@@ -1,5 +1,6 @@
-import type { LeadRequest, LogisticsService } from "../../../src/types/models";
-import { validateLeadRequest } from "../../../src/utils/validations";
+import type { LogisticsService } from "../../../src/types/models";
+import { createTrackFlowCandidate, normalizeAssignedOwner } from "../../../src/backend/lead-capture";
+import { getLeadQualificationSummary } from "../../../src/backend/commercial-operations";
 import type { Candidate, CandidateStage, CandidateWriteInput } from "../../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES } from "../../../src/candidates/types";
 
@@ -149,25 +150,6 @@ function normalizePage(value: string | null): number {
   return Number.isInteger(page) && page > 0 ? page : 1;
 }
 
-function toLeadRequest(id: string, input: CandidateWriteInput): LeadRequest {
-  return {
-    id,
-    companyName: input.companyName,
-    contactPerson: input.contactPerson,
-    corporateEmail: input.corporateEmail,
-    phone: input.phone,
-    companyWebsite: input.companyWebsite,
-    operatingCountry: input.operatingCountry,
-    productType: input.productType,
-    monthlyVolume: input.monthlyVolume,
-    servicesOfInterest: input.servicesOfInterest,
-    current3pl: input.current3pl,
-    comments: input.comments,
-    privacyAccepted: input.privacyAccepted,
-    status: input.status,
-  };
-}
-
 export function listCandidates(searchParams: URLSearchParams) {
   const query = (searchParams.get("q") ?? "").trim().toLowerCase();
   const status = searchParams.get("status") ?? "all";
@@ -198,59 +180,55 @@ export function getCandidate(id: string): Candidate | undefined {
   return candidates.find((candidate) => candidate.id === id);
 }
 
-export function createCandidate(input: CandidateWriteInput): { candidate?: Candidate; errors?: string[] } {
+export function createCandidate(input: CandidateWriteInput): { candidate?: Candidate; errors?: string[]; warnings?: string[] } {
   const id = nextId("lead");
-  const validation = validateLeadRequest(toLeadRequest(id, input), services);
-
-  if (!validation.valid) {
-    return { errors: validation.errors };
-  }
-
-  if (!CANDIDATE_STAGES.includes(input.stage)) {
-    return { errors: ["Stage must be a valid TrackFlow pipeline stage."] };
-  }
-
   const createdAt = now();
-  const candidate: Candidate = {
-    ...toLeadRequest(id, input),
-    stage: input.stage,
-    assignedTo: input.assignedTo.trim() || "Commercial Desk",
-    createdAt,
+  const result = createTrackFlowCandidate(id, input, services, createdAt);
+
+  if (!result.candidate) {
+    return { errors: result.errors ?? ["Candidate could not be created."], warnings: result.warnings ?? [] };
+  }
+
+  const candidate = result.candidate;
+  const qualification = getLeadQualificationSummary(candidate);
+
+  const normalizedCandidate: Candidate = {
+    ...candidate,
+    status: qualification.status,
+    stage: qualification.stage,
+    assignedTo: normalizeAssignedOwner(candidate.assignedTo),
     updatedAt: createdAt,
-    notes: [],
   };
 
-  candidates = [candidate, ...candidates];
-  return { candidate };
+  candidates = [normalizedCandidate, ...candidates];
+  return { candidate: normalizedCandidate, warnings: result.warnings ?? [] };
 }
 
-export function replaceCandidate(id: string, input: CandidateWriteInput): { candidate?: Candidate; errors?: string[] } {
+export function replaceCandidate(id: string, input: CandidateWriteInput): { candidate?: Candidate; errors?: string[]; warnings?: string[] } {
   const existing = getCandidate(id);
 
   if (!existing) {
     return { errors: ["Candidate was not found."] };
   }
 
-  const validation = validateLeadRequest(toLeadRequest(id, input), services);
+  const result = createTrackFlowCandidate(id, input, services, now());
 
-  if (!validation.valid) {
-    return { errors: validation.errors };
+  if (!result.candidate) {
+    return { errors: result.errors ?? ["Candidate could not be saved."], warnings: result.warnings ?? [] };
   }
 
-  if (!CANDIDATE_STAGES.includes(input.stage)) {
-    return { errors: ["Stage must be a valid TrackFlow pipeline stage."] };
-  }
-
+  const qualification = getLeadQualificationSummary(result.candidate);
   const updated: Candidate = {
     ...existing,
-    ...toLeadRequest(id, input),
-    stage: input.stage,
-    assignedTo: input.assignedTo.trim() || "Commercial Desk",
+    ...result.candidate,
+    status: qualification.status,
+    stage: qualification.stage,
+    assignedTo: normalizeAssignedOwner(result.candidate.assignedTo),
     updatedAt: now(),
   };
 
   candidates = candidates.map((candidate) => (candidate.id === id ? updated : candidate));
-  return { candidate: updated };
+  return { candidate: updated, warnings: result.warnings ?? [] };
 }
 
 export function patchCandidate(id: string, payload: { status?: string; stage?: string }): { candidate?: Candidate; errors?: string[] } {
