@@ -1,0 +1,11 @@
+incident_id,category,status,description,customer_name,email,phone,date,satisfaction_score,notes
+INC001,complaints,closed,Valid record,Company A,valid@company.com,+1-555-0001,2024-01-01,8.0,Good
+INC002,invalid_cat,open,Missing category value,Company B,test@company.com,+1-555-0002,2024-01-02,,Bad category
+INC003,complaints,,Missing status value,Company C,test2@company.com,+1-555-0003,2024-01-03,,Missing status
+INC004,complaints,open,Missing email field,Company D,,+1-555-0004,2024-01-04,,No email
+INC005,complaints,closed,Bad email format,Company E,bademail@invalid,+1-555-0005,2024-01-05,,Email missing domain
+INC006,requests,closed,Bad date format,Company F,test@company.com,+1-555-0006,01-01-2024,8.5,Wrong date format
+INC007,complaints,open,Bad satisfaction score,Company G,test@company.com,+1-555-0007,2024-01-07,15.0,Score out of range
+INC008,operational_failures,closed,Valid record 2,Company H,test@company.com,+1-555-0008,2024-01-08,9.0,Good
+INC009,complaints,open,Valid record 3,Company I,test@company.com,+1-555-0009,2024-01-09,,Open no score
+INC010,requests,discarded,Valid record 4,Company J,test@company.com,+1-555-0010,2024-01-10,,Discarded

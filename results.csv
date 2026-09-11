@@ -1,0 +1,27 @@
+Metric,Value
+,
+SUMMARY METRICS,
+Total Records Processed,10
+Valid Records,4
+Invalid Records,6
+,
+CATEGORY BREAKDOWN,
+Complaints,2
+Requests,1
+Operational Failures,1
+,
+STATUS BREAKDOWN,
+Open,1
+Closed,2
+Discarded,1
+,
+Average Satisfaction Index,8.50
+,
+INVALID RECORDS,
+Row Number,Incident ID,Errors
+3,INC002,"Invalid category 'invalid_cat'; must be one of: complaints, requests, operational_failures"
+4,INC003,Missing required field 'status'
+5,INC004,Missing required field 'email'
+6,INC005,Invalid email format: 'bademail@invalid'
+7,INC006,Invalid date format '01-01-2024'; must be YYYY-MM-DD
+8,INC007,Invalid satisfaction score '15.0'; must be a number between 0-10

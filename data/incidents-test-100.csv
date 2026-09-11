@@ -1,0 +1,101 @@
+incident_id,category,status,description,customer_name,email,phone,date,satisfaction_score,notes
+INC001,complaints,closed,Delayed delivery to customer,Acme Corp,john@acme.com,+1-555-0101,2024-01-15,8.5,Resolved with refund
+INC002,requests,open,Need expedited shipping option,TechFlow Inc,sarah@techflow.com,+1-555-0102,2024-01-16,,Awaiting response
+INC003,operational_failures,closed,Warehouse sorting error,FastShip Co,mike@fastship.com,+1-555-0103,2024-01-17,7.0,Process updated
+INC004,complaints,open,Damaged package on arrival,GlowCart LLC,aisha@glowcart.com,+1-555-0104,2024-01-18,,Customer waiting resolution
+INC005,requests,closed,Integration API documentation,DevTools Pro,david@devtools.com,+1-555-0105,2024-01-19,9.0,Documentation provided
+INC006,operational_failures,discarded,False alarm - inventory mismatch resolved,EuroShop,maria@euroshop.com,+1-555-0106,2024-01-20,,Self-resolved
+INC007,complaints,closed,Incorrect order fulfillment,Fashion Hub,emma@fashionhub.com,+1-555-0107,2024-01-21,6.5,Order replaced
+INC008,requests,open,Custom label requirements,Electronics Pro,alex@electronicspro.com,+1-555-0108,2024-01-22,,Forwarded to operations
+INC009,operational_failures,open,System downtime report,CosmoBrand,nina@comosbrand.com,+1-555-0109,2024-01-23,,Investigating
+INC010,complaints,closed,Late delivery notification,QuickCart,james@quickcart.com,+1-555-0110,2024-01-24,8.0,SLA met compensation
+INC011,requests,closed,Warehouse capacity query,BoldStyle,lisa@boldstyle.com,+1-555-0111,2024-01-25,7.5,Capacity confirmed
+INC012,complaints,open,Missing items in shipment,VividColor,robert@vividcolor.com,+1-555-0112,2024-01-26,,Investigating inventory
+INC013,operational_failures,closed,Return processing delay,ShopSmile,sophie@shopsmile.com,+1-555-0113,2024-01-27,7.0,Process optimized
+INC014,requests,open,Rate negotiation inquiry,TradeHub,william@tradehub.com,+1-555-0114,2024-01-28,,Sales team engaged
+INC015,complaints,closed,Label printing error,PureGood,charlotte@puregood.com,+1-555-0115,2024-01-29,8.5,Template corrected
+INC016,operational_failures,discarded,Test ticket - ignore,TestCorp,test@testcorp.com,+1-555-0116,2024-01-30,,Cleanup
+INC017,requests,closed,Volume discount request,BudgetMart,henry@budgetmart.com,+1-555-0117,2024-01-31,8.0,New pricing offered
+INC018,complaints,open,Tracking number not updated,LuxeBrand,victoria@luxebrand.com,+1-555-0118,2024-02-01,,System sync issue
+INC019,operational_failures,open,Staff shortage impact,NeonStyle,jack@neonstyle.com,+1-555-0119,2024-02-02,,Temporary staffing arranged
+INC020,requests,closed,API rate limit increase,CloudCart,grace@cloudcart.com,+1-555-0120,2024-02-03,9.5,Limits increased
+INC021,complaints,closed,Billing discrepancy,SereneHome,oliver@serenehome.com,+1-555-0121,2024-02-04,7.0,Invoice corrected
+INC022,requests,open,White label partnership inquiry,BrandHub,sophia@brandhub.com,+1-555-0122,2024-02-05,,Business development reviewing
+INC023,operational_failures,closed,Customs clearance delay,GlobalShip,lucas@globalship.com,+1-555-0123,2024-02-06,6.5,Process documentation updated
+INC024,complaints,open,Duplicate charges,CheckoutMax,isabella@checkoutmax.com,+1-555-0124,2024-02-07,,Finance investigating
+INC025,requests,closed,Warehouse automation consultation,TechPro,ethan@techpro.com,+1-555-0125,2024-02-08,8.0,Consultation completed
+INC026,operational_failures,discarded,Spam report - ignore,Spam Inc,spam@spam.com,+1-555-0126,2024-02-09,,Marked as spam
+INC027,complaints,closed,Temperature control issue,ColdChain,amelia@coldchain.com,+1-555-0127,2024-02-10,7.5,HVAC serviced
+INC028,requests,open,Reporting and analytics access,DataDriven,michael@datadriven.com,+1-555-0128,2024-02-11,,Dashboard access being configured
+INC029,operational_failures,open,Equipment malfunction,PackPro,rachel@packpro.com,+1-555-0129,2024-02-12,,Equipment repair ordered
+INC030,complaints,closed,Staff rudeness complaint,CustomerCare,benjamin@customercare.com,+1-555-0130,2024-02-13,5.0,Staff retraining scheduled
+INC031,requests,closed,Sustainability reporting,GreenShop,emma@greenshop.com,+1-555-0131,2024-02-14,9.0,Report delivered
+INC032,complaints,open,Wrong address on label,AddressGo,daniel@addressgo.com,+1-555-0132,2024-02-15,,Process review underway
+INC033,operational_failures,closed,Network connectivity issue,ConnectCo,sophia@connectco.com,+1-555-0133,2024-02-16,8.5,Network upgraded
+INC034,requests,open,Training on new features,TrainUp,liam@trainup.com,+1-555-0134,2024-02-17,,Scheduling session
+INC035,complaints,closed,Return processing slow,QuickReturn,noah@quickreturn.com,+1-555-0135,2024-02-18,6.0,Staff added to returns
+INC036,operational_failures,discarded,Outdated system notification - ignore,OldSystem,old@oldsystem.com,+1-555-0136,2024-02-19,,Archive
+INC037,requests,closed,EDI integration setup,IntegrationPro,ava@integrationpro.com,+1-555-0137,2024-02-20,8.5,EDI configured
+INC038,complaints,open,Seasonal capacity shortage,SeasonalBiz,mia@seasonalbiz.com,+1-555-0138,2024-02-21,,Temp solution in place
+INC039,operational_failures,closed,Printer malfunction,PrintCo,mason@printco.com,+1-555-0139,2024-02-22,7.5,Replacement installed
+INC040,requests,closed,SOC 2 compliance documentation,ComplianceCo,emily@complianceco.com,+1-555-0140,2024-02-23,9.0,Documentation provided
+INC041,complaints,closed,Carrier billing confusion,CarrierHelp,jacob@carrierhelp.com,+1-555-0141,2024-02-24,7.0,Billing clarified
+INC042,requests,open,Mobile app integration,AppDev,charlotte@appdev.com,+1-555-0142,2024-02-25,,Development plan in progress
+INC043,operational_failures,open,Database backup failure,DataBackup,henry@databackup.com,+1-555-0143,2024-02-26,,Emergency procedures activated
+INC044,complaints,closed,Insurance claim filing,InsureShip,alexander@insureship.com,+1-555-0144,2024-02-27,6.5,Claim submitted
+INC045,requests,closed,Inventory forecasting tools,ForecastPro,amelia@forecastpro.com,+1-555-0145,2024-02-28,8.0,Tools deployed
+INC046,operational_failures,discarded,Test incident - ignore,TestSystem,test2@testsystem.com,+1-555-0146,2024-02-29,,QA only
+INC047,complaints,open,Packaging material shortage,PackagingCo,benjamin@packagingco.com,+1-555-0147,2024-03-01,,Alternative packaging sourced
+INC048,requests,closed,Video tutorial request,VideoContent,sophia@videocontent.com,+1-555-0148,2024-03-02,8.5,Tutorials created
+INC049,operational_failures,closed,Power outage impact,PowerAware,lucas@poweraware.com,+1-555-0149,2024-03-03,5.0,Generator installed
+INC050,complaints,closed,Invoice format changes,BillingHelp,olivia@billinghelp.com,+1-555-0150,2024-03-04,8.0,Format updated
+INC051,requests,open,Blockchain verification,BlockchainCo,mason@blockchaincco.com,+1-555-0151,2024-03-05,,Feasibility study
+INC052,complaints,open,Customer service hours expansion,ServicePlus,isabella@serviceplus.com,+1-555-0152,2024-03-06,,Hours extended
+INC053,operational_failures,closed,Security audit findings,SecureShip,ethan@secureship.com,+1-555-0153,2024-03-07,9.0,Audit cleared
+INC054,requests,closed,Sustainability certification help,SustainableCorp,grace@sustainablecorp.com,+1-555-0154,2024-03-08,8.5,Certification achieved
+INC055,complaints,closed,Third-party logistics confusion,LogisticsCo,james@logisticscco.com,+1-555-0155,2024-03-09,6.5,Process documented
+INC056,operational_failures,discarded,False alert - resolved,FalseAlertCorp,falsetest@falsealert.com,+1-555-0156,2024-03-10,,Monitor only
+INC057,requests,open,Geolocation services query,GeoServices,rachel@geoservices.com,+1-555-0157,2024-03-11,,Demonstration scheduled
+INC058,complaints,open,Customs documentation errors,CustomsClear,william@customsclear.com,+1-555-0158,2024-03-12,,Documentation being corrected
+INC059,operational_failures,closed,HVAC temperature fluctuation,ClimateControl,sophia@climatecontrol.com,+1-555-0159,2024-03-13,7.0,HVAC calibrated
+INC060,complaints,closed,Quality control failure,QualityFirst,daniel@qualityfirst.com,+1-555-0160,2024-03-14,5.5,Quality process updated
+INC061,requests,closed,Employee training program,TrainingTeam,noah@trainingteam.com,+1-555-0161,2024-03-15,8.0,Program launched
+INC062,operational_failures,open,Forklift breakdown,WarehouseTools,ava@warehousetools.com,+1-555-0162,2024-03-16,,Replacement equipment rented
+INC063,complaints,open,Payment processing delays,PaymentGateway,mia@paymentgateway.com,+1-555-0163,2024-03-17,,Payment processor investigating
+INC064,requests,closed,Diversity and inclusion report,DEIInitiative,liam@deiinitiative.com,+1-555-0164,2024-03-18,9.0,Report completed
+INC065,complaints,closed,Packaging material damage,PackageDamage,emma@packagedamage.com,+1-555-0165,2024-03-19,6.0,Supplier changed
+INC066,operational_failures,discarded,Outdated notification - cleanup,OldNotif,old@oldnotif.com,+1-555-0166,2024-03-20,,Archive
+INC067,requests,open,Machine learning capabilities,AIServices,olivia@aiservices.com,+1-555-0167,2024-03-21,,Technical review in progress
+INC068,complaints,closed,Carrier communication gap,CarrierComm,jacob@carriercomm.com,+1-555-0168,2024-03-22,7.5,Communication protocol updated
+INC069,operational_failures,closed,Server maintenance window impact,ServerOps,charlotte@serverops.com,+1-555-0169,2024-03-23,8.5,Maintenance scheduling improved
+INC070,requests,closed,Warehouse expansion planning,ExpansionCorp,henry@expansioncorp.com,+1-555-0170,2024-03-24,8.0,Expansion plan delivered
+INC071,complaints,closed,Seasonal rate confusion,SeasonalRates,alexander@seasonalrates.com,+1-555-0171,2024-03-25,7.0,Rates clarified
+INC072,requests,open,Augmented reality product preview,ARCorp,amelia@arcorp.com,+1-555-0172,2024-03-26,,Proof of concept planned
+INC073,operational_failures,open,Pest control emergency,PestControl,benjamin@pestcontrol.com,+1-555-0173,2024-03-27,,Exterminator scheduled
+INC074,complaints,open,Inventory accuracy issue,InventoryCheck,sophia@inventorycheck.com,+1-555-0174,2024-03-28,,Reconciliation in progress
+INC075,requests,closed,Sustainability goal tracking,SustainGoals,lucas@sustaingoals.com,+1-555-0175,2024-03-29,9.0,Tracking system deployed
+INC076,operational_failures,discarded,Duplicate test ticket - ignore,DupTest,dup@duptest.com,+1-555-0176,2024-03-30,,Cleanup
+INC077,complaints,closed,Reverse logistics process delay,ReverseLog,olivia@reverselog.com,+1-555-0177,2024-03-31,6.5,Process streamlined
+INC078,requests,open,Real-time data analytics,DataAnalytics,mason@dataanalytics.com,+1-555-0178,2024-04-01,,Technical architecture review
+INC079,operational_failures,closed,Fire safety inspection findings,SafetyFirst,isabella@safetyfirst.com,+1-555-0179,2024-04-02,9.0,Safety measures implemented
+INC080,complaints,closed,Shipping carrier rate spike,RateReview,ethan@ratereview.com,+1-555-0180,2024-04-03,7.0,Alternative carriers identified
+INC081,requests,closed,Voice of customer program,CustomerVoice,grace@customervoice.com,+1-555-0181,2024-04-04,8.5,Program established
+INC082,operational_failures,open,Network latency issues,NetworkOps,james@networkops.com,+1-555-0182,2024-04-05,,ISP escalation initiated
+INC083,complaints,open,Return label generation failure,ReturnLabels,rachel@returnlabels.com,+1-555-0183,2024-04-06,,System debugging ongoing
+INC084,requests,closed,Competitive analysis report,CompAnalysis,william@companalysis.com,+1-555-0184,2024-04-07,8.0,Report delivered
+INC085,operational_failures,closed,Loading dock congestion,LoadingDock,sophia@loadingdock.com,+1-555-0185,2024-04-08,7.5,Scheduling optimized
+INC086,complaints,closed,Billing system integration issue,BillingIntegration,daniel@billingintegration.com,+1-555-0186,2024-04-09,6.0,Integration completed
+INC087,requests,open,Gamification engagement strategy,GameServices,noah@gameservices.com,+1-555-0187,2024-04-10,,Campaign design underway
+INC088,operational_failures,discarded,Test environment noise - ignore,TestEnv,test3@testenv.com,+1-555-0188,2024-04-11,,Archive
+INC089,complaints,open,Carrier service area limitation,ServiceArea,ava@servicearea.com,+1-555-0189,2024-04-12,,Expansion options explored
+INC090,requests,closed,Emotional intelligence training,EmotionalInt,mia@emotionalint.com,+1-555-0190,2024-04-13,8.5,Training completed
+INC091,operational_failures,closed,Environmental compliance audit,EnvCompliance,liam@envcompliance.com,+1-555-0191,2024-04-14,9.0,Audit passed
+INC092,complaints,closed,Promotional shipment timing issue,PromoShip,emma@promoship.com,+1-555-0192,2024-04-15,7.5,Timeline revised
+INC093,requests,open,Quantum computing research,QuantumCorp,olivia@quantumcorp.com,+1-555-0193,2024-04-16,,Research proposal submitted
+INC094,operational_failures,open,Utility cost spike investigation,UtilityMgmt,jacob@utilitymgmt.com,+1-555-0194,2024-04-17,,Rate review initiated
+INC095,complaints,closed,Documentation language support,DocSupport,charlotte@docsupport.com,+1-555-0195,2024-04-18,8.0,Multilingual docs created
+INC096,requests,closed,Supply chain visibility platform,SupplyChain,henry@supplychain.com,+1-555-0196,2024-04-19,8.5,Platform deployed
+INC097,operational_failures,discarded,Redundant report - cleanup,RedundantCorp,redundant@redundant.com,+1-555-0197,2024-04-20,,Archive
+INC098,complaints,open,Climate impact of logistics,ClimateImpact,alexander@climateimpact.com,+1-555-0198,2024-04-21,,Sustainability study planned
+INC099,requests,closed,Future of work consultation,FutureWork,amelia@futurework.com,+1-555-0199,2024-04-22,9.0,Consultation delivered
+INC100,complaints,closed,Final delivery window change,DeliveryWindow,benjamin@deliverywindow.com,+1-555-0200,2024-04-23,8.0,Window adjusted
