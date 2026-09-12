@@ -19,6 +19,9 @@ export default function Navigation() {
         <Link className="button secondary" href="/candidates">
           Pipeline
         </Link>
+        <Link className="button secondary" href="/uis/backoffice/suppliers">
+          Suppliers
+        </Link>
         <Link className="button" href="/candidates/new">
           New candidate
         </Link>

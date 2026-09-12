@@ -1,7 +1,14 @@
 {
-  "/page": "app/page.js",
-  "/candidates/page": "app/candidates/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/candidates/[id]/notes/[noteId]/route": "app/api/candidates/[id]/notes/[noteId]/route.js",
+  "/api/candidates/[id]/notes/route": "app/api/candidates/[id]/notes/route.js",
+  "/api/candidates/[id]/route": "app/api/candidates/[id]/route.js",
   "/api/candidates/route": "app/api/candidates/route.js",
-  "/uis/website/page": "app/uis/website/page.js",
-  "/candidates/new/page": "app/candidates/new/page.js"
+  "/candidates/[id]/page": "app/candidates/[id]/page.js",
+  "/candidates/page": "app/candidates/page.js",
+  "/candidates/new/page": "app/candidates/new/page.js",
+  "/page": "app/page.js",
+  "/uis/backoffice/page": "app/uis/backoffice/page.js",
+  "/uis/backoffice/suppliers/page": "app/uis/backoffice/suppliers/page.js",
+  "/uis/website/page": "app/uis/website/page.js"
 }
