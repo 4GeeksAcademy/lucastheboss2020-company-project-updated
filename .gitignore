@@ -8,3 +8,7 @@ dist/
 .env
 .env.local
 .env.*.local
+backend/.venv/
+backend/data/*.json
+__pycache__/
+.pytest_cache/

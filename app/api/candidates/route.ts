@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { createCandidate, listCandidates } from "./data";
 import type { CandidateWriteInput } from "../../../src/candidates/types";
+import { requireAuthentication } from "../_auth";
 
 export async function GET(request: Request) {
+  const authError = requireAuthentication(request);
+  if (authError) return authError;
   const url = new URL(request.url);
   return NextResponse.json(listCandidates(url.searchParams));
 }
