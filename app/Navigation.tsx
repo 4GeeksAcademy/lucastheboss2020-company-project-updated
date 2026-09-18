@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { clearToken } from "../src/auth";
 
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
 
-  if (pathname === "/uis/website") {
+  if (pathname === "/" || pathname === "/uis/website" || pathname === "/login" || pathname === "/register") {
     return null;
   }
 
@@ -22,6 +24,8 @@ export default function Navigation() {
         <Link className="button" href="/candidates/new">
           New candidate
         </Link>
+        <Link className="button secondary" href="/account/profile">Profile</Link>
+        <button type="button" className="secondary" onClick={() => { clearToken(); router.replace("/login"); }}>Log out</button>
       </nav>
     </header>
   );

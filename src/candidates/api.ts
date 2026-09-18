@@ -1,27 +1,22 @@
 import type { Candidate, CandidateListResponse, CandidateWriteInput } from "./types";
+import { authenticatedFetch, readJson } from "../auth";
 
 async function parseResponse<T>(response: Response): Promise<T> {
-  const payload = await response.json();
-
-  if (!response.ok) {
-    throw new Error(payload.error ?? "The TrackFlow candidate request failed.");
-  }
-
-  return payload as T;
+  return readJson<T>(response);
 }
 
 export async function fetchCandidates(search: string): Promise<CandidateListResponse> {
-  const response = await fetch(`/api/candidates${search}`, { cache: "no-store" });
+  const response = await authenticatedFetch(`/api/candidates${search}`, { cache: "no-store" });
   return parseResponse<CandidateListResponse>(response);
 }
 
 export async function fetchCandidate(id: string): Promise<Candidate> {
-  const response = await fetch(`/api/candidates/${id}`, { cache: "no-store" });
+  const response = await authenticatedFetch(`/api/candidates/${id}`, { cache: "no-store" });
   return parseResponse<Candidate>(response);
 }
 
 export async function createCandidate(input: CandidateWriteInput): Promise<Candidate> {
-  const response = await fetch("/api/candidates", {
+  const response = await authenticatedFetch("/api/candidates", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -30,7 +25,7 @@ export async function createCandidate(input: CandidateWriteInput): Promise<Candi
 }
 
 export async function updateCandidate(id: string, input: CandidateWriteInput): Promise<Candidate> {
-  const response = await fetch(`/api/candidates/${id}`, {
+  const response = await authenticatedFetch(`/api/candidates/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -39,7 +34,7 @@ export async function updateCandidate(id: string, input: CandidateWriteInput): P
 }
 
 export async function patchCandidateProgress(id: string, status: Candidate["status"], stage: Candidate["stage"]): Promise<Candidate> {
-  const response = await fetch(`/api/candidates/${id}`, {
+  const response = await authenticatedFetch(`/api/candidates/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status, stage }),
@@ -48,7 +43,7 @@ export async function patchCandidateProgress(id: string, status: Candidate["stat
 }
 
 export async function addCandidateNote(id: string, body: string): Promise<Candidate> {
-  const response = await fetch(`/api/candidates/${id}/notes`, {
+  const response = await authenticatedFetch(`/api/candidates/${id}/notes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ body }),
@@ -57,6 +52,6 @@ export async function addCandidateNote(id: string, body: string): Promise<Candid
 }
 
 export async function deleteCandidateNote(id: string, noteId: string): Promise<Candidate> {
-  const response = await fetch(`/api/candidates/${id}/notes/${noteId}`, { method: "DELETE" });
+  const response = await authenticatedFetch(`/api/candidates/${id}/notes/${noteId}`, { method: "DELETE" });
   return parseResponse<Candidate>(response);
 }

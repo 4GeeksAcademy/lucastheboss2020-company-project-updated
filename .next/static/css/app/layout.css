@@ -223,6 +223,16 @@ a:focus-visible {
   color: #1e3a8a;
 }
 
+.auth-card {
+  margin: 3rem auto;
+  max-width: 30rem;
+}
+
+.error-text {
+  color: var(--track-error);
+  font-weight: 700;
+}
+
 .message.warning {
   background: #fef3c7;
   color: #92400e;
