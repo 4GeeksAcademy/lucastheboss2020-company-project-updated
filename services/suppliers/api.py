@@ -6,8 +6,13 @@ app = FastAPI(title="Suppliers API")
 
 
 @app.get("/suppliers")
-def list_suppliers():
-    return get_all()
+def list_suppliers(country: str = None, category: str = None):
+    results = get_all()
+    if country:
+        results = [r for r in results if r.get("country", "").lower() == country.lower()]
+    if category:
+        results = [r for r in results if category.lower() in [c.lower() for c in r.get("product_categories", [])]]
+    return results
 
 
 @app.get("/suppliers/{supplier_id}")

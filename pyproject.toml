@@ -1,6 +1,20 @@
 [build-system]
 requires = ["setuptools>=64"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trackflow"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "tinydb>=4.8.0",
+    "pydantic>=2.0.0",
+    "fastapi>=0.100.0",
+]
+scripts = { seed = "services.suppliers.seed:main" }
+
+[tool.setuptools.packages.find]
+include = ["services*", "backend*"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests", "services/suppliers/tests"]

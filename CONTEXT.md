@@ -275,6 +275,20 @@ Fields:
 - role: "warehouse-operator" | "route-coordinator" | "account-manager" | "support-specialist"
 - country: "United States" | "Spain"
 
+### Supplier
+
+Represents a third-party logistics supplier that TrackFlow partners with.
+
+Fields:
+
+- id: integer
+- name: string
+- country: string
+- product_categories: string[]  (e.g. "Pallets", "Containers", "Express", "Documents", "Fragile", "Bulk")
+- rate: number  (positive only, represents cost per unit)
+- status: "active" | "suspended"
+- updated_at: string  (ISO 8601 timestamp, system-generated)
+
 ## Reports to generate
 
 1. Count leads by service of interest
