@@ -163,6 +163,43 @@ export function IncidentAnalyzer() {
     setSelectedHistoryId(null);
   };
 
+  /**
+   * Aggregate invalid record errors by type for the red alert display.
+   * Groups similar error messages to show "how many of each type".
+   */
+  function aggregateErrorsByType(invalidRecords: AnalysisResult['invalid_records']): { type: string; count: number }[] {
+    const errorCounts: Record<string, number> = {};
+
+    for (const record of invalidRecords) {
+      for (const err of record.errors) {
+        // Categorize the error message into a type
+        let type = 'Other';
+        if (err.toLowerCase().includes('missing required field') || err.toLowerCase().includes('missing field')) {
+          const match = err.match(/'([^']+)'/);
+          type = match ? `Missing field: ${match[1]}` : 'Missing required field';
+        } else if (err.toLowerCase().includes('email')) {
+          type = 'Invalid email';
+        } else if (err.toLowerCase().includes('phone')) {
+          type = 'Invalid phone';
+        } else if (err.toLowerCase().includes('date')) {
+          type = 'Invalid date';
+        } else if (err.toLowerCase().includes('category')) {
+          type = 'Invalid category';
+        } else if (err.toLowerCase().includes('status')) {
+          type = 'Invalid status';
+        } else if (err.toLowerCase().includes('satisfaction') || err.toLowerCase().includes('score')) {
+          type = 'Invalid satisfaction score';
+        }
+
+        errorCounts[type] = (errorCounts[type] || 0) + 1;
+      }
+    }
+
+    return Object.entries(errorCounts)
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count); // Most frequent first
+  }
+
   const displayAnalysis = analysis || (selectedHistoryId && history.find((h) => h.id === selectedHistoryId));
 
   if (displayAnalysis) {
@@ -219,26 +256,42 @@ export function IncidentAnalyzer() {
         </div>
 
         {displayAnalysis.invalid_records.length > 0 && (
-          <section className="panel" style={{ marginTop: "1rem" }}>
-            <header>
-              <h3>Invalid Records ({displayAnalysis.invalid_records.length})</h3>
-              <button className="button secondary compact-button" onClick={() => setExpandedInvalidRecords(!expandedInvalidRecords)} type="button">
-                {expandedInvalidRecords ? 'Collapse' : 'Expand'}
-              </button>
-            </header>
-            {expandedInvalidRecords && (
-              <div className="detail-grid">
-                {displayAnalysis.invalid_records.map((record) => (
-                  <article className="candidate-card" key={record.row_number}>
-                    <p><strong>Row {record.row_number}</strong> · ID: {record.incident_id}</p>
-                    <ul>
-                      {record.errors.map((error) => <li key={error}>{error}</li>)}
-                    </ul>
-                  </article>
+          <>
+            {/* Red alert banner with error type breakdown */}
+            <div className="panel message error" style={{ marginTop: "1rem" }}>
+              <h3>⚠️ {displayAnalysis.invalid_records.length} Invalid Record{displayAnalysis.invalid_records.length !== 1 ? 's' : ''} Found</h3>
+              <p>The file contains records with validation errors. Please review and correct them.</p>
+              <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {aggregateErrorsByType(displayAnalysis.invalid_records).map(({ type, count }) => (
+                  <span key={type} className="badge" style={{ background: '#dc2626', color: '#fff', fontSize: '0.85rem' }}>
+                    {count}x {type}
+                  </span>
                 ))}
               </div>
-            )}
-          </section>
+            </div>
+
+            {/* Expandable details */}
+            <section className="panel" style={{ marginTop: "1rem" }}>
+              <header>
+                <h3>Invalid Records Details ({displayAnalysis.invalid_records.length})</h3>
+                <button className="button secondary compact-button" onClick={() => setExpandedInvalidRecords(!expandedInvalidRecords)} type="button">
+                  {expandedInvalidRecords ? 'Collapse' : 'Expand'}
+                </button>
+              </header>
+              {expandedInvalidRecords && (
+                <div className="detail-grid">
+                  {displayAnalysis.invalid_records.map((record) => (
+                    <article className="candidate-card" key={record.row_number}>
+                      <p><strong>Row {record.row_number}</strong> · ID: {record.incident_id}</p>
+                      <ul>
+                        {record.errors.map((error) => <li key={error}>{error}</li>)}
+                      </ul>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         )}
       </section>
     );

@@ -53,6 +53,7 @@ export default function BackofficeHome() {
         <div className="actions">
           <Link className="button secondary" href="/uis/website#contact-form">View public lead form</Link>
           <Link className="button" href="/candidates/new">Add lead manually</Link>
+          <Link className="button secondary" href="/uis/backoffice/incidents">Incident Analysis</Link>
         </div>
       </header>
 

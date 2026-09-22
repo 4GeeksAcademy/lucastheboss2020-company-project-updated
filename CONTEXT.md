@@ -283,3 +283,50 @@ Fields:
 4. Count leads by monthly volume
 5. Identify low-volume leads that should receive the warning
 6. Count leads by current 3PL status
+
+## Incident Analysis — Expected Results
+
+When running the analysis script against the test CSV files, the output must match these values.
+
+### File: `data/incidents-test-100.csv`
+
+| Metric | Expected Value |
+|---|---|
+| Total records processed | 25 |
+| Valid records | 25 |
+| Invalid records | 0 |
+| Category — Complaints | 10 |
+| Category — Requests | 8 |
+| Category — Operational Failures | 7 |
+| Status — Open | 8 |
+| Status — Closed | 16 |
+| Status — Discarded | 1 |
+| Average Satisfaction Index | 6.81 |
+
+### File: `data/incidents-test-invalid.csv`
+
+| Metric | Expected Value |
+|---|---|
+| Total records processed | 10 |
+| Valid records | 0 |
+| Invalid records | 10 |
+| Category — Complaints | 0 |
+| Category — Requests | 0 |
+| Category — Operational Failures | 0 |
+| Status — Open | 0 |
+| Status — Closed | 0 |
+| Status — Discarded | 0 |
+| Average Satisfaction Index | N/A |
+
+### Error types expected in `incidents-test-invalid.csv`:
+
+1. Invalid category value (`invalid_category`)
+2. Invalid status value (`bad_status`)
+3. Missing required field (category)
+4. Missing required field (description)
+5. Missing required fields (email, date)
+6. Invalid email format
+7. Invalid phone format
+8. Invalid date format
+9. Invalid satisfaction score (out of range)
+10. Multiple validation failures in one record

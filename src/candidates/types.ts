@@ -24,27 +24,6 @@ export interface CandidateListResponse {
   totalPages: number;
 }
 
-export interface TrackerRecord {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  position: string;
-  status: string;
-  stage: string;
-  experience_years: number | null;
-  created_at: string;
-  updated_at: string;
-  notes_count: number;
-}
-
-export interface TrackerRecordListResponse {
-  data: TrackerRecord[];
-  page: number;
-  limit: number;
-  total: number;
-}
-
 export interface CandidateQuery {
   q?: string;
   status?: LeadStatus | "all";

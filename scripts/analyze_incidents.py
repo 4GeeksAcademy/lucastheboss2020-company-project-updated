@@ -195,6 +195,89 @@ def analyze_csv(file_path: str) -> Dict:
         return {'error': f'CSV parsing error: {e}', 'metrics': None, 'invalid_records': []}
 
 
+def print_summary(result: Dict) -> None:
+    """Print a human-readable summary of analysis results to the console."""
+    if 'error' in result:
+        print(f"\n❌ ERROR: {result['error']}\n")
+        return
+
+    print("\n" + "=" * 55)
+    print("   INCIDENT ANALYSIS REPORT")
+    print("=" * 55)
+
+    print(f"\n{'📊 SUMMARY':^55}")
+    print("-" * 55)
+    print(f"  {'Total records processed':<35} {result['total_processed']:>8}")
+    print(f"  {'Valid records':<35} {result['valid_records']:>8}")
+    print(f"  {'Invalid records':<35} {result['invalid_records']:>8}")
+
+    print(f"\n{'📂 CATEGORY BREAKDOWN':^55}")
+    print("-" * 55)
+    for cat, count in result['category_breakdown'].items():
+        label = cat.replace('_', ' ').title()
+        print(f"  {label:<35} {count:>8}")
+
+    print(f"\n{'📋 STATUS BREAKDOWN':^55}")
+    print("-" * 55)
+    for status, count in result['status_breakdown'].items():
+        label = status.title()
+        print(f"  {label:<35} {count:>8}")
+
+    sat = result['average_satisfaction_index']
+    print(f"\n{'⭐ SATISFACTION INDEX':^55}")
+    print("-" * 55)
+    if sat is not None:
+        print(f"  {'Average satisfaction (0-10)':<35} {sat:>8.2f}")
+    else:
+        print(f"  {'Average satisfaction (0-10)':<35} {'N/A':>8}")
+
+    invalids = result.get('invalid_record_details', [])
+    if invalids:
+        print(f"\n{'⚠️  INVALID RECORDS':^55}")
+        print("-" * 55)
+        for rec in invalids[:5]:  # Show first 5 only
+            errors = '; '.join(rec['errors'])
+            print(f"  Row {rec['row_number']} ({rec.get('incident_id', 'N/A')}):")
+            for err in rec['errors']:
+                print(f"    - {err}")
+        if len(invalids) > 5:
+            print(f"  ... and {len(invalids) - 5} more invalid record(s)")
+
+    print("=" * 55 + "\n")
+
+
+def export_to_csv(result: Dict, filename: str = 'results.csv') -> None:
+    """Export analysis metrics to a CSV file (one row per metric)."""
+    import os
+
+    rows = [
+        ['Metric', 'Value'],
+        ['Total Records Processed', str(result.get('total_processed', ''))],
+        ['Valid Records', str(result.get('valid_records', ''))],
+        ['Invalid Records', str(result.get('invalid_records', ''))],
+    ]
+
+    for cat, count in result.get('category_breakdown', {}).items():
+        rows.append([f'Category - {cat.replace("_", " ").title()}', str(count)])
+
+    for status, count in result.get('status_breakdown', {}).items():
+        rows.append([f'Status - {status.title()}', str(count)])
+
+    sat = result.get('average_satisfaction_index')
+    rows.append(['Average Satisfaction Index', f'{sat:.2f}' if sat is not None else 'N/A'])
+
+    invalids = result.get('invalid_record_details', [])
+    rows.append(['Invalid Record Count', str(len(invalids))])
+
+    try:
+        with open(filename, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerows(rows)
+        print(f"✅ Results exported to {os.path.abspath(filename)}")
+    except Exception as e:
+        print(f"❌ Failed to export results: {e}")
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(json.dumps({'error': 'No CSV file path provided'}))
@@ -203,4 +286,17 @@ if __name__ == '__main__':
     file_path = sys.argv[1]
     result = analyze_csv(file_path)
 
+    # Print human-readable summary
+    print_summary(result)
+
+    # Print JSON for programmatic consumption
     print(json.dumps(result))
+
+    # Ask user if they want to export to CSV
+    if 'error' not in result:
+        try:
+            answer = input('\nExport results to CSV? [y/n]: ').strip().lower()
+            if answer == 'y' or answer == 'yes':
+                export_to_csv(result)
+        except (EOFError, KeyboardInterrupt):
+            print()  # Graceful handling if no interactive terminal
