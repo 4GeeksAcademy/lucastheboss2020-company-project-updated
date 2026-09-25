@@ -16,14 +16,6 @@
       "static/chunks/972-95439f873bcc0e8a.js",
       "static/chunks/app/layout-2147f20d7ef643bc.js"
     ],
-    "/candidates/[id]/page": [
-      "static/chunks/webpack-c81f7fd28659d64f.js",
-      "static/chunks/fd9d1056-e74038e1fede4be0.js",
-      "static/chunks/117-1ef883965b434b2f.js",
-      "static/chunks/main-app-e8c377d95817b565.js",
-      "static/chunks/972-95439f873bcc0e8a.js",
-      "static/chunks/app/candidates/[id]/page-733f584e4e559fbe.js"
-    ],
     "/candidates/new/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",
       "static/chunks/fd9d1056-e74038e1fede4be0.js",
@@ -39,6 +31,14 @@
       "static/chunks/main-app-e8c377d95817b565.js",
       "static/chunks/972-95439f873bcc0e8a.js",
       "static/chunks/app/candidates/page-4685e6bc340e912a.js"
+    ],
+    "/candidates/[id]/page": [
+      "static/chunks/webpack-c81f7fd28659d64f.js",
+      "static/chunks/fd9d1056-e74038e1fede4be0.js",
+      "static/chunks/117-1ef883965b434b2f.js",
+      "static/chunks/main-app-e8c377d95817b565.js",
+      "static/chunks/972-95439f873bcc0e8a.js",
+      "static/chunks/app/candidates/[id]/page-733f584e4e559fbe.js"
     ],
     "/login/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",
@@ -61,7 +61,7 @@
       "static/chunks/fd9d1056-e74038e1fede4be0.js",
       "static/chunks/117-1ef883965b434b2f.js",
       "static/chunks/main-app-e8c377d95817b565.js",
-      "static/chunks/app/uis/backoffice/incidents/page-b005d960396ecfcf.js"
+      "static/chunks/app/uis/backoffice/incidents/page-afa1ec07f8cfc656.js"
     ],
     "/uis/backoffice/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",

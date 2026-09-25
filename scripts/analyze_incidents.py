@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Incident File Analyzer
-Validates customer support incident CSV files and generates analysis metrics.
+Incident File Analyzer — TrackFlow TRF (Tracking Record Format)
+Validates TrackFlow tracking record CSV files and generates analysis metrics.
 
 Usage:
     python analyze_incidents.py <csv_file_path>
 
 The script:
-1. Reads the CSV file
-2. Validates each record against required fields and allowed values
-3. Calculates metrics: total processed, invalid count, category breakdown, status breakdown, satisfaction index
+1. Reads the CSV file using TRF (Tracking Record Format) columns
+2. Validates each record against TrackFlow carriers, incident categories, and field rules
+3. Calculates metrics: total processed, valid/invalid counts, carrier breakdown,
+   category breakdown, status breakdown, average declared value
 4. Prints a JSON summary to stdout
 """
 
@@ -20,33 +21,57 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
 
-# Configuration
-REQUIRED_FIELDS = ['incident_id', 'category', 'status', 'description', 'customer_name', 'email', 'date']
-OPTIONAL_FIELDS = ['phone', 'satisfaction_score', 'notes']
-ALLOWED_CATEGORIES = {'complaints', 'requests', 'operational_failures'}
-ALLOWED_STATUSES = {'open', 'closed', 'discarded'}
+# ─── TRF (Tracking Record Format) Configuration ───────────────────────────
+
+# TRF required columns for TrackFlow tracking records
+REQUIRED_FIELDS = [
+    'tracking_id', 'carrier', 'category', 'status',
+    'origin', 'destination',
+    'shipment_date', 'weight_kg', 'declared_value',
+    'customer_name', 'customer_email',
+]
+OPTIONAL_FIELDS = ['delivery_date', 'notes']
+
+# TrackFlow carriers (from CONTEXT.md — US: UPS, FedEx, DHL; Spain: MRW, SEUR, DHL)
+ALLOWED_CARRIERS = {'UPS', 'FEDEX', 'DHL', 'MRW', 'SEUR'}
+
+# TrackFlow tracking incident categories (logistics exception types)
+ALLOWED_CATEGORIES = {
+    'LOST_PARCEL',      # Package lost in transit
+    'DELAYED',          # Delivery delayed beyond committed window
+    'DAMAGED',          # Package damaged in transit
+    'RETURNED',         # Package returned to sender
+    'WRONG_ITEM',       # Wrong item delivered
+    'ADDRESS_ISSUE',    # Address problems (incomplete, invalid, not found)
+    'MISSING_LABEL',    # Label issues (damaged, illegible, barcode failure)
+    'CUSTOMER_CANCELLATION',  # Customer cancelled after dispatch
+}
+
+# TrackFlow record statuses
+ALLOWED_STATUSES = {'open', 'closed', 'exception'}
+
+# Carrier-to-country mapping for reference
+CARRIER_COUNTRIES = {
+    'UPS': 'US',
+    'FedEx': 'US',
+    'DHL': 'Both',  # Operates in both US and Spain
+    'MRW': 'Spain',
+    'SEUR': 'Spain',
+}
 
 
 def validate_email(email: str) -> bool:
-    """Basic email validation."""
+    """Basic email validation — must contain @ and a domain with a dot."""
     return '@' in email and '.' in email.split('@')[-1]
 
 
-def validate_phone(phone: str) -> bool:
-    """Basic phone validation - must contain at least digits and standard phone chars."""
-    if not phone:
-        return True  # Optional field
-    allowed_chars = set('0123456789+() -.')
-    return all(c in allowed_chars for c in phone) and any(c.isdigit() for c in phone)
-
-
-def validate_satisfaction_score(score: Optional[str]) -> Tuple[bool, Optional[float]]:
-    """Validate satisfaction score - must be numeric if provided."""
-    if not score or score.strip() == '':
-        return True, None
+def validate_positive_number(value: str, field_name: str) -> Tuple[bool, Optional[float]]:
+    """Validate a numeric field is present and positive."""
+    if not value or value.strip() == '':
+        return False, None
     try:
-        val = float(score)
-        if 0 <= val <= 10:
+        val = float(value)
+        if val > 0:
             return True, val
         return False, None
     except ValueError:
@@ -54,9 +79,11 @@ def validate_satisfaction_score(score: Optional[str]) -> Tuple[bool, Optional[fl
 
 
 def validate_date(date_str: str) -> bool:
-    """Validate date format - accepts YYYY-MM-DD."""
+    """Validate date format — must be YYYY-MM-DD."""
+    if not date_str or date_str.strip() == '':
+        return False
     try:
-        datetime.strptime(date_str, '%Y-%m-%d')
+        datetime.strptime(date_str.strip(), '%Y-%m-%d')
         return True
     except ValueError:
         return False
@@ -64,75 +91,85 @@ def validate_date(date_str: str) -> bool:
 
 def validate_record(row: Dict[str, str], row_number: int) -> Tuple[bool, List[str]]:
     """
-    Validate a single record against all rules.
+    Validate a single TRF tracking record against all TrackFlow rules.
     Returns (is_valid, list_of_errors)
     """
     errors = []
 
-    # Check required fields
+    # ── Check required fields exist and are non-empty ──
     for field in REQUIRED_FIELDS:
         if field not in row or row[field].strip() == '':
             errors.append(f"Missing required field '{field}'")
 
-    # If essential fields missing, return early
-    if not row.get('category') or not row.get('status'):
-        return False, errors
+    # ── Carrier validation ──
+    carrier = row.get('carrier', '').strip().upper()
+    if carrier and carrier not in ALLOWED_CARRIERS:
+        errors.append(
+            f"Invalid carrier '{row.get('carrier')}'; "
+            f"must be one of: UPS, FedEx, DHL, MRW, SEUR"
+        )
 
-    # Validate category
-    category = row.get('category', '').strip().lower()
+    # ── Category validation ──
+    category = row.get('category', '').strip().upper()
     if category and category not in ALLOWED_CATEGORIES:
-        errors.append(f"Invalid category '{row.get('category')}'; must be one of: {', '.join(ALLOWED_CATEGORIES)}")
+        errors.append(
+            f"Invalid category '{row.get('category')}'; "
+            f"must be one of: {', '.join(sorted(ALLOWED_CATEGORIES))}"
+        )
 
-    # Validate status
+    # ── Status validation ──
     status = row.get('status', '').strip().lower()
     if status and status not in ALLOWED_STATUSES:
-        errors.append(f"Invalid status '{row.get('status')}'; must be one of: {', '.join(ALLOWED_STATUSES)}")
+        errors.append(
+            f"Invalid status '{row.get('status')}'; "
+            f"must be one of: {', '.join(sorted(ALLOWED_STATUSES))}"
+        )
 
-    # Validate email
-    email = row.get('email', '').strip()
+    # ── Weight validation (must be > 0) ──
+    weight_str = row.get('weight_kg', '').strip()
+    if weight_str:
+        weight_valid, weight_val = validate_positive_number(weight_str, 'weight_kg')
+        if not weight_valid:
+            errors.append(f"Invalid weight_kg '{weight_str}'; must be a positive number")
+
+    # ── Declared value validation (must be > 0) ──
+    value_str = row.get('declared_value', '').strip()
+    if value_str:
+        value_valid, value_val = validate_positive_number(value_str, 'declared_value')
+        if not value_valid:
+            errors.append(f"Invalid declared_value '{value_str}'; must be a positive number")
+
+    # ── Customer email validation ──
+    email = row.get('customer_email', '').strip()
     if email and not validate_email(email):
-        errors.append(f"Invalid email format: '{email}'")
+        errors.append(f"Invalid customer_email format: '{email}'")
 
-    # Validate phone if present
-    phone = row.get('phone', '').strip()
-    if phone and not validate_phone(phone):
-        errors.append(f"Invalid phone format: '{phone}'")
+    # ── Shipment date validation ──
+    ship_date = row.get('shipment_date', '').strip()
+    if ship_date and not validate_date(ship_date):
+        errors.append(f"Invalid shipment_date '{ship_date}'; must be YYYY-MM-DD")
 
-    # Validate date
-    date_str = row.get('date', '').strip()
-    if date_str and not validate_date(date_str):
-        errors.append(f"Invalid date format '{date_str}'; must be YYYY-MM-DD")
-
-    # Validate satisfaction score if present
-    satisfaction_score = row.get('satisfaction_score', '').strip()
-    if satisfaction_score:
-        is_valid, _ = validate_satisfaction_score(satisfaction_score)
-        if not is_valid:
-            errors.append(f"Invalid satisfaction score '{satisfaction_score}'; must be a number between 0-10")
+    # ── Delivery date validation (optional, but must be valid if provided) ──
+    del_date = row.get('delivery_date', '').strip()
+    if del_date and not validate_date(del_date):
+        errors.append(f"Invalid delivery_date '{del_date}'; must be YYYY-MM-DD")
 
     return len(errors) == 0, errors
 
 
 def analyze_csv(file_path: str) -> Dict:
     """
-    Analyze a CSV file containing incident records.
+    Analyze a CSV file containing TRF tracking records.
     Returns a dictionary with metrics and validation errors.
     """
     metrics = {
         'total_processed': 0,
         'valid_records': 0,
         'invalid_records': 0,
-        'category_breakdown': {
-            'complaints': 0,
-            'requests': 0,
-            'operational_failures': 0,
-        },
-        'status_breakdown': {
-            'open': 0,
-            'closed': 0,
-            'discarded': 0,
-        },
-        'satisfaction_scores': [],
+        'carrier_breakdown': {c: 0 for c in sorted(ALLOWED_CARRIERS)},
+        'category_breakdown': {c: 0 for c in sorted(ALLOWED_CATEGORIES)},
+        'status_breakdown': {s: 0 for s in sorted(ALLOWED_STATUSES)},
+        'declared_values': [],
     }
 
     invalid_records = []
@@ -155,38 +192,52 @@ def analyze_csv(file_path: str) -> Dict:
 
                 if is_valid:
                     metrics['valid_records'] += 1
-                    category = row.get('category', '').strip().lower()
+
+                    # Track carrier breakdown
+                    carrier = row.get('carrier', '').strip().upper()
+                    if carrier in metrics['carrier_breakdown']:
+                        metrics['carrier_breakdown'][carrier] += 1
+
+                    # Track category breakdown
+                    category = row.get('category', '').strip().upper()
                     if category in metrics['category_breakdown']:
                         metrics['category_breakdown'][category] += 1
+
+                    # Track status breakdown
                     status = row.get('status', '').strip().lower()
                     if status in metrics['status_breakdown']:
                         metrics['status_breakdown'][status] += 1
-                    if status == 'closed':
-                        score_str = row.get('satisfaction_score', '').strip()
-                        if score_str:
-                            try:
-                                metrics['satisfaction_scores'].append(float(score_str))
-                            except ValueError:
-                                pass
+
+                    # Track declared values for average
+                    value_str = row.get('declared_value', '').strip()
+                    if value_str:
+                        try:
+                            metrics['declared_values'].append(float(value_str))
+                        except ValueError:
+                            pass
                 else:
                     metrics['invalid_records'] += 1
                     invalid_records.append({
                         'row_number': row_num,
-                        'incident_id': row.get('incident_id', 'N/A'),
+                        'tracking_id': row.get('tracking_id', 'N/A'),
                         'errors': errors,
                     })
 
-        avg_satisfaction = None
-        if metrics['satisfaction_scores']:
-            avg_satisfaction = sum(metrics['satisfaction_scores']) / len(metrics['satisfaction_scores'])
+        avg_declared_value = None
+        if metrics['declared_values']:
+            avg_declared_value = round(
+                sum(metrics['declared_values']) / len(metrics['declared_values']), 2
+            )
 
         return {
+            'format': 'TRF',
             'total_processed': metrics['total_processed'],
             'valid_records': metrics['valid_records'],
             'invalid_records': metrics['invalid_records'],
+            'carrier_breakdown': metrics['carrier_breakdown'],
             'category_breakdown': metrics['category_breakdown'],
             'status_breakdown': metrics['status_breakdown'],
-            'average_satisfaction_index': avg_satisfaction,
+            'average_declared_value': avg_declared_value,
             'invalid_record_details': invalid_records,
         }
     except FileNotFoundError:
@@ -201,49 +252,52 @@ def print_summary(result: Dict) -> None:
         print(f"\n❌ ERROR: {result['error']}\n")
         return
 
-    print("\n" + "=" * 55)
-    print("   INCIDENT ANALYSIS REPORT")
-    print("=" * 55)
+    print("\n" + "=" * 60)
+    print("   TRACKFLOW TRF ANALYSIS REPORT")
+    print("=" * 60)
 
-    print(f"\n{'📊 SUMMARY':^55}")
-    print("-" * 55)
-    print(f"  {'Total records processed':<35} {result['total_processed']:>8}")
-    print(f"  {'Valid records':<35} {result['valid_records']:>8}")
-    print(f"  {'Invalid records':<35} {result['invalid_records']:>8}")
+    print(f"\n{'📊 SUMMARY':^60}")
+    print("-" * 60)
+    print(f"  {'Total records processed':<40} {result['total_processed']:>8}")
+    print(f"  {'Valid records':<40} {result['valid_records']:>8}")
+    print(f"  {'Invalid records':<40} {result['invalid_records']:>8}")
 
-    print(f"\n{'📂 CATEGORY BREAKDOWN':^55}")
-    print("-" * 55)
-    for cat, count in result['category_breakdown'].items():
-        label = cat.replace('_', ' ').title()
-        print(f"  {label:<35} {count:>8}")
+    print(f"\n{'🚚 CARRIER BREAKDOWN':^60}")
+    print("-" * 60)
+    for carrier, count in result.get('carrier_breakdown', {}).items():
+        print(f"  {carrier:<40} {count:>8}")
 
-    print(f"\n{'📋 STATUS BREAKDOWN':^55}")
-    print("-" * 55)
-    for status, count in result['status_breakdown'].items():
+    print(f"\n{'📂 CATEGORY BREAKDOWN':^60}")
+    print("-" * 60)
+    for cat, count in result.get('category_breakdown', {}).items():
+        print(f"  {cat:<40} {count:>8}")
+
+    print(f"\n{'📋 STATUS BREAKDOWN':^60}")
+    print("-" * 60)
+    for status, count in result.get('status_breakdown', {}).items():
         label = status.title()
-        print(f"  {label:<35} {count:>8}")
+        print(f"  {label:<40} {count:>8}")
 
-    sat = result['average_satisfaction_index']
-    print(f"\n{'⭐ SATISFACTION INDEX':^55}")
-    print("-" * 55)
-    if sat is not None:
-        print(f"  {'Average satisfaction (0-10)':<35} {sat:>8.2f}")
+    avg_dv = result.get('average_declared_value')
+    print(f"\n{'💰 AVERAGE DECLARED VALUE':^60}")
+    print("-" * 60)
+    if avg_dv is not None:
+        print(f"  {'Average declared value (€)':<40} {avg_dv:>10.2f}")
     else:
-        print(f"  {'Average satisfaction (0-10)':<35} {'N/A':>8}")
+        print(f"  {'Average declared value (€)':<40} {'N/A':>8}")
 
     invalids = result.get('invalid_record_details', [])
     if invalids:
-        print(f"\n{'⚠️  INVALID RECORDS':^55}")
-        print("-" * 55)
-        for rec in invalids[:5]:  # Show first 5 only
-            errors = '; '.join(rec['errors'])
-            print(f"  Row {rec['row_number']} ({rec.get('incident_id', 'N/A')}):")
+        print(f"\n{'⚠️  INVALID RECORDS':^60}")
+        print("-" * 60)
+        for rec in invalids[:5]:
             for err in rec['errors']:
-                print(f"    - {err}")
+                print(f"  Row {rec['row_number']} ({rec.get('tracking_id', 'N/A')}):")
+                print(f"    └─ {err}")
         if len(invalids) > 5:
             print(f"  ... and {len(invalids) - 5} more invalid record(s)")
 
-    print("=" * 55 + "\n")
+    print("=" * 60 + "\n")
 
 
 def export_to_csv(result: Dict, filename: str = 'results.csv') -> None:
@@ -252,19 +306,23 @@ def export_to_csv(result: Dict, filename: str = 'results.csv') -> None:
 
     rows = [
         ['Metric', 'Value'],
+        ['Format', 'TRF'],
         ['Total Records Processed', str(result.get('total_processed', ''))],
         ['Valid Records', str(result.get('valid_records', ''))],
         ['Invalid Records', str(result.get('invalid_records', ''))],
     ]
 
+    for carrier, count in result.get('carrier_breakdown', {}).items():
+        rows.append([f'Carrier - {carrier}', str(count)])
+
     for cat, count in result.get('category_breakdown', {}).items():
-        rows.append([f'Category - {cat.replace("_", " ").title()}', str(count)])
+        rows.append([f'Category - {cat}', str(count)])
 
     for status, count in result.get('status_breakdown', {}).items():
         rows.append([f'Status - {status.title()}', str(count)])
 
-    sat = result.get('average_satisfaction_index')
-    rows.append(['Average Satisfaction Index', f'{sat:.2f}' if sat is not None else 'N/A'])
+    avg_dv = result.get('average_declared_value')
+    rows.append(['Average Declared Value (€)', f'{avg_dv:.2f}' if avg_dv is not None else 'N/A'])
 
     invalids = result.get('invalid_record_details', [])
     rows.append(['Invalid Record Count', str(len(invalids))])
@@ -289,14 +347,5 @@ if __name__ == '__main__':
     # Print human-readable summary
     print_summary(result)
 
-    # Print JSON for programmatic consumption
+    # Print JSON for programmatic consumption (API route parses this)
     print(json.dumps(result))
-
-    # Ask user if they want to export to CSV
-    if 'error' not in result:
-        try:
-            answer = input('\nExport results to CSV? [y/n]: ').strip().lower()
-            if answer == 'y' or answer == 'yes':
-                export_to_csv(result)
-        except (EOFError, KeyboardInterrupt):
-            print()  # Graceful handling if no interactive terminal

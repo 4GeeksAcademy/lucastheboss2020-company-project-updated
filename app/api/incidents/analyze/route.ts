@@ -1,7 +1,7 @@
 /**
  * POST /api/incidents/analyze
- * 
- * Accepts a CSV file upload containing incident records.
+ *
+ * Accepts a CSV file upload containing TRF (Tracking Record Format) records.
  * Spawns the Python analysis script as a subprocess, parses results,
  * stores them in memory, and returns the analysis.
  */
@@ -24,23 +24,17 @@ const ALLOWED_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel'];
 const PYTHON_SCRIPT = path.join(process.cwd(), 'scripts/analyze_incidents.py');
 
 interface PythonAnalysisOutput {
+  format: string;
   total_processed: number;
   valid_records: number;
   invalid_records: number;
-  category_breakdown: {
-    complaints: number;
-    requests: number;
-    operational_failures: number;
-  };
-  status_breakdown: {
-    open: number;
-    closed: number;
-    discarded: number;
-  };
-  average_satisfaction_index: number | null;
+  carrier_breakdown: Record<string, number>;
+  category_breakdown: Record<string, number>;
+  status_breakdown: Record<string, number>;
+  average_declared_value: number | null;
   invalid_record_details: Array<{
     row_number: number;
-    incident_id: string;
+    tracking_id: string;
     errors: string[];
   }>;
 }
@@ -122,23 +116,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
       }
 
       if (!analysisData) {
-        // Fallback: If we can't parse JSON, the script might be in old format
         return NextResponse.json(
           { errors: ['Failed to parse analysis results from Python script'] },
           { status: 500 }
         );
       }
 
-      // Create analysis result object and store it
+      // Create analysis result object and store it (TRF format)
       const stored = storeAnalysis({
         filename: file.name,
+        format: 'TRF',
         metrics: {
           total_processed: analysisData.total_processed,
           valid_records: analysisData.valid_records,
           invalid_records: analysisData.invalid_records,
+          carrier_breakdown: analysisData.carrier_breakdown,
           category_breakdown: analysisData.category_breakdown,
           status_breakdown: analysisData.status_breakdown,
-          average_satisfaction_index: analysisData.average_satisfaction_index ?? undefined,
+          average_declared_value: analysisData.average_declared_value ?? undefined,
         },
         invalid_records: analysisData.invalid_record_details,
         valid_record_count: analysisData.valid_records,

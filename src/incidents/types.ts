@@ -1,29 +1,43 @@
 /**
- * Incident Analysis Domain Types
- * 
- * Defines incident records for customer support data analysis:
- * complaints, requests, and operational failures.
+ * Incident Analysis Domain Types — TrackFlow TRF (Tracking Record Format)
+ *
+ * Defines tracking/logistics incident records for TrackFlow data analysis:
+ * carrier exceptions, lost parcels, delays, damages, etc.
  */
 
-// Incident categories from the support department system
-export type IncidentCategory = 'complaints' | 'requests' | 'operational_failures';
+// TrackFlow carriers (US: UPS, FedEx, DHL; Spain: MRW, SEUR, DHL)
+export type Carrier = 'UPS' | 'FedEx' | 'DHL' | 'MRW' | 'SEUR';
 
-// Incident status lifecycle
-export type IncidentStatus = 'open' | 'closed' | 'discarded';
+// TRF incident categories (logistics exception types)
+export type TRFCategory =
+  | 'LOST_PARCEL'
+  | 'DELAYED'
+  | 'DAMAGED'
+  | 'RETURNED'
+  | 'WRONG_ITEM'
+  | 'ADDRESS_ISSUE'
+  | 'MISSING_LABEL'
+  | 'CUSTOMER_CANCELLATION';
+
+// TRF record status lifecycle
+export type TRFStatus = 'open' | 'closed' | 'exception';
 
 /**
- * A single incident record from the CSV file
+ * A single TRF (Tracking Record Format) record from the CSV file
  */
-export interface IncidentRecord {
-  incident_id: string;
-  category: IncidentCategory;
-  status: IncidentStatus;
-  description: string;
+export interface TRFRecord {
+  tracking_id: string;
+  carrier: Carrier;
+  category: TRFCategory;
+  status: TRFStatus;
+  origin: string;
+  destination: string;
+  shipment_date: string;
+  delivery_date?: string;
+  weight_kg: number;
+  declared_value: number;
   customer_name: string;
-  email: string;
-  phone?: string;
-  date: string;
-  satisfaction_score?: number; // Only for closed incidents
+  customer_email: string;
   notes?: string;
 }
 
@@ -32,7 +46,7 @@ export interface IncidentRecord {
  */
 export interface RecordValidationError {
   row_number: number;
-  incident_id?: string;
+  tracking_id?: string;
   errors: string[]; // Array of specific field validation errors
 }
 
@@ -43,27 +57,20 @@ export interface AnalysisMetrics {
   total_processed: number;
   valid_records: number;
   invalid_records: number;
-  category_breakdown: {
-    complaints: number;
-    requests: number;
-    operational_failures: number;
-  };
-  status_breakdown: {
-    open: number;
-    closed: number;
-    discarded: number;
-  };
-  average_satisfaction_index?: number; // Average of satisfaction scores for closed incidents
-  satisfaction_score_count?: number; // Count of closed incidents with satisfaction scores
+  carrier_breakdown: Record<string, number>;
+  category_breakdown: Record<string, number>;
+  status_breakdown: Record<string, number>;
+  average_declared_value?: number;
 }
 
 /**
- * Complete analysis result from running the analyzer on a CSV file
+ * Complete analysis result from running the analyzer on a TRF CSV file
  */
 export interface AnalysisResult {
   id: string;
   timestamp: number; // Unix milliseconds
   filename: string;
+  format?: string; // 'TRF' for TRF format, undefined for legacy
   metrics: AnalysisMetrics;
   invalid_records: RecordValidationError[]; // Details on each invalid record
   valid_record_count: number;

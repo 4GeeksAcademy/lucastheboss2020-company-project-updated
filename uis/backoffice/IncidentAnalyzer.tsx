@@ -166,6 +166,7 @@ export function IncidentAnalyzer() {
   /**
    * Aggregate invalid record errors by type for the red alert display.
    * Groups similar error messages to show "how many of each type".
+   * Handles both TRF and legacy format error types.
    */
   function aggregateErrorsByType(invalidRecords: AnalysisResult['invalid_records']): { type: string; count: number }[] {
     const errorCounts: Record<string, number> = {};
@@ -174,20 +175,26 @@ export function IncidentAnalyzer() {
       for (const err of record.errors) {
         // Categorize the error message into a type
         let type = 'Other';
-        if (err.toLowerCase().includes('missing required field') || err.toLowerCase().includes('missing field')) {
+        const errLower = err.toLowerCase();
+
+        if (errLower.includes('missing required field') || errLower.includes('missing field')) {
           const match = err.match(/'([^']+)'/);
           type = match ? `Missing field: ${match[1]}` : 'Missing required field';
-        } else if (err.toLowerCase().includes('email')) {
+        } else if (errLower.includes('carrier')) {
+          type = 'Invalid carrier';
+        } else if (errLower.includes('email')) {
           type = 'Invalid email';
-        } else if (err.toLowerCase().includes('phone')) {
-          type = 'Invalid phone';
-        } else if (err.toLowerCase().includes('date')) {
+        } else if (errLower.includes('weight') || errLower.includes('weight_kg')) {
+          type = 'Invalid weight';
+        } else if (errLower.includes('declared_value') || errLower.includes('declared value')) {
+          type = 'Invalid declared value';
+        } else if (errLower.includes('date')) {
           type = 'Invalid date';
-        } else if (err.toLowerCase().includes('category')) {
+        } else if (errLower.includes('category')) {
           type = 'Invalid category';
-        } else if (err.toLowerCase().includes('status')) {
+        } else if (errLower.includes('status')) {
           type = 'Invalid status';
-        } else if (err.toLowerCase().includes('satisfaction') || err.toLowerCase().includes('score')) {
+        } else if (errLower.includes('satisfaction') || errLower.includes('score')) {
           type = 'Invalid satisfaction score';
         }
 
@@ -204,12 +211,16 @@ export function IncidentAnalyzer() {
 
   if (displayAnalysis) {
     const { metrics } = displayAnalysis;
+    const m = metrics as any;
+
+    // Detect format: TRF has carrier_breakdown, legacy has category_breakdown with complaints
+    const isTRF = m.carrier_breakdown !== undefined;
 
     return (
       <section>
         <header className="page-header">
           <span className="badge green">Incident Analysis</span>
-          <h1>Analysis Results</h1>
+          <h1>Analysis Results {isTRF ? '(TRF Format)' : ''}</h1>
           <p>File: <strong>{displayAnalysis.filename}</strong></p>
           <div className="actions">
             <button className="button" onClick={handleExport} type="button">Export CSV</button>
@@ -221,35 +232,64 @@ export function IncidentAnalyzer() {
           <article className="panel">
             <h3>Summary</h3>
             <div className="stat-group">
-              <div className="stat"><span className="stat-value">{metrics.total_processed}</span><span className="stat-label">Total Records</span></div>
-              <div className="stat"><span className="stat-value green">{metrics.valid_records}</span><span className="stat-label">Valid</span></div>
-              <div className="stat"><span className="stat-value red">{metrics.invalid_records}</span><span className="stat-label">Invalid</span></div>
+              <div className="stat"><span className="stat-value">{m.total_processed}</span><span className="stat-label">Total Records</span></div>
+              <div className="stat"><span className="stat-value green">{m.valid_records}</span><span className="stat-label">Valid</span></div>
+              <div className="stat"><span className="stat-value red">{m.invalid_records}</span><span className="stat-label">Invalid</span></div>
             </div>
           </article>
 
+          {isTRF && m.carrier_breakdown && (
+            <article className="panel">
+              <h3>Carrier Breakdown</h3>
+              <div className="stat-group">
+                {Object.entries(m.carrier_breakdown as Record<string, number>).map(([carrier, count]) => (
+                  <div className="stat" key={carrier}>
+                    <span className="stat-value">{count}</span>
+                    <span className="stat-label">{carrier}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
           <article className="panel">
-            <h3>Category Breakdown</h3>
+            <h3>{isTRF ? 'Incident Category' : 'Category'} Breakdown</h3>
             <div className="stat-group">
-              <div className="stat"><span className="stat-value">{metrics.category_breakdown.complaints}</span><span className="stat-label">Complaints</span></div>
-              <div className="stat"><span className="stat-value">{metrics.category_breakdown.requests}</span><span className="stat-label">Requests</span></div>
-              <div className="stat"><span className="stat-value">{metrics.category_breakdown.operational_failures}</span><span className="stat-label">Operational Failures</span></div>
+              {m.category_breakdown && Object.entries(m.category_breakdown as Record<string, number>).map(([cat, count]) => (
+                <div className="stat" key={cat}>
+                  <span className="stat-value">{count}</span>
+                  <span className="stat-label">{cat}</span>
+                </div>
+              ))}
             </div>
           </article>
 
           <article className="panel">
             <h3>Status Breakdown</h3>
             <div className="stat-group">
-              <div className="stat"><span className="stat-value">{metrics.status_breakdown.open}</span><span className="stat-label">Open</span></div>
-              <div className="stat"><span className="stat-value">{metrics.status_breakdown.closed}</span><span className="stat-label">Closed</span></div>
-              <div className="stat"><span className="stat-value">{metrics.status_breakdown.discarded}</span><span className="stat-label">Discarded</span></div>
+              {m.status_breakdown && Object.entries(m.status_breakdown as Record<string, number>).map(([status, count]) => (
+                <div className="stat" key={status}>
+                  <span className="stat-value">{count}</span>
+                  <span className="stat-label">{status}</span>
+                </div>
+              ))}
             </div>
           </article>
 
-          {metrics.average_satisfaction_index !== undefined && (
+          {isTRF && m.average_declared_value !== undefined && (
+            <article className="panel">
+              <h3>Average Declared Value</h3>
+              <div className="stat-group">
+                <div className="stat"><span className="stat-value">€{m.average_declared_value.toFixed(2)}</span><span className="stat-label">Avg Declared Value</span></div>
+              </div>
+            </article>
+          )}
+
+          {!isTRF && m.average_satisfaction_index !== undefined && (
             <article className="panel">
               <h3>Customer Satisfaction</h3>
               <div className="stat-group">
-                <div className="stat"><span className="stat-value">{metrics.average_satisfaction_index.toFixed(2)}</span><span className="stat-label">Avg Satisfaction (0–10)</span></div>
+                <div className="stat"><span className="stat-value">{m.average_satisfaction_index.toFixed(2)}</span><span className="stat-label">Avg Satisfaction (0–10)</span></div>
               </div>
             </article>
           )}
@@ -280,14 +320,18 @@ export function IncidentAnalyzer() {
               </header>
               {expandedInvalidRecords && (
                 <div className="detail-grid">
-                  {displayAnalysis.invalid_records.map((record) => (
-                    <article className="candidate-card" key={record.row_number}>
-                      <p><strong>Row {record.row_number}</strong> · ID: {record.incident_id}</p>
-                      <ul>
-                        {record.errors.map((error) => <li key={error}>{error}</li>)}
-                      </ul>
-                    </article>
-                  ))}
+                  {displayAnalysis.invalid_records.map((record) => {
+                    const rec = record as any;
+                    const idField = isTRF ? rec.tracking_id : rec.incident_id;
+                    return (
+                      <article className="candidate-card" key={rec.row_number}>
+                        <p><strong>Row {rec.row_number}</strong> · ID: {idField || 'N/A'}</p>
+                        <ul>
+                          {rec.errors.map((error: string) => <li key={error}>{error}</li>)}
+                        </ul>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </section>

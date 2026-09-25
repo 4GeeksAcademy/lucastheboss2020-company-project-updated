@@ -1,7 +1,8 @@
 /**
  * GET /api/incidents/results/[id]/export
- * 
+ *
  * Exports a specific analysis result as a downloadable CSV file
+ * Supports both TRF format and legacy format.
  */
 
 import { NextResponse } from 'next/server';
@@ -26,49 +27,76 @@ export async function GET(
     // Generate CSV content
     const csvLines: string[] = [];
     csvLines.push('Metric,Value');
+
+    const metrics = analysis.metrics as any;
+
+    // Detect format: TRF has carrier_breakdown, legacy has category_breakdown with complaints
+    const isTRF = metrics.carrier_breakdown !== undefined;
+
     csvLines.push(''); // Blank line
 
     // Summary metrics
     csvLines.push('SUMMARY METRICS,');
-    csvLines.push(`Total Records Processed,${analysis.metrics.total_processed}`);
-    csvLines.push(`Valid Records,${analysis.metrics.valid_records}`);
-    csvLines.push(`Invalid Records,${analysis.metrics.invalid_records}`);
+    csvLines.push(`Format,${isTRF ? 'TRF' : 'Legacy'}`);
+    csvLines.push(`Total Records Processed,${metrics.total_processed}`);
+    csvLines.push(`Valid Records,${metrics.valid_records}`);
+    csvLines.push(`Invalid Records,${metrics.invalid_records}`);
 
     csvLines.push(''); // Blank line
 
+    if (isTRF) {
+      // TRF format: carrier breakdown
+      csvLines.push('CARRIER BREAKDOWN,');
+      if (metrics.carrier_breakdown) {
+        for (const [carrier, count] of Object.entries(metrics.carrier_breakdown)) {
+          csvLines.push(`${carrier},${count}`);
+        }
+      }
+
+      csvLines.push(''); // Blank line
+    }
+
     // Category breakdown
     csvLines.push('CATEGORY BREAKDOWN,');
-    csvLines.push(`Complaints,${analysis.metrics.category_breakdown.complaints}`);
-    csvLines.push(`Requests,${analysis.metrics.category_breakdown.requests}`);
-    csvLines.push(`Operational Failures,${analysis.metrics.category_breakdown.operational_failures}`);
+    if (metrics.category_breakdown) {
+      for (const [cat, count] of Object.entries(metrics.category_breakdown)) {
+        csvLines.push(`${cat},${count}`);
+      }
+    }
 
     csvLines.push(''); // Blank line
 
     // Status breakdown
     csvLines.push('STATUS BREAKDOWN,');
-    csvLines.push(`Open,${analysis.metrics.status_breakdown.open}`);
-    csvLines.push(`Closed,${analysis.metrics.status_breakdown.closed}`);
-    csvLines.push(`Discarded,${analysis.metrics.status_breakdown.discarded}`);
+    if (metrics.status_breakdown) {
+      for (const [status, count] of Object.entries(metrics.status_breakdown)) {
+        csvLines.push(`${status},${count}`);
+      }
+    }
 
     csvLines.push(''); // Blank line
 
-    // Satisfaction index
-    if (analysis.metrics.average_satisfaction_index !== undefined) {
-      csvLines.push(`Average Satisfaction Index,${analysis.metrics.average_satisfaction_index.toFixed(2)}`);
+    // Average value (declared value for TRF, satisfaction index for legacy)
+    if (isTRF) {
+      const avgDv = metrics.average_declared_value;
+      csvLines.push(`Average Declared Value (€),${avgDv !== undefined ? avgDv.toFixed(2) : 'N/A'}`);
     } else {
-      csvLines.push('Average Satisfaction Index,N/A');
+      const avgSat = metrics.average_satisfaction_index;
+      csvLines.push(`Average Satisfaction Index,${avgSat !== undefined ? avgSat.toFixed(2) : 'N/A'}`);
     }
 
     // Invalid records details
     if (analysis.invalid_records.length > 0) {
       csvLines.push(''); // Blank line
       csvLines.push('INVALID RECORDS,');
-      csvLines.push('Row Number,Incident ID,Errors');
+      const idField = isTRF ? 'Tracking ID' : 'Incident ID';
+      csvLines.push(`Row Number,${idField},Errors`);
 
       for (const invalid of analysis.invalid_records) {
         const errorText = invalid.errors.join(' | ');
         const escapedErrors = `"${errorText.replace(/"/g, '""')}"`;
-        csvLines.push(`${invalid.row_number},${invalid.incident_id},${escapedErrors}`);
+        const recId = (invalid as any).tracking_id || (invalid as any).incident_id || 'N/A';
+        csvLines.push(`${invalid.row_number},${recId},${escapedErrors}`);
       }
     }
 
@@ -76,7 +104,8 @@ export async function GET(
 
     // Generate filename with timestamp
     const timestamp = new Date(analysis.timestamp).toISOString().split('T')[0];
-    const filename = `incident-analysis-${timestamp}-${id.substring(0, 8)}.csv`;
+    const formatTag = isTRF ? 'trf' : 'legacy';
+    const filename = `incident-analysis-${formatTag}-${timestamp}-${id.substring(0, 8)}.csv`;
 
     // Return CSV file as downloadable attachment
     return new NextResponse(csvContent, {
