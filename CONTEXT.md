@@ -283,9 +283,10 @@ Fields:
 
 - id: integer
 - name: string
-- country: string
-- product_categories: string[]  (e.g. "Pallets", "Containers", "Express", "Documents", "Fragile", "Bulk")
-- rate: number  (positive only, represents cost per unit)
+- country: "United States" | "Spain"
+- services: string[]  (TrackFlow service categories: "warehouse-management", "last-mile-delivery", "reverse-logistics")
+- rate_per_shipment: number  (positive only, represents cost per shipment)
+- currency: "USD" | "EUR"  (United States suppliers use USD, Spain suppliers use EUR)
 - status: "active" | "suspended"
 - updated_at: string  (ISO 8601 timestamp, system-generated)
 
