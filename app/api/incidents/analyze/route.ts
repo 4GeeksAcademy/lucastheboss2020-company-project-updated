@@ -1,7 +1,7 @@
 /**
  * POST /api/incidents/analyze
- * 
- * Accepts a CSV file upload containing incident records.
+ *
+ * Accepts a CSV file upload containing TrackFlow incident records.
  * Spawns the Python analysis script as a subprocess, parses results,
  * stores them in memory, and returns the analysis.
  */
@@ -24,19 +24,12 @@ const ALLOWED_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel'];
 const PYTHON_SCRIPT = path.join(process.cwd(), 'scripts/analyze_incidents.py');
 
 interface PythonAnalysisOutput {
+  format: string;
   total_processed: number;
   valid_records: number;
   invalid_records: number;
-  category_breakdown: {
-    complaints: number;
-    requests: number;
-    operational_failures: number;
-  };
-  status_breakdown: {
-    open: number;
-    closed: number;
-    discarded: number;
-  };
+  category_breakdown: Record<string, number>;
+  status_breakdown: Record<string, number>;
   average_satisfaction_index: number | null;
   invalid_record_details: Array<{
     row_number: number;
@@ -122,16 +115,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
       }
 
       if (!analysisData) {
-        // Fallback: If we can't parse JSON, the script might be in old format
         return NextResponse.json(
           { errors: ['Failed to parse analysis results from Python script'] },
           { status: 500 }
         );
       }
 
-      // Create analysis result object and store it
+      // Create analysis result object and store it (trackflow format)
       const stored = storeAnalysis({
         filename: file.name,
+        format: 'trackflow',
         metrics: {
           total_processed: analysisData.total_processed,
           valid_records: analysisData.valid_records,

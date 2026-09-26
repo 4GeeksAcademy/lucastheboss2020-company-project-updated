@@ -1,29 +1,34 @@
 /**
- * Incident Analysis Domain Types
- * 
- * Defines incident records for customer support data analysis:
- * complaints, requests, and operational failures.
+ * Incident Analysis Domain Types — TrackFlow Syllabus Format
+ *
+ * Defines incident records per CONTEXT.md TrackFlow spec:
+ * incident_id, category (complaints/requests/operational_failures),
+ * status (open/closed/discarded), description, customer_name, email,
+ * phone, date, satisfaction_score (0-10), notes.
  */
 
-// Incident categories from the support department system
-export type IncidentCategory = 'complaints' | 'requests' | 'operational_failures';
+// TrackFlow incident categories (per CONTEXT syllabus)
+export type TrackFlowCategory =
+  | 'complaints'
+  | 'requests'
+  | 'operational_failures';
 
-// Incident status lifecycle
-export type IncidentStatus = 'open' | 'closed' | 'discarded';
+// TrackFlow incident statuses
+export type TrackFlowStatus = 'open' | 'closed' | 'discarded';
 
 /**
- * A single incident record from the CSV file
+ * A single incident record from the CSV file (Syllabus Format)
  */
 export interface IncidentRecord {
   incident_id: string;
-  category: IncidentCategory;
-  status: IncidentStatus;
+  category: TrackFlowCategory;
+  status: TrackFlowStatus;
   description: string;
   customer_name: string;
   email: string;
   phone?: string;
   date: string;
-  satisfaction_score?: number; // Only for closed incidents
+  satisfaction_score?: number;
   notes?: string;
 }
 
@@ -33,7 +38,7 @@ export interface IncidentRecord {
 export interface RecordValidationError {
   row_number: number;
   incident_id?: string;
-  errors: string[]; // Array of specific field validation errors
+  errors: string[];
 }
 
 /**
@@ -43,18 +48,9 @@ export interface AnalysisMetrics {
   total_processed: number;
   valid_records: number;
   invalid_records: number;
-  category_breakdown: {
-    complaints: number;
-    requests: number;
-    operational_failures: number;
-  };
-  status_breakdown: {
-    open: number;
-    closed: number;
-    discarded: number;
-  };
-  average_satisfaction_index?: number; // Average of satisfaction scores for closed incidents
-  satisfaction_score_count?: number; // Count of closed incidents with satisfaction scores
+  category_breakdown: Record<string, number>;
+  status_breakdown: Record<string, number>;
+  average_satisfaction_index?: number;
 }
 
 /**
@@ -62,10 +58,11 @@ export interface AnalysisMetrics {
  */
 export interface AnalysisResult {
   id: string;
-  timestamp: number; // Unix milliseconds
+  timestamp: number;
   filename: string;
+  format?: string;
   metrics: AnalysisMetrics;
-  invalid_records: RecordValidationError[]; // Details on each invalid record
+  invalid_records: RecordValidationError[];
   valid_record_count: number;
 }
 

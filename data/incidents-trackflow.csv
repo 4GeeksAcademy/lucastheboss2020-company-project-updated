@@ -1,0 +1,101 @@
+incident_id,category,status,description,customer_name,email,phone,date,satisfaction_score,notes
+TF-00001,complaints,discarded,New carrier integration request,Helen Wu,helen.wu@example.com,+34 976 771 73,2026-07-21,4,Apology and discount offered
+TF-00002,complaints,discarded,Inventory count discrepancy for SKU-57447,Mike Brown,mike.brown@example.com,+34 928 864 84,2026-07-19,3,Apology and discount offered
+TF-00003,operational_failures,closed,Staff shortage during peak hours,Sofia Chen,sofia.chen@example.com,+1 310 256 90,2026-03-26,3,Corrected and sent
+TF-00004,requests,discarded,Damaged package received,Alex Kim,alex.kim@example.com,+34 928 666 11,2026-11-24,3,Integration in progress
+TF-00005,operational_failures,closed,Poor packaging quality on shipment,Carlos Williams,carlos.williams@example.com,+49 30 261 68,2026-01-24,2,Apology and discount offered
+TF-00006,operational_failures,open,Product returned in unsellable condition,Laura Williams,laura.williams@example.com,+34 976 256 57,2026-03-18,2,Insurance claim filed
+TF-00007,requests,open,Wrong item received in order #21226,Carlos Park,carlos.park@example.com,+34 928 345 17,2026-04-19,0,
+TF-00008,complaints,discarded,Poor packaging quality on shipment,Yuki Martinez,yuki.martinez@example.com,+1 323 775 70,2026-09-06,4,
+TF-00009,requests,open,System outage affected order processing,Mike Tanaka,mike.tanaka@example.com,+34 976 830 49,2026-07-22,1,
+TF-00010,complaints,open,Integration request for e-commerce platform,Priya Ruiz,priya.ruiz@example.com,+39 02 121 85,2026-09-08,3,Under review
+TF-00011,operational_failures,discarded,Repeated missed delivery windows at hub,James Singh,james.singh@example.com,+1 310 132 52,2026-02-17,2,
+TF-00012,complaints,discarded,Damaged package received,Ana Davis,ana.davis@example.com,+52 55 348 70,2026-07-07,1,Corrected and sent
+TF-00013,requests,closed,Delivery delayed by 6 days,Rosa Johnson,rosa.johnson@example.com,+1 213 789 93,2026-11-04,3,Insurance claim filed
+TF-00014,complaints,open,New carrier integration request,Luis Gomez,luis.gomez@example.com,+52 55 243 64,2026-03-09,4,Under review
+TF-00015,requests,discarded,Pick and pack error on order #73092,Carlos Chen,carlos.chen@example.com,+1 213 195 40,2026-03-14,3,Corrected and sent
+TF-00016,complaints,open,Security breach attempt on customer portal,Nuria Lopez,nuria.lopez@example.com,+49 30 371 68,2026-05-14,6,
+TF-00017,complaints,open,Request for expedited shipping option,Tom Gomez,tom.gomez@example.com,+1 213 693 79,2026-01-24,3,
+TF-00018,requests,discarded,Package marked delivered but not received,Juan Torres,juan.torres@example.com,+1 213 620 20,2026-03-03,3,Escalated to operations
+TF-00019,requests,open,Integration request for e-commerce platform,Katie Singh,katie.singh@example.com,+1 213 734 20,2026-07-22,4,Insurance claim filed
+TF-00020,requests,open,International shipping customs delay,Chris Tanaka,chris.tanaka@example.com,+39 02 344 43,2026-07-05,2,Under review
+TF-00021,complaints,closed,Poor packaging quality on shipment,Pablo Davis,pablo.davis@example.com,+1 310 175 78,2026-04-17,3,Under review
+TF-00022,complaints,closed,Package marked delivered but not received,Tom Torres,tom.torres@example.com,+52 55 953 79,2026-12-10,4,Replacement sent
+TF-00023,operational_failures,discarded,Damaged package received,Tom Ali,tom.ali@example.com,+1 310 999 27,2026-05-04,3,Integration in progress
+TF-00024,requests,discarded,Poor packaging quality on shipment,Luis Tanaka,luis.tanaka@example.com,+39 02 308 97,2026-11-28,2,Integration in progress
+TF-00025,complaints,open,Billing discrepancy in invoice #93507,Laura Fernandez,laura.fernandez@example.com,+34 928 145 10,2026-06-25,5,Apology and discount offered
+TF-00026,operational_failures,closed,Billing discrepancy in invoice #81511,Mike Tanaka,mike.tanaka@example.com,+49 30 674 11,2026-02-03,4,Insurance claim filed
+TF-00027,operational_failures,discarded,Delivery delayed by 2 days,Ana Fernandez,ana.fernandez@example.com,+1 323 142 49,2026-06-26,7,Escalated to operations
+TF-00028,operational_failures,open,Request for return label,David Brown,david.brown@example.com,+49 30 735 29,2026-04-28,1,Replacement sent
+TF-00029,complaints,discarded,Inventory count discrepancy for SKU-15075,Cindy Fernandez,cindy.fernandez@example.com,+34 976 373 30,2026-12-04,2,
+TF-00030,complaints,open,Customer service response time too slow,Alex Park,alex.park@example.com,+34 928 940 39,2026-04-01,5,Integration in progress
+TF-00031,complaints,closed,Damaged package received,David Martin,david.martin@example.com,+49 30 795 78,2026-06-01,5,
+TF-00032,requests,open,Product returned in unsellable condition,Carlos Lee,carlos.lee@example.com,+49 30 453 50,2026-07-20,3,
+TF-00033,complaints,closed,Customer service response time too slow,James Tanaka,james.tanaka@example.com,+49 30 101 76,2026-09-22,3,Under review
+TF-00034,operational_failures,closed,Staff shortage during peak hours,Pablo Wu,pablo.wu@example.com,+1 310 837 48,2026-09-10,3,Integration in progress
+TF-00035,operational_failures,open,International shipping customs delay,Luis Fernandez,luis.fernandez@example.com,+49 30 793 32,2026-10-19,8,Replacement sent
+TF-00036,requests,closed,Customer service response time too slow,Luis Fernandez,luis.fernandez@example.com,+39 02 576 66,2026-08-22,3,Apology and discount offered
+TF-00037,operational_failures,open,Repeated missed delivery windows at hub,Tom Kim,tom.kim@example.com,+39 02 195 40,2026-11-10,9,Replacement sent
+TF-00038,complaints,open,Customer service response time too slow,Isabel Lee,isabel.lee@example.com,+1 310 566 63,2026-11-19,1,Corrected and sent
+TF-00039,complaints,open,Request for return label,Laura Tanaka,laura.tanaka@example.com,+1 213 868 23,2026-07-08,2,Replacement sent
+TF-00040,operational_failures,open,Security breach attempt on customer portal,Carlos Johnson,carlos.johnson@example.com,+1 323 920 69,2026-11-17,2,
+TF-00041,operational_failures,discarded,Repeated missed delivery windows at hub,Juan Fernandez,juan.fernandez@example.com,+52 55 262 70,2026-08-09,2,
+TF-00042,requests,discarded,Request for expedited shipping option,Priya Bianchi,priya.bianchi@example.com,+52 55 179 46,2026-04-09,2,Under review
+TF-00043,complaints,open,Staff shortage during peak hours,Priya Garcia,priya.garcia@example.com,+1 323 823 37,2026-02-14,2,
+TF-00044,requests,open,Integration request for e-commerce platform,Luis Fernandez,luis.fernandez@example.com,+49 30 888 84,2026-12-01,3,Replacement sent
+TF-00045,requests,closed,Pick and pack error on order #38760,Yuki Garcia,yuki.garcia@example.com,+49 30 651 79,2026-10-08,4,Corrected and sent
+TF-00046,requests,open,Package marked delivered but not received,Nuria Wu,nuria.wu@example.com,+49 30 841 31,2026-08-05,3,Corrected and sent
+TF-00047,operational_failures,discarded,New carrier integration request,Chris Lopez,chris.lopez@example.com,+1 310 758 64,2026-03-28,1,Integration in progress
+TF-00048,requests,closed,Staff shortage during peak hours,Luis Johnson,luis.johnson@example.com,+39 02 445 58,2026-05-25,2,Under review
+TF-00049,requests,open,Delivery delayed by 2 days,Omar Brown,omar.brown@example.com,+1 213 458 38,2026-11-03,5,Escalated to operations
+TF-00050,complaints,discarded,Customer service response time too slow,Ana Singh,ana.singh@example.com,+1 323 584 95,2026-02-19,3,Integration in progress
+TF-00051,requests,open,Integration request for e-commerce platform,Pablo Lee,pablo.lee@example.com,+1 310 896 30,2026-05-04,0,
+TF-00052,operational_failures,closed,Repeated missed delivery windows at hub,Nuria Tanaka,nuria.tanaka@example.com,+34 976 177 85,2026-12-27,1,Integration in progress
+TF-00053,operational_failures,discarded,System outage affected order processing,Carlos Davis,carlos.davis@example.com,+1 213 455 78,2026-07-22,2,Insurance claim filed
+TF-00054,complaints,closed,Billing discrepancy in invoice #67080,Isabel Mendez,isabel.mendez@example.com,+49 30 470 91,2026-08-23,4,
+TF-00055,operational_failures,closed,Poor packaging quality on shipment,Pablo Brown,pablo.brown@example.com,+52 55 576 65,2026-12-19,2,Escalated to operations
+TF-00056,complaints,closed,Request for expedited shipping option,Alex Singh,alex.singh@example.com,+52 55 683 88,2026-11-13,3,Insurance claim filed
+TF-00057,complaints,closed,Poor packaging quality on shipment,Luis Park,luis.park@example.com,+34 928 448 45,2026-10-23,2,
+TF-00058,complaints,open,Pick and pack error on order #68743,Priya Fernandez,priya.fernandez@example.com,+52 55 668 40,2026-12-16,1,Replacement sent
+TF-00059,complaints,closed,Pick and pack error on order #82544,Priya Garcia,priya.garcia@example.com,+34 976 413 94,2026-10-12,1,Insurance claim filed
+TF-00060,requests,discarded,Poor packaging quality on shipment,Mike Wu,mike.wu@example.com,+39 02 819 68,2026-05-10,2,Escalated to operations
+TF-00061,requests,open,Poor packaging quality on shipment,Omar Brown,omar.brown@example.com,+1 323 296 37,2026-12-16,3,
+TF-00062,operational_failures,closed,Missing item in order #80010,Carlos Gomez,carlos.gomez@example.com,+34 928 332 56,2026-03-10,6,Integration in progress
+TF-00063,complaints,open,Missing item in order #85243,Mike Williams,mike.williams@example.com,+1 323 753 72,2026-02-28,1,
+TF-00064,requests,closed,Wrong item received in order #62521,Cindy Torres,cindy.torres@example.com,+1 213 358 71,2026-02-27,4,Under review
+TF-00065,operational_failures,discarded,Repeated missed delivery windows at hub,Chris Chen,chris.chen@example.com,+1 323 252 82,2026-05-03,3,Corrected and sent
+TF-00066,operational_failures,discarded,Integration request for e-commerce platform,Pablo Singh,pablo.singh@example.com,+49 30 561 66,2026-05-28,5,
+TF-00067,operational_failures,open,Wrong item received in order #30585,Pablo Mendez,pablo.mendez@example.com,+34 976 740 37,2026-05-22,2,Apology and discount offered
+TF-00068,operational_failures,open,International shipping customs delay,Elena Lopez,elena.lopez@example.com,+49 30 561 98,2026-10-16,0,Integration in progress
+TF-00069,operational_failures,closed,Integration request for e-commerce platform,Helen Johnson,helen.johnson@example.com,+1 310 803 39,2026-05-26,7,Escalated to operations
+TF-00070,requests,open,Request for return label,Mike Singh,mike.singh@example.com,+1 323 372 28,2026-02-02,3,
+TF-00071,requests,closed,Security breach attempt on customer portal,Carlos Johnson,carlos.johnson@example.com,+34 928 816 61,2026-05-17,6,Under review
+TF-00072,operational_failures,open,Integration request for e-commerce platform,Rosa Wu,rosa.wu@example.com,+34 928 126 21,2026-04-22,3,Integration in progress
+TF-00073,operational_failures,open,Request for return label,Yuki Torres,yuki.torres@example.com,+52 55 631 93,2026-08-09,6,
+TF-00074,complaints,closed,Request for return label,David Fernandez,david.fernandez@example.com,+39 02 428 95,2026-02-28,2,
+TF-00075,requests,discarded,Request for expedited shipping option,Nuria Brown,nuria.brown@example.com,+1 213 565 21,2026-06-09,4,Corrected and sent
+TF-00076,operational_failures,open,System outage affected order processing,Chris Brown,chris.brown@example.com,+52 55 523 16,2026-04-17,5,
+TF-00077,operational_failures,closed,New carrier integration request,Yuki Chen,yuki.chen@example.com,+34 976 373 80,2026-03-10,4,Replacement sent
+TF-00078,operational_failures,discarded,Staff shortage during peak hours,Priya Tanaka,priya.tanaka@example.com,+1 323 418 80,2026-01-18,2,Under review
+TF-00079,requests,open,Poor packaging quality on shipment,Laura Martinez,laura.martinez@example.com,+52 55 833 47,2026-09-23,2,
+TF-00080,requests,open,Billing discrepancy in invoice #19150,Alex Brown,alex.brown@example.com,+1 323 492 34,2026-10-17,6,Corrected and sent
+TF-00081,requests,discarded,Pick and pack error on order #29476,Marco Lopez,marco.lopez@example.com,+34 928 843 48,2026-10-19,8,
+TF-00082,requests,closed,Repeated missed delivery windows at hub,Cindy Brown,cindy.brown@example.com,+49 30 566 51,2026-04-23,1,Escalated to operations
+TF-00083,requests,open,Pick and pack error on order #14852,Cindy Perez,cindy.perez@example.com,+49 30 495 94,2026-11-05,3,
+TF-00084,operational_failures,closed,Billing discrepancy in invoice #63736,Carlos Johnson,carlos.johnson@example.com,+1 310 638 68,2026-01-24,4,Apology and discount offered
+TF-00085,complaints,closed,Security breach attempt on customer portal,Marco Wu,marco.wu@example.com,+49 30 765 20,2026-06-28,1,
+TF-00086,operational_failures,open,Wrong item received in order #66881,Pablo Ruiz,pablo.ruiz@example.com,+34 976 746 97,2026-05-08,4,Under review
+TF-00087,requests,open,System outage affected order processing,Helen Williams,helen.williams@example.com,+1 213 147 51,2026-01-10,6,Apology and discount offered
+TF-00088,complaints,discarded,Inventory count discrepancy for SKU-91226,Rosa Davis,rosa.davis@example.com,+1 323 274 32,2026-02-20,1,Escalated to operations
+TF-00089,requests,discarded,Missing item in order #70981,Ana Singh,ana.singh@example.com,+52 55 753 42,2026-08-09,1,
+TF-00090,complaints,open,New carrier integration request,Alex Park,alex.park@example.com,+34 928 754 64,2026-12-09,2,Corrected and sent
+TF-00091,requests,open,Missing item in order #96275,Priya Garcia,priya.garcia@example.com,+39 02 688 47,2026-12-10,2,Integration in progress
+TF-00092,complaints,discarded,System outage affected order processing,Chris Chen,chris.chen@example.com,+52 55 952 46,2026-04-20,2,Escalated to operations
+TF-00093,operational_failures,closed,Delivery delayed by 7 days,Chris Ali,chris.ali@example.com,+1 323 743 22,2026-11-21,0,
+TF-00094,complaints,discarded,Request for return label,David Martinez,david.martinez@example.com,+1 310 402 51,2026-12-14,1,
+TF-00095,requests,discarded,Request for expedited shipping option,Juan Bianchi,juan.bianchi@example.com,+1 323 363 71,2026-05-24,5,Under review
+TF-00096,invalid_category,closed,Test with invalid category,Test User,test@example.com,+1 213 555 0000,2026-09-01,5,Should fail
+TF-00097,complaints,bad_status,Test with invalid status,Test User2,test2@example.com,,2026-09-01,,
+TF-00098,,closed,Missing category field,Test User3,test3@example.com,,2026-09-01,,
+TF-00099,requests,closed,,Missing customer_name,test4@example.com,,2026-09-01,,
+TF-00100,complaints,closed,Satisfaction score out of range 15,Score User,score@example.com,,2026-09-01,15,

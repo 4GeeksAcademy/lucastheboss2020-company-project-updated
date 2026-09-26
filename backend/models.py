@@ -89,11 +89,17 @@ class SupplierStatus(str, Enum):
     SUSPENDED = "suspended"
 
 
+TRACKFLOW_SERVICES = ["warehouse-management", "last-mile-delivery", "reverse-logistics"]
+CURRENCIES = ["USD", "EUR"]
+COUNTRIES = ["United States", "Spain"]
+
+
 class SupplierInput(BaseModel):
     name: str = Field(min_length=2)
     country: str = Field(min_length=2)
-    product_categories: list[str] = Field(min_length=1)
-    rate: float = Field(gt=0)
+    services: list[str] = Field(min_length=1)
+    rate_per_shipment: float = Field(gt=0)
+    currency: str = Field(min_length=3, default="USD")
     status: SupplierStatus = SupplierStatus.ACTIVE
 
 
@@ -103,7 +109,7 @@ class Supplier(SupplierInput):
 
 
 class RateUpdate(BaseModel):
-    rate: float = Field(gt=0)
+    rate_per_shipment: float = Field(gt=0)
 
 
 class StatusUpdate(BaseModel):

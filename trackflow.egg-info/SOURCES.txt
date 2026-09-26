@@ -11,6 +11,10 @@ backend/storage.py
 backend/tests/__init__.py
 backend/tests/test_auth.py
 services/__init__.py
+services/incidents/__init__.py
+services/incidents/api.py
+services/incidents/data.py
+services/incidents/models.py
 services/suppliers/__init__.py
 services/suppliers/api.py
 services/suppliers/data.py

@@ -283,9 +283,10 @@ Fields:
 
 - id: integer
 - name: string
-- country: string
-- product_categories: string[]  (e.g. "Pallets", "Containers", "Express", "Documents", "Fragile", "Bulk")
-- rate: number  (positive only, represents cost per unit)
+- country: "United States" | "Spain"
+- services: string[]  (TrackFlow service categories: "warehouse-management", "last-mile-delivery", "reverse-logistics")
+- rate_per_shipment: number  (positive only, represents cost per shipment)
+- currency: "USD" | "EUR"  (United States suppliers use USD, Spain suppliers use EUR)
 - status: "active" | "suspended"
 - updated_at: string  (ISO 8601 timestamp, system-generated)
 
@@ -302,7 +303,64 @@ Fields:
 
 When running the analysis script against the test CSV files, the output must match these values.
 
-### File: `data/incidents-test-100.csv`
+### TRF (Tracking Record Format) Column Specification
+
+The incident analysis script uses the **TrackFlow TRF (Tracking Record Format)** for tracking/logistics records. Columns:
+
+| Column | Type | Required | Validation |
+|---|---|---|---|
+| `tracking_id` | string | Yes | Non-empty identifier (e.g. `TF-00001`) |
+| `carrier` | string | Yes | Must be one of: `UPS`, `FedEx`, `DHL`, `MRW`, `SEUR` |
+| `category` | string | Yes | Must be one of: `LOST_PARCEL`, `DELAYED`, `DAMAGED`, `RETURNED`, `WRONG_ITEM`, `ADDRESS_ISSUE`, `MISSING_LABEL`, `CUSTOMER_CANCELLATION` |
+| `status` | string | Yes | Must be one of: `open`, `closed`, `exception` |
+| `origin` | string | Yes | Non-empty origin city/location |
+| `destination` | string | Yes | Non-empty destination city/location |
+| `shipment_date` | date | Yes | Format: `YYYY-MM-DD` |
+| `delivery_date` | date | No | Format: `YYYY-MM-DD` if provided |
+| `weight_kg` | number | Yes | Must be a positive number (> 0) |
+| `declared_value` | number | Yes | Must be a positive number (> 0) |
+| `customer_name` | string | Yes | Non-empty customer name |
+| `customer_email` | string | Yes | Valid email format (`@` and domain with `.`) |
+| `notes` | string | No | Free text |
+
+### File: `data/incidents-trf-official.csv` (100 records, 95 valid / 5 invalid)
+
+| Metric | Expected Value |
+|---|---|
+| Total records processed | 100 |
+| Valid records | 95 |
+| Invalid records | 5 |
+| Carrier — DHL | 19 |
+| Carrier — FEDEX | 22 |
+| Carrier — MRW | 15 |
+| Carrier — SEUR | 15 |
+| Carrier — UPS | 24 |
+| Category — ADDRESS_ISSUE | 10 |
+| Category — CUSTOMER_CANCELLATION | 6 |
+| Category — DAMAGED | 14 |
+| Category — DELAYED | 19 |
+| Category — LOST_PARCEL | 17 |
+| Category — MISSING_LABEL | 7 |
+| Category — RETURNED | 11 |
+| Category — WRONG_ITEM | 11 |
+| Status — Closed | 46 |
+| Status — Exception | 17 |
+| Status — Open | 32 |
+| Average Declared Value (€) | 219.78 |
+
+### Error types expected in `incidents-trf-official.csv` (5 invalid records):
+
+1. Invalid carrier (`INVALID_CARRIER`)
+2. Invalid category (`INVALID_CATEGORY`)
+3. Missing required field (status)
+4. Missing required fields (origin, customer_name) — multi-error
+5. Invalid weight_kg (zero)
+
+### Legacy files (backward compatibility — `data/incidents-test-100.csv` and `data/incidents-test-invalid.csv`)
+
+These legacy test files use the old format with generic complaint fields. They are preserved for reference but the official analysis uses the TRF format above.
+
+#### File: `data/incidents-test-100.csv`
 
 | Metric | Expected Value |
 |---|---|
@@ -317,7 +375,7 @@ When running the analysis script against the test CSV files, the output must mat
 | Status — Discarded | 1 |
 | Average Satisfaction Index | 6.81 |
 
-### File: `data/incidents-test-invalid.csv`
+#### File: `data/incidents-test-invalid.csv`
 
 | Metric | Expected Value |
 |---|---|
@@ -332,7 +390,7 @@ When running the analysis script against the test CSV files, the output must mat
 | Status — Discarded | 0 |
 | Average Satisfaction Index | N/A |
 
-### Error types expected in `incidents-test-invalid.csv`:
+#### Error types expected in `incidents-test-invalid.csv`:
 
 1. Invalid category value (`invalid_category`)
 2. Invalid status value (`bad_status`)

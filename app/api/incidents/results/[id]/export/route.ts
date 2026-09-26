@@ -1,7 +1,8 @@
 /**
  * GET /api/incidents/results/[id]/export
- * 
+ *
  * Exports a specific analysis result as a downloadable CSV file
+ * Supports both TRF format and legacy format.
  */
 
 import { NextResponse } from 'next/server';
@@ -26,38 +27,47 @@ export async function GET(
     // Generate CSV content
     const csvLines: string[] = [];
     csvLines.push('Metric,Value');
+
+    const metrics = analysis.metrics as any;
+
+    // Use 'trackflow' format detection: average_satisfaction_index present means trackflow
+    const isTrackflow = 'average_satisfaction_index' in metrics || !('carrier_breakdown' in metrics);
+
     csvLines.push(''); // Blank line
 
     // Summary metrics
     csvLines.push('SUMMARY METRICS,');
-    csvLines.push(`Total Records Processed,${analysis.metrics.total_processed}`);
-    csvLines.push(`Valid Records,${analysis.metrics.valid_records}`);
-    csvLines.push(`Invalid Records,${analysis.metrics.invalid_records}`);
+    csvLines.push(`Format,${isTrackflow ? 'TrackFlow' : 'Legacy'}`);
+    csvLines.push(`Total Records Processed,${metrics.total_processed}`);
+    csvLines.push(`Valid Records,${metrics.valid_records}`);
+    csvLines.push(`Invalid Records,${metrics.invalid_records}`);
 
     csvLines.push(''); // Blank line
 
     // Category breakdown
     csvLines.push('CATEGORY BREAKDOWN,');
-    csvLines.push(`Complaints,${analysis.metrics.category_breakdown.complaints}`);
-    csvLines.push(`Requests,${analysis.metrics.category_breakdown.requests}`);
-    csvLines.push(`Operational Failures,${analysis.metrics.category_breakdown.operational_failures}`);
+    if (metrics.category_breakdown) {
+      for (const [cat, count] of Object.entries(metrics.category_breakdown)) {
+        const label = cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        csvLines.push(`${label},${count}`);
+      }
+    }
 
     csvLines.push(''); // Blank line
 
     // Status breakdown
     csvLines.push('STATUS BREAKDOWN,');
-    csvLines.push(`Open,${analysis.metrics.status_breakdown.open}`);
-    csvLines.push(`Closed,${analysis.metrics.status_breakdown.closed}`);
-    csvLines.push(`Discarded,${analysis.metrics.status_breakdown.discarded}`);
+    if (metrics.status_breakdown) {
+      for (const [status, count] of Object.entries(metrics.status_breakdown)) {
+        csvLines.push(`${status.charAt(0).toUpperCase() + status.slice(1)},${count}`);
+      }
+    }
 
     csvLines.push(''); // Blank line
 
-    // Satisfaction index
-    if (analysis.metrics.average_satisfaction_index !== undefined) {
-      csvLines.push(`Average Satisfaction Index,${analysis.metrics.average_satisfaction_index.toFixed(2)}`);
-    } else {
-      csvLines.push('Average Satisfaction Index,N/A');
-    }
+    // Average satisfaction index
+    const avgSat = metrics.average_satisfaction_index;
+    csvLines.push(`Average Satisfaction Index,${avgSat !== undefined ? avgSat.toFixed(2) : 'N/A'}`);
 
     // Invalid records details
     if (analysis.invalid_records.length > 0) {
@@ -68,7 +78,8 @@ export async function GET(
       for (const invalid of analysis.invalid_records) {
         const errorText = invalid.errors.join(' | ');
         const escapedErrors = `"${errorText.replace(/"/g, '""')}"`;
-        csvLines.push(`${invalid.row_number},${invalid.incident_id},${escapedErrors}`);
+        const recId = (invalid as any).incident_id || (invalid as any).tracking_id || 'N/A';
+        csvLines.push(`${invalid.row_number},${recId},${escapedErrors}`);
       }
     }
 
@@ -76,7 +87,8 @@ export async function GET(
 
     // Generate filename with timestamp
     const timestamp = new Date(analysis.timestamp).toISOString().split('T')[0];
-    const filename = `incident-analysis-${timestamp}-${id.substring(0, 8)}.csv`;
+    const formatTag = isTrackflow ? 'trackflow' : 'legacy';
+    const filename = `incident-analysis-${formatTag}-${timestamp}-${id.substring(0, 8)}.csv`;
 
     // Return CSV file as downloadable attachment
     return new NextResponse(csvContent, {

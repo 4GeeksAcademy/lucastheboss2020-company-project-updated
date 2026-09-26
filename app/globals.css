@@ -281,3 +281,88 @@ a:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ── Backoffice Reports ── */
+
+.report-section {
+  background: #ffffff;
+  border: 1px solid var(--track-border);
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  padding: 1rem;
+}
+
+.report-section-title {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.report-bars {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.report-bar-row {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 10rem 1fr 2.5rem;
+}
+
+.report-bar-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: right;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-bar-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+  height: 1.25rem;
+  overflow: hidden;
+}
+
+.report-bar-fill {
+  border-radius: 999px;
+  height: 100%;
+  transition: width 0.3s ease;
+  min-width: 4px;
+}
+
+.report-bar-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.report-table {
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+.report-table th {
+  font-weight: 700;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  color: #475569;
+}
+
+.report-table td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0.5rem 0.75rem;
+  color: #334155;
+}
+
+.report-table tbody tr:hover {
+  background: #f8fafc;
+}

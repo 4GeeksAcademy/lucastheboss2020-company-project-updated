@@ -2,6 +2,7 @@
   "/_not-found/page": "app/_not-found/page.js",
   "/api/candidates/[id]/notes/[noteId]/route": "app/api/candidates/[id]/notes/[noteId]/route.js",
   "/api/candidates/[id]/notes/route": "app/api/candidates/[id]/notes/route.js",
+  "/api/candidates/[id]/route": "app/api/candidates/[id]/route.js",
   "/api/candidates/route": "app/api/candidates/route.js",
   "/api/incidents/analyze/route": "app/api/incidents/analyze/route.js",
   "/api/incidents/results/[id]/export/route": "app/api/incidents/results/[id]/export/route.js",
@@ -15,6 +16,5 @@
   "/uis/backoffice/incidents/page": "app/uis/backoffice/incidents/page.js",
   "/uis/backoffice/page": "app/uis/backoffice/page.js",
   "/uis/backoffice/suppliers/page": "app/uis/backoffice/suppliers/page.js",
-  "/api/candidates/[id]/route": "app/api/candidates/[id]/route.js",
   "/uis/website/page": "app/uis/website/page.js"
 }
