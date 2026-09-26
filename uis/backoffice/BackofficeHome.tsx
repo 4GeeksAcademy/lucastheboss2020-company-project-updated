@@ -6,6 +6,7 @@ import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { fetchCandidates } from "../../src/candidates/api";
 import type { CandidateListResponse } from "../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES } from "../../src/candidates/types";
+import BackofficeReports from "./BackofficeReports";
 
 function formatServices(services: string[]): string {
   return services.map((service) => service.replace(/-/g, " ")).join(", ");
@@ -83,6 +84,8 @@ export default function BackofficeHome() {
       </section>
 
       {result && result.totalPages > 1 && <nav className="actions" aria-label="Lead candidate pages" style={{ marginTop: "1rem" }}><button className="secondary" disabled={result.page === 1} onClick={() => updateParam("page", String(result.page - 1))}>Previous</button><span className="badge">Page {result.page} of {result.totalPages}</span><button className="secondary" disabled={result.page === result.totalPages} onClick={() => updateParam("page", String(result.page + 1))}>Next</button></nav>}
+
+      <BackofficeReports />
     </section>
   );
 }
