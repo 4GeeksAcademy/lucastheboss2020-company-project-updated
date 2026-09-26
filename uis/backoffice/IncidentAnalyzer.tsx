@@ -196,6 +196,8 @@ export function IncidentAnalyzer() {
           type = 'Invalid status';
         } else if (errLower.includes('satisfaction') || errLower.includes('score')) {
           type = 'Invalid satisfaction score';
+        } else if (errLower.includes('phone')) {
+          type = 'Invalid phone';
         }
 
         errorCounts[type] = (errorCounts[type] || 0) + 1;
@@ -213,14 +215,14 @@ export function IncidentAnalyzer() {
     const { metrics } = displayAnalysis;
     const m = metrics as any;
 
-    // Detect format: TRF has carrier_breakdown, legacy has category_breakdown with complaints
-    const isTRF = m.carrier_breakdown !== undefined;
+    // TrackFlow format has average_satisfaction_index
+    const isTrackflow = 'average_satisfaction_index' in metrics || !('carrier_breakdown' in metrics);
 
     return (
       <section>
         <header className="page-header">
           <span className="badge green">Incident Analysis</span>
-          <h1>Analysis Results {isTRF ? '(TRF Format)' : ''}</h1>
+          <h1>{isTrackflow ? 'Analysis Results' : 'Analysis Results'}</h1>
           <p>File: <strong>{displayAnalysis.filename}</strong></p>
           <div className="actions">
             <button className="button" onClick={handleExport} type="button">Export CSV</button>
@@ -238,27 +240,13 @@ export function IncidentAnalyzer() {
             </div>
           </article>
 
-          {isTRF && m.carrier_breakdown && (
-            <article className="panel">
-              <h3>Carrier Breakdown</h3>
-              <div className="stat-group">
-                {Object.entries(m.carrier_breakdown as Record<string, number>).map(([carrier, count]) => (
-                  <div className="stat" key={carrier}>
-                    <span className="stat-value">{count}</span>
-                    <span className="stat-label">{carrier}</span>
-                  </div>
-                ))}
-              </div>
-            </article>
-          )}
-
           <article className="panel">
-            <h3>{isTRF ? 'Incident Category' : 'Category'} Breakdown</h3>
+            <h3>Category Breakdown</h3>
             <div className="stat-group">
               {m.category_breakdown && Object.entries(m.category_breakdown as Record<string, number>).map(([cat, count]) => (
                 <div className="stat" key={cat}>
                   <span className="stat-value">{count}</span>
-                  <span className="stat-label">{cat}</span>
+                  <span className="stat-label">{cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
                 </div>
               ))}
             </div>
@@ -270,22 +258,13 @@ export function IncidentAnalyzer() {
               {m.status_breakdown && Object.entries(m.status_breakdown as Record<string, number>).map(([status, count]) => (
                 <div className="stat" key={status}>
                   <span className="stat-value">{count}</span>
-                  <span className="stat-label">{status}</span>
+                  <span className="stat-label">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
                 </div>
               ))}
             </div>
           </article>
 
-          {isTRF && m.average_declared_value !== undefined && (
-            <article className="panel">
-              <h3>Average Declared Value</h3>
-              <div className="stat-group">
-                <div className="stat"><span className="stat-value">€{m.average_declared_value.toFixed(2)}</span><span className="stat-label">Avg Declared Value</span></div>
-              </div>
-            </article>
-          )}
-
-          {!isTRF && m.average_satisfaction_index !== undefined && (
+          {m.average_satisfaction_index !== undefined && (
             <article className="panel">
               <h3>Customer Satisfaction</h3>
               <div className="stat-group">
@@ -322,10 +301,10 @@ export function IncidentAnalyzer() {
                 <div className="detail-grid">
                   {displayAnalysis.invalid_records.map((record) => {
                     const rec = record as any;
-                    const idField = isTRF ? rec.tracking_id : rec.incident_id;
+                    const idField = rec.incident_id || rec.tracking_id || 'N/A';
                     return (
                       <article className="candidate-card" key={rec.row_number}>
-                        <p><strong>Row {rec.row_number}</strong> · ID: {idField || 'N/A'}</p>
+                        <p><strong>Row {rec.row_number}</strong> · ID: {idField}</p>
                         <ul>
                           {rec.errors.map((error: string) => <li key={error}>{error}</li>)}
                         </ul>

@@ -1,0 +1,21 @@
+Metric,Value
+Format,trackflow
+Total Records Processed,100
+Valid Records,95
+Invalid Records,5
+Category — Complaints,31
+Category — Operational Failures,31
+Category — Requests,33
+Status — Closed,28
+Status — Discarded,28
+Status — Open,39
+Average Satisfaction Index,3.06
+Invalid Record Count,5
+
+INVALID RECORD DETAILS,
+Row Number,Incident ID,Errors
+97,TF-00096,"Invalid category 'invalid_category'; must be one of: complaints, operational_failures, requests"
+98,TF-00097,"Invalid status 'bad_status'; must be one of: closed, discarded, open"
+99,TF-00098,Missing required field 'category'
+100,TF-00099,Missing required field 'description'
+101,TF-00100,Invalid satisfaction_score '15'; must be a number between 0 and 10

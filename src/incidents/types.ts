@@ -1,43 +1,34 @@
 /**
- * Incident Analysis Domain Types — TrackFlow TRF (Tracking Record Format)
+ * Incident Analysis Domain Types — TrackFlow Syllabus Format
  *
- * Defines tracking/logistics incident records for TrackFlow data analysis:
- * carrier exceptions, lost parcels, delays, damages, etc.
+ * Defines incident records per CONTEXT.md TrackFlow spec:
+ * incident_id, category (complaints/requests/operational_failures),
+ * status (open/closed/discarded), description, customer_name, email,
+ * phone, date, satisfaction_score (0-10), notes.
  */
 
-// TrackFlow carriers (US: UPS, FedEx, DHL; Spain: MRW, SEUR, DHL)
-export type Carrier = 'UPS' | 'FedEx' | 'DHL' | 'MRW' | 'SEUR';
+// TrackFlow incident categories (per CONTEXT syllabus)
+export type TrackFlowCategory =
+  | 'complaints'
+  | 'requests'
+  | 'operational_failures';
 
-// TRF incident categories (logistics exception types)
-export type TRFCategory =
-  | 'LOST_PARCEL'
-  | 'DELAYED'
-  | 'DAMAGED'
-  | 'RETURNED'
-  | 'WRONG_ITEM'
-  | 'ADDRESS_ISSUE'
-  | 'MISSING_LABEL'
-  | 'CUSTOMER_CANCELLATION';
-
-// TRF record status lifecycle
-export type TRFStatus = 'open' | 'closed' | 'exception';
+// TrackFlow incident statuses
+export type TrackFlowStatus = 'open' | 'closed' | 'discarded';
 
 /**
- * A single TRF (Tracking Record Format) record from the CSV file
+ * A single incident record from the CSV file (Syllabus Format)
  */
-export interface TRFRecord {
-  tracking_id: string;
-  carrier: Carrier;
-  category: TRFCategory;
-  status: TRFStatus;
-  origin: string;
-  destination: string;
-  shipment_date: string;
-  delivery_date?: string;
-  weight_kg: number;
-  declared_value: number;
+export interface IncidentRecord {
+  incident_id: string;
+  category: TrackFlowCategory;
+  status: TrackFlowStatus;
+  description: string;
   customer_name: string;
-  customer_email: string;
+  email: string;
+  phone?: string;
+  date: string;
+  satisfaction_score?: number;
   notes?: string;
 }
 
@@ -46,8 +37,8 @@ export interface TRFRecord {
  */
 export interface RecordValidationError {
   row_number: number;
-  tracking_id?: string;
-  errors: string[]; // Array of specific field validation errors
+  incident_id?: string;
+  errors: string[];
 }
 
 /**
@@ -57,22 +48,21 @@ export interface AnalysisMetrics {
   total_processed: number;
   valid_records: number;
   invalid_records: number;
-  carrier_breakdown: Record<string, number>;
   category_breakdown: Record<string, number>;
   status_breakdown: Record<string, number>;
-  average_declared_value?: number;
+  average_satisfaction_index?: number;
 }
 
 /**
- * Complete analysis result from running the analyzer on a TRF CSV file
+ * Complete analysis result from running the analyzer on a CSV file
  */
 export interface AnalysisResult {
   id: string;
-  timestamp: number; // Unix milliseconds
+  timestamp: number;
   filename: string;
-  format?: string; // 'TRF' for TRF format, undefined for legacy
+  format?: string;
   metrics: AnalysisMetrics;
-  invalid_records: RecordValidationError[]; // Details on each invalid record
+  invalid_records: RecordValidationError[];
   valid_record_count: number;
 }
 

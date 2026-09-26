@@ -1,7 +1,7 @@
 /**
  * POST /api/incidents/analyze
  *
- * Accepts a CSV file upload containing TRF (Tracking Record Format) records.
+ * Accepts a CSV file upload containing TrackFlow incident records.
  * Spawns the Python analysis script as a subprocess, parses results,
  * stores them in memory, and returns the analysis.
  */
@@ -28,13 +28,12 @@ interface PythonAnalysisOutput {
   total_processed: number;
   valid_records: number;
   invalid_records: number;
-  carrier_breakdown: Record<string, number>;
   category_breakdown: Record<string, number>;
   status_breakdown: Record<string, number>;
-  average_declared_value: number | null;
+  average_satisfaction_index: number | null;
   invalid_record_details: Array<{
     row_number: number;
-    tracking_id: string;
+    incident_id: string;
     errors: string[];
   }>;
 }
@@ -122,18 +121,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         );
       }
 
-      // Create analysis result object and store it (TRF format)
+      // Create analysis result object and store it (trackflow format)
       const stored = storeAnalysis({
         filename: file.name,
-        format: 'TRF',
+        format: 'trackflow',
         metrics: {
           total_processed: analysisData.total_processed,
           valid_records: analysisData.valid_records,
           invalid_records: analysisData.invalid_records,
-          carrier_breakdown: analysisData.carrier_breakdown,
           category_breakdown: analysisData.category_breakdown,
           status_breakdown: analysisData.status_breakdown,
-          average_declared_value: analysisData.average_declared_value ?? undefined,
+          average_satisfaction_index: analysisData.average_satisfaction_index ?? undefined,
         },
         invalid_records: analysisData.invalid_record_details,
         valid_record_count: analysisData.valid_records,

@@ -30,37 +30,26 @@ export async function GET(
 
     const metrics = analysis.metrics as any;
 
-    // Detect format: TRF has carrier_breakdown, legacy has category_breakdown with complaints
-    const isTRF = metrics.carrier_breakdown !== undefined;
+    // Use 'trackflow' format detection: average_satisfaction_index present means trackflow
+    const isTrackflow = 'average_satisfaction_index' in metrics || !('carrier_breakdown' in metrics);
 
     csvLines.push(''); // Blank line
 
     // Summary metrics
     csvLines.push('SUMMARY METRICS,');
-    csvLines.push(`Format,${isTRF ? 'TRF' : 'Legacy'}`);
+    csvLines.push(`Format,${isTrackflow ? 'TrackFlow' : 'Legacy'}`);
     csvLines.push(`Total Records Processed,${metrics.total_processed}`);
     csvLines.push(`Valid Records,${metrics.valid_records}`);
     csvLines.push(`Invalid Records,${metrics.invalid_records}`);
 
     csvLines.push(''); // Blank line
 
-    if (isTRF) {
-      // TRF format: carrier breakdown
-      csvLines.push('CARRIER BREAKDOWN,');
-      if (metrics.carrier_breakdown) {
-        for (const [carrier, count] of Object.entries(metrics.carrier_breakdown)) {
-          csvLines.push(`${carrier},${count}`);
-        }
-      }
-
-      csvLines.push(''); // Blank line
-    }
-
     // Category breakdown
     csvLines.push('CATEGORY BREAKDOWN,');
     if (metrics.category_breakdown) {
       for (const [cat, count] of Object.entries(metrics.category_breakdown)) {
-        csvLines.push(`${cat},${count}`);
+        const label = cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        csvLines.push(`${label},${count}`);
       }
     }
 
@@ -70,32 +59,26 @@ export async function GET(
     csvLines.push('STATUS BREAKDOWN,');
     if (metrics.status_breakdown) {
       for (const [status, count] of Object.entries(metrics.status_breakdown)) {
-        csvLines.push(`${status},${count}`);
+        csvLines.push(`${status.charAt(0).toUpperCase() + status.slice(1)},${count}`);
       }
     }
 
     csvLines.push(''); // Blank line
 
-    // Average value (declared value for TRF, satisfaction index for legacy)
-    if (isTRF) {
-      const avgDv = metrics.average_declared_value;
-      csvLines.push(`Average Declared Value (€),${avgDv !== undefined ? avgDv.toFixed(2) : 'N/A'}`);
-    } else {
-      const avgSat = metrics.average_satisfaction_index;
-      csvLines.push(`Average Satisfaction Index,${avgSat !== undefined ? avgSat.toFixed(2) : 'N/A'}`);
-    }
+    // Average satisfaction index
+    const avgSat = metrics.average_satisfaction_index;
+    csvLines.push(`Average Satisfaction Index,${avgSat !== undefined ? avgSat.toFixed(2) : 'N/A'}`);
 
     // Invalid records details
     if (analysis.invalid_records.length > 0) {
       csvLines.push(''); // Blank line
       csvLines.push('INVALID RECORDS,');
-      const idField = isTRF ? 'Tracking ID' : 'Incident ID';
-      csvLines.push(`Row Number,${idField},Errors`);
+      csvLines.push('Row Number,Incident ID,Errors');
 
       for (const invalid of analysis.invalid_records) {
         const errorText = invalid.errors.join(' | ');
         const escapedErrors = `"${errorText.replace(/"/g, '""')}"`;
-        const recId = (invalid as any).tracking_id || (invalid as any).incident_id || 'N/A';
+        const recId = (invalid as any).incident_id || (invalid as any).tracking_id || 'N/A';
         csvLines.push(`${invalid.row_number},${recId},${escapedErrors}`);
       }
     }
@@ -104,7 +87,7 @@ export async function GET(
 
     // Generate filename with timestamp
     const timestamp = new Date(analysis.timestamp).toISOString().split('T')[0];
-    const formatTag = isTRF ? 'trf' : 'legacy';
+    const formatTag = isTrackflow ? 'trackflow' : 'legacy';
     const filename = `incident-analysis-${formatTag}-${timestamp}-${id.substring(0, 8)}.csv`;
 
     // Return CSV file as downloadable attachment
