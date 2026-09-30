@@ -2,7 +2,7 @@
 Run script for the TrackFlow Incidents Analysis Service.
 Start with: uvicorn services.incidents.run:app --port 8002
 
-This exposes REST endpoints for TRF incident analysis results
+This exposes REST endpoints for TrackFlow incident analysis results
 at http://localhost:8002/incidents/analyses
 """
 

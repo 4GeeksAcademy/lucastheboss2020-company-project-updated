@@ -16,14 +16,6 @@
       "static/chunks/972-a533e70569432dd6.js",
       "static/chunks/app/layout-4db0967d56a6953f.js"
     ],
-    "/candidates/[id]/page": [
-      "static/chunks/webpack-c81f7fd28659d64f.js",
-      "static/chunks/fd9d1056-9600c27d0477c7ee.js",
-      "static/chunks/117-e7f74aee950a158a.js",
-      "static/chunks/main-app-e8c377d95817b565.js",
-      "static/chunks/972-a533e70569432dd6.js",
-      "static/chunks/app/candidates/[id]/page-67c3afa9b0a1fee3.js"
-    ],
     "/candidates/new/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",
       "static/chunks/fd9d1056-9600c27d0477c7ee.js",
@@ -40,12 +32,13 @@
       "static/chunks/972-a533e70569432dd6.js",
       "static/chunks/app/candidates/page-81265772a23a6bc4.js"
     ],
-    "/login/page": [
+    "/candidates/[id]/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",
       "static/chunks/fd9d1056-9600c27d0477c7ee.js",
       "static/chunks/117-e7f74aee950a158a.js",
       "static/chunks/main-app-e8c377d95817b565.js",
-      "static/chunks/app/login/page-5f40b879f6f30325.js"
+      "static/chunks/972-a533e70569432dd6.js",
+      "static/chunks/app/candidates/[id]/page-67c3afa9b0a1fee3.js"
     ],
     "/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",
@@ -56,12 +49,19 @@
       "static/chunks/958-cf3cb66b4a836130.js",
       "static/chunks/app/page-dd068b001d612b8f.js"
     ],
+    "/login/page": [
+      "static/chunks/webpack-c81f7fd28659d64f.js",
+      "static/chunks/fd9d1056-9600c27d0477c7ee.js",
+      "static/chunks/117-e7f74aee950a158a.js",
+      "static/chunks/main-app-e8c377d95817b565.js",
+      "static/chunks/app/login/page-5f40b879f6f30325.js"
+    ],
     "/uis/backoffice/incidents/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",
       "static/chunks/fd9d1056-9600c27d0477c7ee.js",
       "static/chunks/117-e7f74aee950a158a.js",
       "static/chunks/main-app-e8c377d95817b565.js",
-      "static/chunks/app/uis/backoffice/incidents/page-ba73626a7b680270.js"
+      "static/chunks/app/uis/backoffice/incidents/page-0246cc2c1a0cc36a.js"
     ],
     "/uis/backoffice/page": [
       "static/chunks/webpack-c81f7fd28659d64f.js",

@@ -166,7 +166,6 @@ export function IncidentAnalyzer() {
   /**
    * Aggregate invalid record errors by type for the red alert display.
    * Groups similar error messages to show "how many of each type".
-   * Handles both TRF and legacy format error types.
    */
   function aggregateErrorsByType(invalidRecords: AnalysisResult['invalid_records']): { type: string; count: number }[] {
     const errorCounts: Record<string, number> = {};
@@ -180,24 +179,26 @@ export function IncidentAnalyzer() {
         if (errLower.includes('missing required field') || errLower.includes('missing field')) {
           const match = err.match(/'([^']+)'/);
           type = match ? `Missing field: ${match[1]}` : 'Missing required field';
-        } else if (errLower.includes('carrier')) {
-          type = 'Invalid carrier';
-        } else if (errLower.includes('email')) {
-          type = 'Invalid email';
-        } else if (errLower.includes('weight') || errLower.includes('weight_kg')) {
-          type = 'Invalid weight';
-        } else if (errLower.includes('declared_value') || errLower.includes('declared value')) {
-          type = 'Invalid declared value';
-        } else if (errLower.includes('date')) {
-          type = 'Invalid date';
+        } else if (errLower.includes('tracking') && (errLower.includes('short') || errLower.includes('8 character'))) {
+          type = 'Invalid tracking number';
+        } else if (errLower.includes('carrier') && (errLower.includes('country') || errLower.includes('valid'))) {
+          type = 'Carrier/country mismatch';
         } else if (errLower.includes('category')) {
-          type = 'Invalid category';
-        } else if (errLower.includes('status')) {
-          type = 'Invalid status';
+          type = 'Invalid or missing category';
+        } else if (errLower.includes('email')) {
+          type = 'Invalid or missing email';
+        } else if (errLower.includes('closed') && errLower.includes('satisfaction')) {
+          type = 'Closed incident, no score';
         } else if (errLower.includes('satisfaction') || errLower.includes('score')) {
           type = 'Invalid satisfaction score';
-        } else if (errLower.includes('phone')) {
-          type = 'Invalid phone';
+        } else if (errLower.includes('description')) {
+          type = 'Invalid or missing description';
+        } else if (errLower.includes('date')) {
+          type = 'Invalid date';
+        } else if (errLower.includes('country')) {
+          type = 'Invalid or missing country';
+        } else if (errLower.includes('customer_type')) {
+          type = 'Invalid customer type';
         }
 
         errorCounts[type] = (errorCounts[type] || 0) + 1;
@@ -215,14 +216,12 @@ export function IncidentAnalyzer() {
     const { metrics } = displayAnalysis;
     const m = metrics as any;
 
-    // TrackFlow format has average_satisfaction_index
-    const isTrackflow = 'average_satisfaction_index' in metrics || !('carrier_breakdown' in metrics);
-
+    // TrackFlow logistics format has carrier_breakdown
     return (
       <section>
         <header className="page-header">
           <span className="badge green">Incident Analysis</span>
-          <h1>{isTrackflow ? 'Analysis Results' : 'Analysis Results'}</h1>
+          <h1>TrackFlow Analysis Results</h1>
           <p>File: <strong>{displayAnalysis.filename}</strong></p>
           <div className="actions">
             <button className="button" onClick={handleExport} type="button">Export CSV</button>
@@ -239,6 +238,20 @@ export function IncidentAnalyzer() {
               <div className="stat"><span className="stat-value red">{m.invalid_records}</span><span className="stat-label">Invalid</span></div>
             </div>
           </article>
+
+          {m.carrier_breakdown && Object.keys(m.carrier_breakdown).length > 0 && (
+            <article className="panel">
+              <h3>Carrier Breakdown</h3>
+              <div className="stat-group">
+                {Object.entries(m.carrier_breakdown as Record<string, number>).map(([carrier, count]) => (
+                  <div className="stat" key={carrier}>
+                    <span className="stat-value">{count}</span>
+                    <span className="stat-label">{carrier}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
 
           <article className="panel">
             <h3>Category Breakdown</h3>
@@ -264,11 +277,25 @@ export function IncidentAnalyzer() {
             </div>
           </article>
 
+          {m.country_breakdown && Object.keys(m.country_breakdown).length > 0 && (
+            <article className="panel">
+              <h3>Country Breakdown</h3>
+              <div className="stat-group">
+                {Object.entries(m.country_breakdown as Record<string, number>).map(([country, count]) => (
+                  <div className="stat" key={country}>
+                    <span className="stat-value">{count}</span>
+                    <span className="stat-label">{country}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
           {m.average_satisfaction_index !== undefined && (
             <article className="panel">
               <h3>Customer Satisfaction</h3>
               <div className="stat-group">
-                <div className="stat"><span className="stat-value">{m.average_satisfaction_index.toFixed(2)}</span><span className="stat-label">Avg Satisfaction (0–10)</span></div>
+                <div className="stat"><span className="stat-value">{m.average_satisfaction_index.toFixed(2)}</span><span className="stat-label">Avg Satisfaction (1–5)</span></div>
               </div>
             </article>
           )}
@@ -301,7 +328,7 @@ export function IncidentAnalyzer() {
                 <div className="detail-grid">
                   {displayAnalysis.invalid_records.map((record) => {
                     const rec = record as any;
-                    const idField = rec.incident_id || rec.tracking_id || 'N/A';
+                    const idField = rec.incident_id || 'N/A';
                     return (
                       <article className="candidate-card" key={rec.row_number}>
                         <p><strong>Row {rec.row_number}</strong> · ID: {idField}</p>

@@ -1,5 +1,5 @@
 """
-In-memory storage for TRF incident analysis results.
+In-memory storage for TrackFlow incident analysis results.
 Analogy to services/suppliers/data.py but for analysis results.
 """
 

@@ -3,19 +3,30 @@ Format,trackflow
 Total Records Processed,100
 Valid Records,95
 Invalid Records,5
-Category — Complaints,31
-Category — Operational Failures,31
-Category — Requests,33
-Status — Closed,28
-Status — Discarded,28
-Status — Open,39
+Carrier -- MRW,45
+Carrier -- UPS,50
+Category -- DAMAGE,7
+Category -- DELAYED_DELIVERY,38
+Category -- LOST_PARCEL,14
+Category -- RETURN_REQUEST,17
+Category -- WRONG_ADDRESS,19
+Status -- CLOSED,52
+Status -- DISCARDED,14
+Status -- OPEN,29
+Country -- ES,45
+Country -- US,50
 Average Satisfaction Index,3.06
+Invalid -- Carrier/country mismatch,1
+"Invalid -- Closed incident, no score",1
+Invalid -- Invalid or missing category,1
+Invalid -- Invalid or missing email,1
+Invalid -- Other,1
 Invalid Record Count,5
 
 INVALID RECORD DETAILS,
 Row Number,Incident ID,Errors
-97,TF-00096,"Invalid category 'invalid_category'; must be one of: complaints, operational_failures, requests"
-98,TF-00097,"Invalid status 'bad_status'; must be one of: closed, discarded, open"
-99,TF-00098,Missing required field 'category'
-100,TF-00099,Missing required field 'description'
-101,TF-00100,Invalid satisfaction_score '15'; must be a number between 0 and 10
+2,TRF-000096,Invalid tracking number 'SHORT'; must be at least 8 characters
+3,TRF-000097,Carrier 'UPS' not valid for country 'ES'
+4,TRF-000098,"Invalid category 'INVALID_CAT'; must be one of: DAMAGE, DELAYED_DELIVERY, LOST_PARCEL, RETURN_REQUEST, WRONG_ADDRESS"
+5,TRF-000099,Invalid or missing customer_email
+6,TRF-000100,Closed incident without satisfaction_score
