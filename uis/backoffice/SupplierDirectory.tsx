@@ -25,6 +25,7 @@ interface FormErrors {
 }
 
 const API_BASE = "/api/suppliers";
+const STORAGE_KEY = "trackflow_token";
 
 // TrackFlow constants per CONTEXT_3.md
 const COUNTRIES = ["USA", "Spain"];
@@ -44,6 +45,20 @@ function formatCategory(cat: string): string {
   return cat
     .replace(/_/g, " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+function authHeaders(): HeadersInit {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem(STORAGE_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function handleUnauthorized(): never {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.href = "/login";
+  }
+  throw new Error("Session expired. Please log in again.");
 }
 
 export default function SupplierDirectory() {
@@ -89,7 +104,8 @@ export default function SupplierDirectory() {
       if (countryFilter) params.set("country", countryFilter);
       if (categoryFilter) params.set("category", categoryFilter);
       const url = `${API_BASE}${params.toString() ? "?" + params.toString() : ""}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: { ...authHeaders() } });
+      if (res.status === 401) handleUnauthorized();
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       setSuppliers((await res.json()) as Supplier[]);
     } catch (e) {
@@ -142,9 +158,10 @@ export default function SupplierDirectory() {
 
       const res = await fetch(API_BASE, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify(body),
       });
+      if (res.status === 401) handleUnauthorized();
       if (!res.ok) {
         const responseBody = await res.json().catch(() => null);
         const detail = responseBody?.detail
@@ -185,9 +202,10 @@ export default function SupplierDirectory() {
     try {
       const res = await fetch(`${API_BASE}/${supplierId}/rate`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ rate_per_shipment: rateNum }),
       });
+      if (res.status === 401) handleUnauthorized();
       if (!res.ok) {
         const responseBody = await res.json().catch(() => null);
         const detail = responseBody?.detail
@@ -211,9 +229,10 @@ export default function SupplierDirectory() {
     try {
       const res = await fetch(`${API_BASE}/${supplier.id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ status: newStatus }),
       });
+      if (res.status === 401) handleUnauthorized();
       if (!res.ok) {
         const responseBody = await res.json().catch(() => null);
         const detail = responseBody?.detail

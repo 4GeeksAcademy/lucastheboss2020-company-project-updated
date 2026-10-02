@@ -2,9 +2,10 @@
 
 import { useAuth } from "../auth/AuthProvider";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-xl bg-white p-8 shadow-lg space-y-6">
         <h1 className="text-2xl font-bold text-gray-900 text-center">TrackFlow Login</h1>
+        <p className="text-center text-sm text-gray-500">
+          Sign in to access TrackFlow protected backoffice views.
+        </p>
 
         {error && (
           <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
@@ -75,11 +79,18 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || isLoading}
           className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {submitting ? "Signing in…" : "Sign in"}
         </button>
+
+        <p className="text-center text-sm text-gray-600">
+          No account yet?{" "}
+          <Link href="/register" className="font-semibold text-blue-700 hover:text-blue-800">
+            Create one
+          </Link>
+        </p>
       </form>
     </div>
   );
