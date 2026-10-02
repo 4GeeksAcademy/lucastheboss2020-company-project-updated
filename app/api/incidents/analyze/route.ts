@@ -28,9 +28,12 @@ interface PythonAnalysisOutput {
   total_processed: number;
   valid_records: number;
   invalid_records: number;
+  carrier_breakdown: Record<string, number>;
   category_breakdown: Record<string, number>;
   status_breakdown: Record<string, number>;
+  country_breakdown: Record<string, number>;
   average_satisfaction_index: number | null;
+  invalid_breakdown: Record<string, number>;
   invalid_record_details: Array<{
     row_number: number;
     incident_id: string;
@@ -129,9 +132,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
           total_processed: analysisData.total_processed,
           valid_records: analysisData.valid_records,
           invalid_records: analysisData.invalid_records,
+          carrier_breakdown: analysisData.carrier_breakdown,
           category_breakdown: analysisData.category_breakdown,
           status_breakdown: analysisData.status_breakdown,
+          country_breakdown: analysisData.country_breakdown,
           average_satisfaction_index: analysisData.average_satisfaction_index ?? undefined,
+          invalid_breakdown: analysisData.invalid_breakdown,
         },
         invalid_records: analysisData.invalid_record_details,
         valid_record_count: analysisData.valid_records,

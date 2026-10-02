@@ -2,7 +2,7 @@
  * GET /api/incidents/results/[id]/export
  *
  * Exports a specific analysis result as a downloadable CSV file
- * Supports both TRF format and legacy format.
+ * Uses TrackFlow logistics format (carrier/country/status breakdowns).
  */
 
 import { NextResponse } from 'next/server';
@@ -30,8 +30,8 @@ export async function GET(
 
     const metrics = analysis.metrics as any;
 
-    // Use 'trackflow' format detection: average_satisfaction_index present means trackflow
-    const isTrackflow = 'average_satisfaction_index' in metrics || !('carrier_breakdown' in metrics);
+    // TrackFlow format: has carrier_breakdown and average_satisfaction_index
+    const isTrackflow = 'carrier_breakdown' in metrics;
 
     csvLines.push(''); // Blank line
 
@@ -44,12 +44,21 @@ export async function GET(
 
     csvLines.push(''); // Blank line
 
+    // Carrier breakdown
+    csvLines.push('CARRIER BREAKDOWN,');
+    if (metrics.carrier_breakdown) {
+      for (const [carrier, count] of Object.entries(metrics.carrier_breakdown)) {
+        csvLines.push(`${carrier},${count}`);
+      }
+    }
+
+    csvLines.push(''); // Blank line
+
     // Category breakdown
     csvLines.push('CATEGORY BREAKDOWN,');
     if (metrics.category_breakdown) {
       for (const [cat, count] of Object.entries(metrics.category_breakdown)) {
-        const label = cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        csvLines.push(`${label},${count}`);
+        csvLines.push(`${cat},${count}`);
       }
     }
 
@@ -59,7 +68,17 @@ export async function GET(
     csvLines.push('STATUS BREAKDOWN,');
     if (metrics.status_breakdown) {
       for (const [status, count] of Object.entries(metrics.status_breakdown)) {
-        csvLines.push(`${status.charAt(0).toUpperCase() + status.slice(1)},${count}`);
+        csvLines.push(`${status},${count}`);
+      }
+    }
+
+    csvLines.push(''); // Blank line
+
+    // Country breakdown
+    csvLines.push('COUNTRY BREAKDOWN,');
+    if (metrics.country_breakdown) {
+      for (const [country, count] of Object.entries(metrics.country_breakdown)) {
+        csvLines.push(`${country},${count}`);
       }
     }
 
@@ -68,6 +87,15 @@ export async function GET(
     // Average satisfaction index
     const avgSat = metrics.average_satisfaction_index;
     csvLines.push(`Average Satisfaction Index,${avgSat !== undefined ? avgSat.toFixed(2) : 'N/A'}`);
+
+    // Invalid breakdown
+    if (metrics.invalid_breakdown) {
+      csvLines.push(''); // Blank line
+      csvLines.push('INVALID BREAKDOWN,');
+      for (const [rule, count] of Object.entries(metrics.invalid_breakdown)) {
+        csvLines.push(`${rule},${count}`);
+      }
+    }
 
     // Invalid records details
     if (analysis.invalid_records.length > 0) {
@@ -78,7 +106,7 @@ export async function GET(
       for (const invalid of analysis.invalid_records) {
         const errorText = invalid.errors.join(' | ');
         const escapedErrors = `"${errorText.replace(/"/g, '""')}"`;
-        const recId = (invalid as any).incident_id || (invalid as any).tracking_id || 'N/A';
+        const recId = (invalid as any).incident_id || 'N/A';
         csvLines.push(`${invalid.row_number},${recId},${escapedErrors}`);
       }
     }

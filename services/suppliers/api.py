@@ -1,17 +1,17 @@
 from fastapi import FastAPI, HTTPException, status
-from .models import SupplierInput, RateUpdate, StatusUpdate, TRACKFLOW_SERVICES
+from .models import SupplierInput, RateUpdate, StatusUpdate, VALID_CATEGORIES
 from .data import get_all, get_one, create, update_rate, update_status, delete_one
 
 app = FastAPI(title="Suppliers API")
 
 
 @app.get("/suppliers")
-def list_suppliers(country: str = None, service: str = None):
+def list_suppliers(country: str = None, category: str = None):
     results = get_all()
     if country:
         results = [r for r in results if r.get("country", "").lower() == country.lower()]
-    if service:
-        results = [r for r in results if service.lower() in [s.lower() for s in r.get("services", [])]]
+    if category:
+        results = [r for r in results if category.lower() in [c.lower() for c in r.get("categories", [])]]
     return results
 
 
@@ -52,7 +52,7 @@ def delete_supplier(supplier_id: int):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found")
 
 
-@app.get("/suppliers/services/list")
-def list_trackflow_services():
-    """Return the list of valid TrackFlow service categories."""
-    return {"services": TRACKFLOW_SERVICES}
+@app.get("/suppliers/categories/list")
+def list_categories():
+    """Return the list of valid TrackFlow supplier categories."""
+    return {"categories": VALID_CATEGORIES}

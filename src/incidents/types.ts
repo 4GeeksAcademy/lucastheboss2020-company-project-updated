@@ -1,35 +1,49 @@
 /**
- * Incident Analysis Domain Types — TrackFlow Syllabus Format
+ * Incident Analysis Domain Types — TrackFlow Logistics Format
  *
- * Defines incident records per CONTEXT.md TrackFlow spec:
- * incident_id, category (complaints/requests/operational_failures),
- * status (open/closed/discarded), description, customer_name, email,
- * phone, date, satisfaction_score (0-10), notes.
+ * Defines incident records per CONTEXT-trackflow spec:
+ * incident_id (TRF-XXXXXX), date (YYYY-MM-DD), country (US/ES),
+ * customer_type (B2B/B2C), tracking_number (>=8 chars),
+ * carrier (per country), category (LOST_PARCEL/DELAYED_DELIVERY/etc.),
+ * status (OPEN/CLOSED/DISCARDED), customer_email (SENSITIVE),
+ * satisfaction_score (1-5, required if CLOSED).
  */
 
-// TrackFlow incident categories (per CONTEXT syllabus)
-export type TrackFlowCategory =
-  | 'complaints'
-  | 'requests'
-  | 'operational_failures';
+// Valid countries
+export type TrackFlowCountry = 'US' | 'ES';
 
-// TrackFlow incident statuses
-export type TrackFlowStatus = 'open' | 'closed' | 'discarded';
+// Valid carriers per country
+export type TrackFlowCarrier = 'UPS' | 'FEDEX' | 'DHL_US' | 'MRW' | 'SEUR' | 'DHL_ES' | 'LOCAL_ES';
+
+// Valid incident categories (TrackFlow logistics)
+export type TrackFlowCategory =
+  | 'LOST_PARCEL'
+  | 'DELAYED_DELIVERY'
+  | 'WRONG_ADDRESS'
+  | 'RETURN_REQUEST'
+  | 'DAMAGE';
+
+// Valid incident statuses
+export type TrackFlowStatus = 'OPEN' | 'CLOSED' | 'DISCARDED';
+
+// Valid customer types
+export type CustomerType = 'B2B' | 'B2C';
 
 /**
- * A single incident record from the CSV file (Syllabus Format)
+ * A single incident record from the CSV file (TrackFlow Format)
  */
-export interface IncidentRecord {
+export interface TrackFlowRecord {
   incident_id: string;
-  category: TrackFlowCategory;
-  status: TrackFlowStatus;
-  description: string;
-  customer_name: string;
-  email: string;
-  phone?: string;
   date: string;
+  country: TrackFlowCountry;
+  customer_type: CustomerType;
+  tracking_number: string;
+  carrier: TrackFlowCarrier;
+  category: TrackFlowCategory;
+  description: string;
+  status: TrackFlowStatus;
+  customer_email: string;
   satisfaction_score?: number;
-  notes?: string;
 }
 
 /**
@@ -48,9 +62,12 @@ export interface AnalysisMetrics {
   total_processed: number;
   valid_records: number;
   invalid_records: number;
+  carrier_breakdown: Record<string, number>;
   category_breakdown: Record<string, number>;
   status_breakdown: Record<string, number>;
+  country_breakdown: Record<string, number>;
   average_satisfaction_index?: number;
+  invalid_breakdown: Record<string, number>;
 }
 
 /**

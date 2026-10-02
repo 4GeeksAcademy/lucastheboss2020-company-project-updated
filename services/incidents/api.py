@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, status
-from .models import AnalysisResult, TRFRecord, AnalysisMetrics, InvalidRecordDetail
+from .models import AnalysisResult, TrackFlowRecord, AnalysisMetrics, InvalidRecordDetail
 from .data import store_analysis, get_analysis, get_all_analyses
 
 app = FastAPI(title="TrackFlow Incidents API")
@@ -42,7 +42,7 @@ def export_analysis_csv(analysis_id: str):
     metrics = result.get("metrics", {})
     lines = ["Metric,Value"]
 
-    lines.append(f"Format,TRF")
+    lines.append(f"Format,TrackFlow")
     lines.append(f"Total Records Processed,{metrics.get('total_processed', '')}")
     lines.append(f"Valid Records,{metrics.get('valid_records', '')}")
     lines.append(f"Invalid Records,{metrics.get('invalid_records', '')}")
@@ -53,23 +53,28 @@ def export_analysis_csv(analysis_id: str):
     for cat, count in metrics.get("category_breakdown", {}).items():
         lines.append(f'Category - {cat},{count}')
 
-    for status, count in metrics.get("status_breakdown", {}).items():
-        lines.append(f'Status - {status.title()},{count}')
+    for status_val, count in metrics.get("status_breakdown", {}).items():
+        lines.append(f'Status - {status_val},{count}')
 
-    avg_dv = metrics.get("average_declared_value")
-    lines.append(f'Average Declared Value (€),{avg_dv:.2f}' if avg_dv else 'Average Declared Value (€),N/A')
+    for country, count in metrics.get("country_breakdown", {}).items():
+        lines.append(f'Country - {country},{count}')
+
+    avg_sat = metrics.get("average_satisfaction_index")
+    lines.append(f'Average Satisfaction Index,{avg_sat:.2f}' if avg_sat else 'Average Satisfaction Index,N/A')
+
+    for rule, count in metrics.get("invalid_breakdown", {}).items():
+        lines.append(f'Invalid - {rule},{count}')
 
     invalids = result.get("invalid_records", [])
     lines.append(f"Invalid Record Count,{len(invalids)}")
 
     if invalids:
         lines.append("")
-        lines.append("Row Number,Tracking ID,Errors")
+        lines.append("Row Number,Incident ID,Errors")
         for rec in invalids:
             errs = " | ".join(rec.get("errors", []))
-            # Proper CSV escaping
             errs_escaped = f'"{errs}"' if "," in errs else errs
-            lines.append(f'{rec.get("row_number", "")},{rec.get("tracking_id", "")},{errs_escaped}')
+            lines.append(f'{rec.get("row_number", "")},{rec.get("incident_id", "")},{errs_escaped}')
 
     csv_content = "\n".join(lines)
 
@@ -78,7 +83,7 @@ def export_analysis_csv(analysis_id: str):
     import re
 
     sanitized_id = re.sub(r'[^a-zA-Z0-9-]', '', analysis_id)[:8]
-    filename = f"incident-analysis-trf-{sanitized_id}.csv"
+    filename = f"incident-analysis-trackflow-{sanitized_id}.csv"
 
     return Response(
         content=csv_content,

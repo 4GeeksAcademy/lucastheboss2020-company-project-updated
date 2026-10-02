@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from enum import Enum
+from typing import Optional
+from datetime import datetime, timezone
 
 
 class SupplierStatus(str, Enum):
@@ -7,42 +9,70 @@ class SupplierStatus(str, Enum):
     SUSPENDED = "suspended"
 
 
-TRACKFLOW_SERVICES = ["warehouse-management", "last-mile-delivery", "reverse-logistics"]
-CURRENCIES = ["USD", "EUR"]
-COUNTRIES = ["United States", "Spain"]
+VALID_CATEGORIES = [
+    "carrier_last_mile",
+    "carrier_international",
+    "warehouse_supplies",
+    "packaging_materials",
+    "reverse_logistics",
+    "fleet_maintenance",
+    "it_and_wms_software",
+    "cleaning_and_facilities",
+]
+
+VALID_STATUSES = ["active", "suspended"]
+
+COUNTRY_CURRENCY_MAP = {
+    "USA": "USD",
+    "Spain": "EUR",
+}
 
 
 class SupplierInput(BaseModel):
     name: str = Field(min_length=2)
     country: str = Field(min_length=2)
-    services: list[str] = Field(min_length=1)
+    categories: list[str] = Field(min_length=1)
     rate_per_shipment: float = Field(gt=0)
-    currency: str = Field(min_length=3, default="USD")
+    currency: str = Field(min_length=3)
     status: SupplierStatus = SupplierStatus.ACTIVE
+    service_zone: Optional[str] = None
+    contact_email: Optional[str] = None
+    notes: Optional[str] = None
 
     @field_validator("country")
     @classmethod
     def validate_country(cls, v: str) -> str:
-        if v not in COUNTRIES:
-            raise ValueError(f"Country must be one of: {', '.join(COUNTRIES)}")
+        allowed = list(COUNTRY_CURRENCY_MAP.keys())
+        if v not in allowed:
+            raise ValueError(f"Country must be one of: {', '.join(allowed)}")
         return v
 
-    @field_validator("services")
+    @field_validator("categories")
     @classmethod
-    def validate_services(cls, v: list[str]) -> list[str]:
-        invalid = [s for s in v if s not in TRACKFLOW_SERVICES]
+    def validate_categories(cls, v: list[str]) -> list[str]:
+        invalid = [c for c in v if c not in VALID_CATEGORIES]
         if invalid:
             raise ValueError(
-                f"Invalid services: {invalid}. Must be one of: {', '.join(TRACKFLOW_SERVICES)}"
+                f"Invalid categories: {invalid}. Must be one of: {', '.join(VALID_CATEGORIES)}"
             )
         return v
 
-    @field_validator("currency")
+    @field_validator("status")
     @classmethod
-    def validate_currency(cls, v: str) -> str:
-        if v not in CURRENCIES:
-            raise ValueError(f"Currency must be one of: {', '.join(CURRENCIES)}")
+    def validate_status(cls, v: SupplierStatus) -> SupplierStatus:
+        if v.value not in VALID_STATUSES:
+            raise ValueError(f"Status must be one of: {', '.join(VALID_STATUSES)}")
         return v
+
+    @model_validator(mode="after")
+    def validate_currency_country_pair(self):
+        expected = COUNTRY_CURRENCY_MAP.get(self.country)
+        if expected and self.currency != expected:
+            raise ValueError(
+                f"Currency '{self.currency}' does not match country '{self.country}'. "
+                f"Expected '{expected}'."
+            )
+        return self
 
 
 class Supplier(SupplierInput):
