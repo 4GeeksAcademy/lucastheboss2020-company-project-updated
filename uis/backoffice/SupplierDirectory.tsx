@@ -6,31 +6,45 @@ export interface Supplier {
   id: number;
   name: string;
   country: string;
-  services: string[];
+  categories: string[];
   rate_per_shipment: number;
   currency: string;
   status: "active" | "suspended";
   updated_at: string;
+  service_zone?: string;
+  contact_email?: string;
+  notes?: string;
 }
 
 interface FormErrors {
   name?: string;
   country?: string;
-  services?: string;
+  categories?: string;
   rate_per_shipment?: string;
   currency?: string;
 }
 
 const API_BASE = "/api/suppliers";
 
-// TrackFlow-specific constants
-const COUNTRIES = ["United States", "Spain"];
+// TrackFlow constants per CONTEXT_3.md
+const COUNTRIES = ["USA", "Spain"];
 
-const TRACKFLOW_SERVICES = [
-  "warehouse-management",
-  "last-mile-delivery",
-  "reverse-logistics",
+const VALID_CATEGORIES = [
+  "carrier_last_mile",
+  "carrier_international",
+  "warehouse_supplies",
+  "packaging_materials",
+  "reverse_logistics",
+  "fleet_maintenance",
+  "it_and_wms_software",
+  "cleaning_and_facilities",
 ];
+
+function formatCategory(cat: string): string {
+  return cat
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
 
 export default function SupplierDirectory() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -39,16 +53,19 @@ export default function SupplierDirectory() {
 
   // Filters
   const [countryFilter, setCountryFilter] = useState("");
-  const [serviceFilter, setServiceFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
 
   // Registration form
   const [showForm, setShowForm] = useState(false);
   const [formName, setFormName] = useState("");
   const [formCountry, setFormCountry] = useState("");
-  const [formServices, setFormServices] = useState<string[]>([]);
+  const [formCategories, setFormCategories] = useState<string[]>([]);
   const [formRatePerShipment, setFormRatePerShipment] = useState("");
-  const [formCurrency, setFormCurrency] = useState("USD");
+  const [formCurrency, setFormCurrency] = useState("");
   const [formStatus, setFormStatus] = useState<"active" | "suspended">("active");
+  const [formServiceZone, setFormServiceZone] = useState("");
+  const [formContactEmail, setFormContactEmail] = useState("");
+  const [formNotes, setFormNotes] = useState("");
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formApiError, setFormApiError] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -58,13 +75,19 @@ export default function SupplierDirectory() {
   const [editRateValue, setEditRateValue] = useState("");
   const [rateUpdateError, setRateUpdateError] = useState<string | null>(null);
 
+  // Auto-currency when country changes
+  useEffect(() => {
+    if (formCountry === "USA") setFormCurrency("USD");
+    else if (formCountry === "Spain") setFormCurrency("EUR");
+  }, [formCountry]);
+
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
       if (countryFilter) params.set("country", countryFilter);
-      if (serviceFilter) params.set("service", serviceFilter);
+      if (categoryFilter) params.set("category", categoryFilter);
       const url = `${API_BASE}${params.toString() ? "?" + params.toString() : ""}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -74,7 +97,7 @@ export default function SupplierDirectory() {
     } finally {
       setLoading(false);
     }
-  }, [countryFilter, serviceFilter]);
+  }, [countryFilter, categoryFilter]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -86,8 +109,8 @@ export default function SupplierDirectory() {
     if (!formName || formName.trim().length < 2)
       errors.name = "Name is required (min 2 characters)";
     if (!formCountry) errors.country = "Country is required";
-    if (formServices.length === 0)
-      errors.services = "At least one service is required";
+    if (formCategories.length === 0)
+      errors.categories = "At least one category is required";
     if (!formCurrency) errors.currency = "Currency is required";
     const rateNum = parseFloat(formRatePerShipment);
     if (!formRatePerShipment || isNaN(rateNum) || rateNum <= 0)
@@ -105,24 +128,29 @@ export default function SupplierDirectory() {
 
     setFormSubmitting(true);
     try {
+      const body: Record<string, unknown> = {
+        name: formName.trim(),
+        country: formCountry,
+        categories: formCategories,
+        rate_per_shipment: parseFloat(formRatePerShipment),
+        currency: formCurrency,
+        status: formStatus,
+      };
+      if (formServiceZone.trim()) body.service_zone = formServiceZone.trim();
+      if (formContactEmail.trim()) body.contact_email = formContactEmail.trim();
+      if (formNotes.trim()) body.notes = formNotes.trim();
+
       const res = await fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formName.trim(),
-          country: formCountry,
-          services: formServices,
-          rate_per_shipment: parseFloat(formRatePerShipment),
-          currency: formCurrency,
-          status: formStatus,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        const detail = body?.detail
-          ? typeof body.detail === "string"
-            ? body.detail
-            : JSON.stringify(body.detail)
+        const responseBody = await res.json().catch(() => null);
+        const detail = responseBody?.detail
+          ? typeof responseBody.detail === "string"
+            ? responseBody.detail
+            : JSON.stringify(responseBody.detail)
           : `HTTP ${res.status}`;
         throw new Error(detail);
       }
@@ -130,12 +158,14 @@ export default function SupplierDirectory() {
       setShowForm(false);
       setFormName("");
       setFormCountry("");
-      setFormServices([]);
+      setFormCategories([]);
       setFormRatePerShipment("");
-      setFormCurrency("USD");
+      setFormCurrency("");
       setFormStatus("active");
+      setFormServiceZone("");
+      setFormContactEmail("");
+      setFormNotes("");
       setFormErrors({});
-      // Refresh list
       await fetchSuppliers();
     } catch (e) {
       setFormApiError(e instanceof Error ? e.message : "Failed to create supplier");
@@ -159,11 +189,11 @@ export default function SupplierDirectory() {
         body: JSON.stringify({ rate_per_shipment: rateNum }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        const detail = body?.detail
-          ? typeof body.detail === "string"
-            ? body.detail
-            : JSON.stringify(body.detail)
+        const responseBody = await res.json().catch(() => null);
+        const detail = responseBody?.detail
+          ? typeof responseBody.detail === "string"
+            ? responseBody.detail
+            : JSON.stringify(responseBody.detail)
           : `HTTP ${res.status}`;
         throw new Error(detail);
       }
@@ -185,11 +215,11 @@ export default function SupplierDirectory() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        const detail = body?.detail
-          ? typeof body.detail === "string"
-            ? body.detail
-            : JSON.stringify(body.detail)
+        const responseBody = await res.json().catch(() => null);
+        const detail = responseBody?.detail
+          ? typeof responseBody.detail === "string"
+            ? responseBody.detail
+            : JSON.stringify(responseBody.detail)
           : `HTTP ${res.status}`;
         throw new Error(detail);
       }
@@ -199,10 +229,10 @@ export default function SupplierDirectory() {
     }
   }
 
-  // ---- Service toggle in form ----
-  function toggleService(svc: string) {
-    setFormServices((prev) =>
-      prev.includes(svc) ? prev.filter((s) => s !== svc) : [...prev, svc]
+  // ---- Category toggle in form ----
+  function toggleCategory(cat: string) {
+    setFormCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
   }
 
@@ -299,7 +329,7 @@ export default function SupplierDirectory() {
               )}
             </div>
 
-            {/* Currency */}
+            {/* Currency — auto-set from country, but editable */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Currency *
@@ -311,6 +341,7 @@ export default function SupplierDirectory() {
                   formErrors.currency ? "border-red-400" : "border-gray-300"
                 }`}
               >
+                <option value="">-- Select --</option>
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
               </select>
@@ -319,50 +350,92 @@ export default function SupplierDirectory() {
               )}
             </div>
 
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              value={formStatus}
-              onChange={(e) =>
-                setFormStatus(e.target.value as "active" | "suspended")
-              }
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </div>
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                value={formStatus}
+                onChange={(e) =>
+                  setFormStatus(e.target.value as "active" | "suspended")
+                }
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+
+            {/* Service Zone (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Service Zone
+              </label>
+              <input
+                type="text"
+                value={formServiceZone}
+                onChange={(e) => setFormServiceZone(e.target.value)}
+                placeholder="e.g. West Coast, Aragón"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            {/* Contact Email (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contact Email
+              </label>
+              <input
+                type="email"
+                value={formContactEmail}
+                onChange={(e) => setFormContactEmail(e.target.value)}
+                placeholder="supplier@example.com"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
           </div>
 
-          {/* TrackFlow Services */}
+          {/* Categories */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              TrackFlow Services *
+              Categories *
             </label>
             <div className="flex flex-wrap gap-2">
-              {TRACKFLOW_SERVICES.map((svc) => (
+              {VALID_CATEGORIES.map((cat) => (
                 <button
-                  key={svc}
+                  key={cat}
                   type="button"
-                  onClick={() => toggleService(svc)}
+                  onClick={() => toggleCategory(cat)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold border ${
-                    formServices.includes(svc)
+                    formCategories.includes(cat)
                       ? "bg-blue-600 text-white border-blue-600"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                   }`}
                 >
-                  {svc}
+                  {formatCategory(cat)}
                 </button>
               ))}
             </div>
-            {formErrors.services && (
+            {formErrors.categories && (
               <p className="mt-1 text-xs text-red-600">
-                {formErrors.services}
+                {formErrors.categories}
               </p>
             )}
+          </div>
+
+          {/* Notes (optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Notes
+            </label>
+            <textarea
+              value={formNotes}
+              onChange={(e) => setFormNotes(e.target.value)}
+              placeholder="Operations team notes..."
+              rows={2}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            />
           </div>
 
           <button
@@ -393,25 +466,25 @@ export default function SupplierDirectory() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Service:</label>
+          <label className="text-sm font-medium text-gray-700">Category:</label>
           <select
-            value={serviceFilter}
-            onChange={(e) => setServiceFilter(e.target.value)}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
             className="rounded border border-gray-300 px-3 py-1.5 text-sm"
           >
             <option value="">All</option>
-            {TRACKFLOW_SERVICES.map((s) => (
-              <option key={s} value={s}>
-                {s}
+            {VALID_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {formatCategory(c)}
               </option>
             ))}
           </select>
         </div>
-        {(countryFilter || serviceFilter) && (
+        {(countryFilter || categoryFilter) && (
           <button
             onClick={() => {
               setCountryFilter("");
-              setServiceFilter("");
+              setCategoryFilter("");
             }}
             className="text-sm text-blue-600 hover:text-blue-800 underline"
           >
@@ -439,7 +512,7 @@ export default function SupplierDirectory() {
             <tr>
               <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
               <th className="px-4 py-3 text-left font-medium text-gray-600">Country</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Services</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-600">Categories</th>
               <th className="px-4 py-3 text-right font-medium text-gray-600">Rate/Shipment</th>
               <th className="px-4 py-3 text-center font-medium text-gray-600">Currency</th>
               <th className="px-4 py-3 text-center font-medium text-gray-600">Status</th>
@@ -452,7 +525,7 @@ export default function SupplierDirectory() {
                 <td className="px-4 py-3 font-medium text-gray-900">{s.name}</td>
                 <td className="px-4 py-3 text-gray-700">{s.country}</td>
                 <td className="px-4 py-3 text-gray-700">
-                  {s.services.join(", ")}
+                  {s.categories.map(formatCategory).join(", ")}
                 </td>
                 <td className="px-4 py-3 text-right text-gray-900">
                   {editingRate === s.id ? (
