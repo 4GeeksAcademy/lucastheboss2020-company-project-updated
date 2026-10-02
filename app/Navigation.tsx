@@ -11,10 +11,12 @@ interface NavLink {
 }
 
 const BACKOFFICE_LINKS: NavLink[] = [
+  { href: "/uis/backoffice", label: "Dashboard" },
   { href: "/candidates", label: "Candidates" },
   { href: "/uis/backoffice/suppliers", label: "Suppliers" },
   { href: "/uis/backoffice/incidents", label: "Incident Analysis" },
   { href: "/candidates/new", label: "New candidate" },
+  { href: "/account/profile", label: "Profile" },
 ];
 
 export default function Navigation() {
@@ -22,13 +24,14 @@ export default function Navigation() {
   const { isAuthenticated, logout, user } = useAuth();
 
   // Hide nav on public website and login page
-  if (pathname === "/uis/website" || pathname === "/login") {
+  if (pathname === "/uis/website" || pathname === "/login" || pathname === "/register") {
     return null;
   }
 
   const isBackoffice =
     pathname.startsWith("/candidates") ||
-    pathname.startsWith("/uis/backoffice");
+    pathname.startsWith("/uis/backoffice") ||
+    pathname.startsWith("/account");
 
   return (
     <header className="topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.75rem 1.5rem", background: "var(--track-blue)", color: "#fff" }}>
@@ -53,9 +56,14 @@ export default function Navigation() {
             Logout ({user?.email ?? "?"})
           </button>
         ) : (
-          <Link className="button secondary" href="/login" style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
-            Login
-          </Link>
+          <>
+            <Link className="button secondary" href="/register" style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
+              Register
+            </Link>
+            <Link className="button secondary" href="/login" style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
+              Login
+            </Link>
+          </>
         )}
       </nav>
     </header>

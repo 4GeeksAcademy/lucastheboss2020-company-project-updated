@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from .auth import create_access_token
+from .auth import create_access_token, get_current_user
 from .candidates import router as candidates_router
-from .models import LoginRequest, TokenResponse
-from .services import get_user_by_email, public_user
+from .models import LoginRequest, ProfileUpdate, TokenResponse, UserCreate
+from .services import create_user, get_profile, get_user_by_email, public_user, update_profile
 from passlib.hash import bcrypt
 
 app = FastAPI(title="TrackFlow API")
@@ -39,5 +39,20 @@ def login(payload: LoginRequest):
 
 
 @app.get("/auth/me")
-def me(user: dict = Depends(__import__("backend.auth", fromlist=["get_current_user"]).get_current_user)):
+def me(user: dict = Depends(get_current_user)):
+    profile = get_profile(user["id"])
+    return {**public_user(user), "profile": profile}
+
+
+@app.post("/users", status_code=status.HTTP_201_CREATED)
+def register_user(payload: UserCreate):
+    try:
+        user = create_user(payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error))
     return public_user(user)
+
+
+@app.put("/profiles/me")
+def update_my_profile(payload: ProfileUpdate, user: dict = Depends(get_current_user)):
+    return update_profile(user["id"], payload)

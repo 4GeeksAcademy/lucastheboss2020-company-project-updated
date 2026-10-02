@@ -12,6 +12,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
   if (response.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("trackflow_token");
+      window.location.href = "/login";
     }
     throw new Error("Session expired. Please log in again.");
   }

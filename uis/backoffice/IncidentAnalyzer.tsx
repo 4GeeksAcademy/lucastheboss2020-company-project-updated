@@ -4,10 +4,25 @@ import React, { useState, useCallback } from 'react';
 import type { AnalysisResult } from '../../src/incidents/types';
 
 type AnalysisState = AnalysisResult | null;
+const STORAGE_KEY = 'trackflow_token';
 
 interface UploadError {
   message: string;
   details?: string;
+}
+
+function authHeaders(): HeadersInit {
+  if (typeof window === 'undefined') return {};
+  const token = localStorage.getItem(STORAGE_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function handleUnauthorized(): never {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.href = '/login';
+  }
+  throw new Error('Session expired. Please log in again.');
 }
 
 export function IncidentAnalyzer() {
@@ -26,7 +41,8 @@ export function IncidentAnalyzer() {
 
   const loadHistory = async () => {
     try {
-      const response = await fetch('/api/incidents/results');
+      const response = await fetch('/api/incidents/results', { headers: { ...authHeaders() } });
+      if (response.status === 401) handleUnauthorized();
       if (response.ok) {
         const data = await response.json();
         setHistory(data.analyses || []);
@@ -52,8 +68,10 @@ export function IncidentAnalyzer() {
 
         const response = await fetch('/api/incidents/analyze', {
           method: 'POST',
+          headers: { ...authHeaders() },
           body: formData,
         });
+        if (response.status === 401) handleUnauthorized();
 
         const data = await response.json();
 
@@ -116,7 +134,8 @@ export function IncidentAnalyzer() {
     if (!analysis) return;
 
     try {
-      const response = await fetch(`/api/incidents/results/${analysis.id}/export`);
+      const response = await fetch(`/api/incidents/results/${analysis.id}/export`, { headers: { ...authHeaders() } });
+      if (response.status === 401) handleUnauthorized();
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -143,7 +162,8 @@ export function IncidentAnalyzer() {
 
   const handleLoadFromHistory = async (id: string) => {
     try {
-      const response = await fetch(`/api/incidents/results?id=${id}`);
+      const response = await fetch(`/api/incidents/results?id=${id}`, { headers: { ...authHeaders() } });
+      if (response.status === 401) handleUnauthorized();
       if (response.ok) {
         const data = await response.json();
         if (data.analyses && data.analyses.length > 0) {

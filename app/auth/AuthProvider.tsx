@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface AuthState {
   token: string | null;
@@ -12,15 +12,25 @@ interface AuthContextValue extends AuthState {
   login: (token: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const STORAGE_KEY = "trackflow_token";
+const PUBLIC_ROUTES = new Set(["/", "/login", "/register", "/uis/website"]);
+
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_ROUTES.has(pathname)) return true;
+  if (pathname.startsWith("/uis/website")) return true;
+  return false;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({ token: null, user: null });
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const fetchUser = useCallback(async (token: string) => {
     try {
@@ -38,11 +48,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem(STORAGE_KEY);
     if (token) {
       fetchUser(token).then((user) => {
-        if (user) setState({ token, user });
-        else localStorage.removeItem(STORAGE_KEY);
+        if (user) {
+          setState({ token, user });
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        setIsLoading(false);
       });
+      return;
     }
+    setIsLoading(false);
   }, [fetchUser]);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const isPublic = isPublicPath(pathname);
+
+    if (!state.token && !isPublic) {
+      router.replace("/login");
+      return;
+    }
+
+    if (state.token && (pathname === "/login" || pathname === "/register")) {
+      router.replace("/uis/backoffice");
+    }
+  }, [isLoading, pathname, router, state.token]);
 
   const login = useCallback(
     async (token: string) => {
@@ -51,6 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         setState({ token, user });
         router.push("/uis/backoffice");
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+        throw new Error("Invalid session token");
       }
     },
     [fetchUser, router],
@@ -63,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, isAuthenticated: !!state.token }}>
+    <AuthContext.Provider value={{ ...state, login, logout, isAuthenticated: !!state.token, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
