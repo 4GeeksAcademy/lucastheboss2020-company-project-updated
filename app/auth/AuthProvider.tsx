@@ -18,7 +18,14 @@ interface AuthContextValue extends AuthState {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const STORAGE_KEY = "trackflow_token";
-const PUBLIC_ROUTES = new Set(["/", "/login", "/register", "/uis/website"]);
+const PUBLIC_ROUTES = new Set([
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/uis/website",
+]);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;

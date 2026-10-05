@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "../../auth/AuthProvider";
 
 interface ProfileData {
@@ -121,6 +122,9 @@ export default function AccountProfilePage() {
         <span className="badge green">Account</span>
         <h1>Profile</h1>
         <p>Manage your user details used by TrackFlow backoffice operations.</p>
+        <Link href="/account/change-password" className="button secondary">
+          Change password
+        </Link>
       </header>
 
       {error && <p className="message error" role="alert">{error}</p>}

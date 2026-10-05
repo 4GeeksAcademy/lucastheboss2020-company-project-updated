@@ -1,5 +1,6 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/account/change-password/page": "app/account/change-password/page.js",
   "/account/profile/page": "app/account/profile/page.js",
   "/api/candidates/[id]/notes/[noteId]/route": "app/api/candidates/[id]/notes/[noteId]/route.js",
   "/api/candidates/[id]/notes/route": "app/api/candidates/[id]/notes/route.js",
@@ -12,11 +13,13 @@
   "/candidates/[id]/page": "app/candidates/[id]/page.js",
   "/candidates/new/page": "app/candidates/new/page.js",
   "/candidates/page": "app/candidates/page.js",
+  "/forgot-password/page": "app/forgot-password/page.js",
   "/login/page": "app/login/page.js",
   "/page": "app/page.js",
+  "/register/page": "app/register/page.js",
+  "/reset-password/page": "app/reset-password/page.js",
   "/uis/backoffice/incidents/page": "app/uis/backoffice/incidents/page.js",
   "/uis/backoffice/page": "app/uis/backoffice/page.js",
   "/uis/backoffice/suppliers/page": "app/uis/backoffice/suppliers/page.js",
-  "/register/page": "app/register/page.js",
   "/uis/website/page": "app/uis/website/page.js"
 }
