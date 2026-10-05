@@ -24,7 +24,13 @@ export default function Navigation() {
   const { isAuthenticated, logout, user } = useAuth();
 
   // Hide nav on public website and login page
-  if (pathname === "/uis/website" || pathname === "/login" || pathname === "/register") {
+  if (
+    pathname === "/uis/website" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password"
+  ) {
     return null;
   }
 
