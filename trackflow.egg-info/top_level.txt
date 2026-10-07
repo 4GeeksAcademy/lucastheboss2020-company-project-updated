@@ -1,2 +1,4 @@
 backend
+packages
+scripts
 services

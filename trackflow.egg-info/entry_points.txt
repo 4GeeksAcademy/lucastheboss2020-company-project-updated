@@ -1,2 +1,3 @@
 [console_scripts]
 seed = services.suppliers.seed:main
+seed-incidents = scripts.seed_incidents:main
