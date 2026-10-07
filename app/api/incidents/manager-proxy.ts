@@ -13,17 +13,25 @@ export async function proxyManagerRequest(
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
 
-  let body: string | undefined;
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    body = await request.text();
-  }
-
   try {
+    let body: string | undefined;
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      try {
+        body = await request.text();
+      } catch {
+        return Response.json(
+          { error: { field: "body", message: "Request body could not be read. Please retry." } },
+          { status: 400 },
+        );
+      }
+    }
+
     const upstream = await fetch(`${INCIDENTS_SERVICE_URL}${servicePath}`, {
       method: request.method,
       headers,
       body,
       cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
     });
     const responseBody = await upstream.text();
 
@@ -33,10 +41,17 @@ export async function proxyManagerRequest(
         "Content-Type": upstream.headers.get("content-type") ?? "application/json",
       },
     });
-  } catch {
+  } catch (error) {
+    const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
     return Response.json(
-      { error: { message: "The incident service is unavailable. Please try again." } },
-      { status: 503 },
+      {
+        error: {
+          message: timedOut
+            ? "The incident service took too long to respond. Please retry."
+            : "The incident service is unavailable. Please try again.",
+        },
+      },
+      { status: timedOut ? 504 : 503 },
     );
   }
 }

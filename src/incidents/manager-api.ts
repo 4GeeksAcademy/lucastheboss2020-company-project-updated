@@ -5,19 +5,15 @@ import type {
   IncidentStatus,
   IncidentSummary,
 } from "./manager-types";
+import { ApiRequestError, fetchJson } from "../utils/api-errors";
 
 const API_BASE = "/api/incidents";
 const STORAGE_KEY = "trackflow_token";
 
-export class IncidentApiError extends Error {
-  field?: string;
-  status?: number;
-
+export class IncidentApiError extends ApiRequestError {
   constructor(message: string, status?: number, field?: string) {
-    super(message);
+    super(message, status, field);
     this.name = "IncidentApiError";
-    this.status = status;
-    this.field = field;
   }
 }
 
@@ -28,34 +24,25 @@ function authHeaders(): HeadersInit {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    cache: "no-store",
-    headers: {
-      ...authHeaders(),
-      ...init.headers,
-    },
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (response.status === 401) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
-      window.location.assign("/login");
+  try {
+    return await fetchJson<T>(path, {
+      ...init,
+      cache: "no-store",
+      headers: {
+        ...authHeaders(),
+        ...init.headers,
+      },
+    });
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      if (error.status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.assign("/login");
+      }
+      throw new IncidentApiError(error.message, error.status, error.field);
     }
-    throw new IncidentApiError("Your session expired. Please sign in again.", 401);
+    throw new IncidentApiError("The incident request could not be completed.");
   }
-
-  if (!response.ok) {
-    const error = (payload as { error?: { field?: string; message?: string } }).error;
-    throw new IncidentApiError(
-      error?.message ?? "The incident request could not be completed.",
-      response.status,
-      error?.field,
-    );
-  }
-
-  return payload as T;
 }
 
 export function listIncidents(filters: IncidentFilters = {}): Promise<IncidentRecord[]> {

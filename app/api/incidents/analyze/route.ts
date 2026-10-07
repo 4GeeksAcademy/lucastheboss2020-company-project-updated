@@ -24,6 +24,7 @@ const ALLOWED_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel'];
 const PYTHON_SCRIPT = path.join(process.cwd(), 'scripts/analyze_incidents.py');
 
 interface PythonAnalysisOutput {
+  error?: string;
   format: string;
   total_processed: number;
   valid_records: number;
@@ -41,91 +42,141 @@ interface PythonAnalysisOutput {
   }>;
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeResponse>> {
-  try {
-    // Parse multipart form data
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
-
-    if (!file) {
-      return NextResponse.json(
-        { errors: ['No file provided. Please upload a CSV file.'] },
-        { status: 400 }
-      );
-    }
-
-    // Validate file type
-    if (!ALLOWED_MIME_TYPES.includes(file.type) && !file.name.endsWith('.csv')) {
-      return NextResponse.json(
-        { errors: [`Invalid file type. Expected CSV file, got: ${file.type}`] },
-        { status: 400 }
-      );
-    }
-
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        {
-          errors: [
-            `File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)} MB, ` +
-            `but your file is ${(file.size / (1024 * 1024)).toFixed(2)} MB.`,
-          ],
-        },
-        { status: 400 }
-      );
-    }
-
-    if (file.size === 0) {
-      return NextResponse.json(
-        { errors: ['File is empty. Please upload a CSV file with data.'] },
-        { status: 400 }
-      );
-    }
-
-    // Write file to temp location
-    const tempDir = os.tmpdir();
-    const tempFileName = `incident-analysis-${randomUUID()}.csv`;
-    const tempFilePath = path.join(tempDir, tempFileName);
-
-    const buffer = await file.arrayBuffer();
-    await writeFile(tempFilePath, Buffer.from(buffer));
-
+function parseAnalyzerOutput(stdout: string): PythonAnalysisOutput | null {
+  for (const line of stdout.split("\n")) {
+    if (!line.trim().startsWith("{")) continue;
     try {
-      // Run Python analysis script
-      const { stdout, stderr } = await execFileAsync('python3', [PYTHON_SCRIPT, tempFilePath], {
+      return JSON.parse(line) as PythonAnalysisOutput;
+    } catch {
+      // Continue to the next output line; user-facing errors are handled by the caller.
+    }
+  }
+  return null;
+}
+
+function handleSubprocessFailure(error: unknown): NextResponse<AnalyzeResponse> {
+  const childError = error as { code?: unknown; killed?: unknown; stdout?: unknown };
+  if (typeof childError.stdout === "string") {
+    const analysisOutput = parseAnalyzerOutput(childError.stdout);
+    if (analysisOutput?.error) {
+      return NextResponse.json(
+        { errors: ["The uploaded CSV could not be read. Check its format and try again."] },
+        { status: 400 },
+      );
+    }
+  }
+
+  const errorCode = typeof childError.code === "string" ? childError.code : "";
+  if (errorCode === "ETIMEDOUT" || childError.killed === true) {
+    return NextResponse.json(
+      { errors: ["Analysis took too long. Try a smaller CSV file."] },
+      { status: 504 },
+    );
+  }
+  if (errorCode === "ENOENT") {
+    return NextResponse.json(
+      { errors: ["The incident analyzer is temporarily unavailable. Please retry later."] },
+      { status: 503 },
+    );
+  }
+
+  console.error("Incident analyzer subprocess failed.");
+  return NextResponse.json(
+    { errors: ["The file could not be analyzed. Check the CSV and try again."] },
+    { status: 500 },
+  );
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeResponse>> {
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json({ errors: ["Request must contain a valid CSV upload."] }, { status: 400 });
+  }
+  const file = formData.get("file") as File | null;
+
+  if (!file || typeof file.arrayBuffer !== "function") {
+    return NextResponse.json(
+      { errors: ["No file provided. Please upload a CSV file."] },
+      { status: 400 },
+    );
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type) && !file.name.toLowerCase().endsWith(".csv")) {
+    return NextResponse.json(
+      { errors: ["Invalid file type. Please upload a CSV file."] },
+      { status: 400 },
+    );
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      { errors: [`File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)} MB.`] },
+      { status: 413 },
+    );
+  }
+
+  if (file.size === 0) {
+    return NextResponse.json(
+      { errors: ["File is empty. Please upload a CSV file with data."] },
+      { status: 400 },
+    );
+  }
+
+  let buffer: ArrayBuffer;
+  try {
+    buffer = await file.arrayBuffer();
+  } catch {
+    return NextResponse.json({ errors: ["The uploaded file could not be read. Please retry."] }, { status: 400 });
+  }
+
+  const tempFilePath = path.join(os.tmpdir(), `incident-analysis-${randomUUID()}.csv`);
+  try {
+    try {
+      await writeFile(tempFilePath, Buffer.from(buffer));
+    } catch {
+      console.error("Incident analyzer could not stage the upload.");
+      return NextResponse.json(
+        { errors: ["The upload could not be processed. Please retry."] },
+        { status: 500 },
+      );
+    }
+
+    let stdout: string;
+    let stderr: string;
+    try {
+      const result = await execFileAsync("python3", [PYTHON_SCRIPT, tempFilePath], {
         maxBuffer: 10 * 1024 * 1024, // 10 MB stdout buffer
         timeout: 60000, // 60 second timeout
       });
+      stdout = result.stdout;
+      stderr = result.stderr;
+    } catch (error) {
+      return handleSubprocessFailure(error);
+    }
 
-      if (stderr) {
-        console.error('Python stderr:', stderr);
-      }
+    if (stderr) console.error("Incident analyzer emitted a diagnostic message.");
 
-      // Parse Python output - the script outputs structured data
-      const lines = stdout.split('\n');
-      let analysisData: PythonAnalysisOutput | null = null;
+    const analysisData = parseAnalyzerOutput(stdout);
+    if (!analysisData) {
+      console.error("Incident analyzer output could not be parsed.");
+      return NextResponse.json(
+        { errors: ["The analyzer returned an unreadable response. Please retry."] },
+        { status: 500 },
+      );
+    }
 
-      // Try to find JSON in the output
-      for (const line of lines) {
-        if (line.trim().startsWith('{')) {
-          try {
-            analysisData = JSON.parse(line);
-            break;
-          } catch {
-            // Continue looking
-          }
-        }
-      }
+    if (analysisData.error) {
+      return NextResponse.json(
+        { errors: ["The uploaded CSV could not be read. Check its format and try again."] },
+        { status: 400 },
+      );
+    }
 
-      if (!analysisData) {
-        return NextResponse.json(
-          { errors: ['Failed to parse analysis results from Python script'] },
-          { status: 500 }
-        );
-      }
-
-      // Create analysis result object and store it (trackflow format)
-      const stored = storeAnalysis({
+    let stored: ReturnType<typeof storeAnalysis>;
+    try {
+      stored = storeAnalysis({
         filename: file.name,
         format: 'trackflow',
         metrics: {
@@ -142,34 +193,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         invalid_records: analysisData.invalid_record_details,
         valid_record_count: analysisData.valid_records,
       });
-
+    } catch {
+      console.error("Incident analyzer could not store its result.");
       return NextResponse.json(
-        { analysis: stored },
-        { status: 200 }
+        { errors: ["Analysis completed but could not be saved. Please retry."] },
+        { status: 500 },
       );
-    } finally {
-      // Clean up temp file
-      try {
-        await unlink(tempFilePath);
-      } catch (error) {
-        console.error('Failed to clean up temp file:', error);
-      }
-    }
-  } catch (error) {
-    console.error('Incident analysis error:', error);
-
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const errors = [
-      'An error occurred while analyzing the file. ' +
-      `Details: ${message}`,
-    ];
-
-    if (message.includes('ENOENT')) {
-      errors[0] = 'Python script not found. Please ensure the analyze_incidents.py script is in the scripts directory.';
-    } else if (message.includes('timeout')) {
-      errors[0] = 'Analysis took too long and was cancelled. Please try with a smaller file.';
     }
 
-    return NextResponse.json({ errors }, { status: 500 });
+    return NextResponse.json({ analysis: stored }, { status: 200 });
+  } finally {
+    try {
+      await unlink(tempFilePath);
+    } catch {
+      console.error("Incident analyzer temporary-file cleanup failed.");
+    }
   }
 }

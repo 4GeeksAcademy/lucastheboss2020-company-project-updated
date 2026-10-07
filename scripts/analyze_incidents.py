@@ -28,6 +28,11 @@ from pathlib import Path
 from datetime import datetime
 from collections import Counter
 from typing import Dict, List
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from packages.shared.incident_validation import (
     ALL_CARRIERS,
     CARRIERS_BY_COUNTRY,
@@ -135,9 +140,15 @@ def analyze_csv(file_path: str) -> dict:
                     })
 
     except FileNotFoundError:
-        return {"error": f"File not found: {file_path}"}
-    except csv.Error as e:
-        return {"error": f"CSV parsing error: {e}"}
+        return {"error": "CSV file was not found."}
+    except PermissionError:
+        return {"error": "CSV file could not be read due to file permissions."}
+    except UnicodeDecodeError:
+        return {"error": "CSV file must use UTF-8 text encoding."}
+    except csv.Error:
+        return {"error": "CSV format could not be parsed."}
+    except OSError:
+        return {"error": "CSV file could not be read."}
 
     # Fix row numbers to be correct (data rows start at 2 with header=1)
     for i, det in enumerate(invalid_details):
@@ -178,7 +189,7 @@ def print_summary(result: dict, file_path: str) -> None:
 
     print("=" * 60)
     print("  TRACKFLOW -- INCIDENT REPORT ANALYSIS")
-    print(f"  Source file: {file_path}")
+    print(f"  Source file: {Path(file_path).name}")
     print("=" * 60)
 
     # Totals
@@ -250,7 +261,7 @@ def print_summary(result: dict, file_path: str) -> None:
     print("\n" + "=" * 60)
 
 
-def export_to_csv(result: dict, filename: str) -> None:
+def export_to_csv(result: dict, filename: str) -> bool:
     """Export metrics as a one-row-per-metric CSV."""
     rows = [["Metric", "Value"]]
     rows.append(["Format", "trackflow"])
@@ -290,9 +301,11 @@ def export_to_csv(result: dict, filename: str) -> None:
     try:
         with open(filename, "w", newline="", encoding="utf-8") as f:
             csv.writer(f).writerows(rows)
-        print(f"Results exported to {os.path.abspath(filename)}")
-    except Exception as e:
-        print(f"Failed to export results: {e}")
+        print(f"Results exported to {Path(filename).name}")
+        return True
+    except (OSError, csv.Error):
+        print("Could not export analysis results to CSV.", file=sys.stderr)
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -301,8 +314,10 @@ def export_to_csv(result: dict, filename: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "No CSV file path provided"}))
-        sys.exit(1)
+        error = {"error": "No CSV file path provided."}
+        print(error["error"], file=sys.stderr)
+        print(json.dumps(error))
+        sys.exit(2)
 
     csv_path = sys.argv[1]
 
@@ -315,13 +330,22 @@ if __name__ == "__main__":
 
     result = analyze_csv(csv_path)
 
+    if "error" in result:
+        print(result["error"], file=sys.stderr)
+        print(json.dumps(result))
+        sys.exit(1)
+
     # Print human-readable report
     print_summary(result, csv_path)
 
     # Export if requested
     if export_path:
-        export_to_csv(result, export_path)
+        export_succeeded = export_to_csv(result, export_path)
+    else:
+        export_succeeded = True
 
     # Output JSON for API (last line, strip internal _ fields)
     public = {k: v for k, v in result.items() if not k.startswith("_")}
     print(json.dumps(public))
+    if not export_succeeded:
+        sys.exit(1)

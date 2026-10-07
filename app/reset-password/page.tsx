@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 
 const API_BASE = "http://localhost:8000";
 
@@ -37,21 +38,14 @@ export default function ResetPasswordPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE}/auth/reset-password`, {
+      await fetchJson(`${API_BASE}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: newPassword }),
       });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const detail = (body as { detail?: string }).detail;
-        throw new Error(detail ?? "Reset link is invalid or expired. Request a new link.");
-      }
-
       router.replace("/login?passwordReset=success");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Password reset failed.");
+      setError(userSafeErrorMessage(submitError, "Password reset failed. Request a new link and try again."));
     } finally {
       setSubmitting(false);
     }

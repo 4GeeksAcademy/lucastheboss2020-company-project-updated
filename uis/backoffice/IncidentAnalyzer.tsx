@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import type { AnalysisResult } from '../../src/incidents/types';
+import { ApiRequestError, fetchResponse, parseJsonResponse, userSafeErrorMessage } from '../../src/utils/api-errors';
 
 type AnalysisState = AnalysisResult | null;
 const STORAGE_KEY = 'trackflow_token';
@@ -17,14 +18,6 @@ function authHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-function handleUnauthorized(): never {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.href = '/login';
-  }
-  throw new Error('Session expired. Please log in again.');
-}
-
 export function IncidentAnalyzer() {
   const [analysis, setAnalysis] = useState<AnalysisState>(null);
   const [loading, setLoading] = useState(false);
@@ -33,6 +26,18 @@ export function IncidentAnalyzer() {
   const [expandedInvalidRecords, setExpandedInvalidRecords] = useState(false);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [selectedHistoryLoading, setSelectedHistoryLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  function getRequestError(error: unknown, fallback: string): string {
+    if (error instanceof ApiRequestError && error.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+      window.location.assign('/login');
+    }
+    return userSafeErrorMessage(error, fallback);
+  }
 
   // Fetch analysis history on mount
   React.useEffect(() => {
@@ -40,15 +45,16 @@ export function IncidentAnalyzer() {
   }, []);
 
   const loadHistory = async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
     try {
-      const response = await fetch('/api/incidents/results', { headers: { ...authHeaders() } });
-      if (response.status === 401) handleUnauthorized();
-      if (response.ok) {
-        const data = await response.json();
-        setHistory(data.analyses || []);
-      }
-    } catch (err) {
-      console.error('Failed to load analysis history:', err);
+      const response = await fetchResponse('/api/incidents/results', { headers: { ...authHeaders() } });
+      const data = await parseJsonResponse<{ analyses?: AnalysisResult[] }>(response);
+      setHistory(Array.isArray(data.analyses) ? data.analyses : []);
+    } catch (requestError) {
+      setHistoryError(getRequestError(requestError, 'Could not load analysis history. Please retry.'));
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -66,33 +72,26 @@ export function IncidentAnalyzer() {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/incidents/analyze', {
+        const response = await fetchResponse('/api/incidents/analyze', {
           method: 'POST',
           headers: { ...authHeaders() },
           body: formData,
         });
-        if (response.status === 401) handleUnauthorized();
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError({
-            message: 'Upload failed',
-            details: data.errors?.[0] || 'Unknown error',
-          });
-          return;
-        }
+        const data = await parseJsonResponse<{ analysis?: AnalysisResult; errors?: string[] }>(response);
 
         if (data.analysis) {
           setAnalysis(data.analysis);
           setSelectedHistoryId(null);
           // Reload history
           await loadHistory();
+        } else {
+          setError({ message: 'Upload failed', details: 'The analyzer returned no results. Please retry.' });
         }
       } catch (err) {
         setError({
-          message: 'Error uploading file',
-          details: err instanceof Error ? err.message : 'Unknown error',
+          message: 'Upload failed',
+          details: getRequestError(err, 'The file could not be analyzed. Check it and retry.'),
         });
       } finally {
         setLoading(false);
@@ -105,18 +104,19 @@ export function IncidentAnalyzer() {
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setDragOver(false);
+      if (loading) return;
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {
         handleFileUpload(files[0]);
       }
     },
-    [handleFileUpload]
+    [handleFileUpload, loading]
   );
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setDragOver(true);
+    if (!loading) setDragOver(true);
   };
 
   const handleDragLeave = () => {
@@ -128,52 +128,61 @@ export function IncidentAnalyzer() {
     if (files && files.length > 0) {
       handleFileUpload(files[0]);
     }
+    e.currentTarget.value = '';
   };
 
   const handleExport = async () => {
     if (!analysis) return;
-
+    let objectUrl: string | null = null;
+    let anchor: HTMLAnchorElement | null = null;
+    setExporting(true);
     try {
-      const response = await fetch(`/api/incidents/results/${analysis.id}/export`, { headers: { ...authHeaders() } });
-      if (response.status === 401) handleUnauthorized();
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download =
-          response.headers
-            .get('content-disposition')
-            ?.split('filename="')[1]
-            ?.replace('"', '') || `incident-analysis-${analysis.id}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+      const response = await fetchResponse(`/api/incidents/results/${analysis.id}/export`, { headers: { ...authHeaders() } });
+      if (!response.ok) await parseJsonResponse<never>(response);
+      if (!response.headers.get('content-type')?.toLowerCase().includes('text/csv')) {
+        throw new ApiRequestError('The analysis export could not be prepared.', response.status);
       }
+      const blob = await response.blob();
+      objectUrl = window.URL.createObjectURL(blob);
+      anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download =
+        response.headers
+          .get('content-disposition')
+          ?.split('filename="')[1]
+          ?.replace('"', '') || `incident-analysis-${analysis.id}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
     } catch (err) {
-      console.error('Export failed:', err);
       setError({
         message: 'Export failed',
-        details: err instanceof Error ? err.message : 'Unknown error',
+        details: getRequestError(err, 'The analysis export could not be downloaded. Please retry.'),
       });
+    } finally {
+      if (anchor?.parentNode) anchor.parentNode.removeChild(anchor);
+      if (objectUrl) window.URL.revokeObjectURL(objectUrl);
+      setExporting(false);
     }
   };
 
   const handleLoadFromHistory = async (id: string) => {
+    setSelectedHistoryLoading(true);
+    setError(null);
     try {
-      const response = await fetch(`/api/incidents/results?id=${id}`, { headers: { ...authHeaders() } });
-      if (response.status === 401) handleUnauthorized();
-      if (response.ok) {
-        const data = await response.json();
-        if (data.analyses && data.analyses.length > 0) {
-          setAnalysis(data.analyses[0]);
-          setSelectedHistoryId(id);
-          setError(null);
-        }
+      const response = await fetchResponse(`/api/incidents/results?id=${id}`, { headers: { ...authHeaders() } });
+      const data = await parseJsonResponse<{ analyses?: AnalysisResult[] }>(response);
+      if (data.analyses && data.analyses.length > 0) {
+        setAnalysis(data.analyses[0]);
+        setSelectedHistoryId(id);
       }
-    } catch (err) {
-      console.error('Failed to load analysis:', err);
+    } catch (requestError) {
+      setError({
+        message: 'Could not open this analysis',
+        details: getRequestError(requestError, 'The saved analysis could not be loaded. Please retry.'),
+      });
+    } finally {
+      setSelectedHistoryLoading(false);
     }
   };
 
@@ -244,7 +253,9 @@ export function IncidentAnalyzer() {
           <h1>TrackFlow Analysis Results</h1>
           <p>File: <strong>{displayAnalysis.filename}</strong></p>
           <div className="actions">
-            <button className="button" onClick={handleExport} type="button">Export CSV</button>
+            <button className="button" onClick={handleExport} type="button" disabled={exporting}>
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </button>
             <button className="button secondary" onClick={handleNewAnalysis} type="button">New Analysis</button>
           </div>
         </header>
@@ -403,15 +414,27 @@ export function IncidentAnalyzer() {
         </div>
       </section>
 
+      {historyLoading && <p className="message loading" role="status">Loading analysis history...</p>}
+      {historyError && (
+        <div className="message error" role="alert">
+          <p>{historyError}</p>
+          <button className="secondary" type="button" onClick={loadHistory}>Retry</button>
+        </div>
+      )}
+      {!historyLoading && !historyError && history.length === 0 && (
+        <p className="message">No saved analyses are available yet.</p>
+      )}
       {history.length > 0 && (
         <section className="panel" style={{ marginTop: '1rem' }}>
           <h2>Previous Analyses</h2>
           <div className="detail-grid">
+            {selectedHistoryLoading && <p className="message loading" role="status">Loading selected analysis…</p>}
             {history.map((item) => (
               <button
                 key={item.id}
                 className={`candidate-card ${selectedHistoryId === item.id ? 'selected' : ''}`}
                 onClick={() => handleLoadFromHistory(item.id)}
+                disabled={selectedHistoryLoading}
                 type="button"
                 style={{ cursor: 'pointer', textAlign: 'left', width: '100%' }}
               >

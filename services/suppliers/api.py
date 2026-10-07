@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException, status
 from .models import SupplierInput, RateUpdate, StatusUpdate, VALID_CATEGORIES
 from .data import get_all, get_one, create, update_rate, update_status, delete_one
+from backend.error_handlers import install_api_error_handlers
 
 app = FastAPI(title="Suppliers API")
+install_api_error_handlers(app)
 
 
 @app.get("/suppliers")

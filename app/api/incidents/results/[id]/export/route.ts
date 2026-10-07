@@ -126,8 +126,8 @@ export async function GET(
         'Content-Disposition': `attachment; filename="${filename}"`,
       },
     });
-  } catch (error) {
-    console.error('Error exporting analysis:', error);
+  } catch {
+    console.error('Error exporting analysis.');
     return NextResponse.json(
       { error: 'Failed to export analysis' },
       { status: 500 }

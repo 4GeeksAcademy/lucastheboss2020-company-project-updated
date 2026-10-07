@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 
 const API_BASE = "http://localhost:8000";
 const CONFIRMATION = "If that address is registered, you'll receive a reset link shortly.";
@@ -10,22 +11,24 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (submitting || submitted) return;
 
     setSubmitting(true);
+    setError("");
     try {
-      await fetch(`${API_BASE}/auth/forgot-password`, {
+      await fetchJson(`${API_BASE}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
       });
-    } catch {
-      // Keep the response indistinguishable for registered and unknown addresses.
-    } finally {
       setSubmitted(true);
+    } catch (requestError) {
+      setError(userSafeErrorMessage(requestError, "We could not send the request. Check your connection and retry."));
+    } finally {
       setSubmitting(false);
     }
   }
@@ -46,6 +49,7 @@ export default function ForgotPasswordPage() {
           </div>
         ) : (
           <>
+            {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</div>}
             <label className="block text-sm font-medium text-gray-700" htmlFor="email">
               Email address
               <input

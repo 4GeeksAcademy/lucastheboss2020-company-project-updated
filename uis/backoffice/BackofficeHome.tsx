@@ -7,6 +7,7 @@ import { fetchCandidates } from "../../src/candidates/api";
 import type { CandidateListResponse } from "../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES } from "../../src/candidates/types";
 import BackofficeReports from "./BackofficeReports";
+import { userSafeErrorMessage } from "../../src/utils/api-errors";
 
 function formatServices(services: string[]): string {
   return services.map((service) => service.replace(/-/g, " ")).join(", ");
@@ -21,6 +22,7 @@ export default function BackofficeHome() {
   const [result, setResult] = useState<CandidateListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retryVersion, setRetryVersion] = useState(0);
 
   function updateParam(key: string, value: string) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -40,10 +42,12 @@ export default function BackofficeHome() {
     setError("");
     fetchCandidates(`?${searchParams.toString()}`)
       .then((data) => { if (!ignore) setResult(data); })
-      .catch((fetchError: Error) => { if (!ignore) setError(fetchError.message); })
+      .catch((fetchError: unknown) => {
+        if (!ignore) setError(userSafeErrorMessage(fetchError, "Could not load the lead dashboard. Please retry."));
+      })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
-  }, [searchParams]);
+  }, [searchParams, retryVersion]);
 
   return (
     <section>
@@ -69,7 +73,12 @@ export default function BackofficeHome() {
       </section>
 
       {loading && <p className="message loading">Loading TrackFlow lead candidates...</p>}
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && (
+        <div className="message error" role="alert">
+          <p>{error}</p>
+          <button className="secondary" type="button" onClick={() => setRetryVersion((version) => version + 1)}>Retry</button>
+        </div>
+      )}
       {!loading && result?.total === 0 && <p className="message">No lead candidates match the current filters.</p>}
       {result && <p className="message" aria-live="polite"><strong>{result.total}</strong> lead candidates found. Page {result.page} of {result.totalPages}.</p>}
 

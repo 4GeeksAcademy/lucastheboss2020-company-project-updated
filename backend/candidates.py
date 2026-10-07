@@ -20,7 +20,7 @@ def list_candidates(_user: dict = UserDep):
 def get_candidate(candidate_id: str, _user: dict = UserDep):
     record = candidates_table.get(Query().id == candidate_id)
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found.")
     return record
 
 
@@ -40,7 +40,7 @@ def create_candidate(payload: CandidateWrite, _user: dict = UserDep):
 def patch_candidate(candidate_id: str, payload: CandidatePatch, _user: dict = UserDep):
     record = candidates_table.get(Query().id == candidate_id)
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found.")
     updates = payload.model_dump(exclude_none=True)
     updates["updatedAt"] = datetime.now(timezone.utc).isoformat()
     candidates_table.update(updates, Query().id == candidate_id)
@@ -51,7 +51,7 @@ def patch_candidate(candidate_id: str, payload: CandidatePatch, _user: dict = Us
 def delete_candidate(candidate_id: str, _user: dict = UserDep):
     record = candidates_table.get(Query().id == candidate_id)
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found.")
     candidates_table.remove(Query().id == candidate_id)
 
 
@@ -59,7 +59,7 @@ def delete_candidate(candidate_id: str, _user: dict = UserDep):
 def list_notes(candidate_id: str, _user: dict = UserDep):
     record = candidates_table.get(Query().id == candidate_id)
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found.")
     return record.get("notes", [])
 
 
@@ -67,7 +67,7 @@ def list_notes(candidate_id: str, _user: dict = UserDep):
 def add_note(candidate_id: str, payload: NoteCreate, _user: dict = UserDep):
     record = candidates_table.get(Query().id == candidate_id)
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found.")
     note = {
         "id": str(uuid4()),
         "body": payload.body,
@@ -83,9 +83,9 @@ def add_note(candidate_id: str, payload: NoteCreate, _user: dict = UserDep):
 def delete_note(candidate_id: str, note_id: str, _user: dict = UserDep):
     record = candidates_table.get(Query().id == candidate_id)
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found.")
     notes = record.get("notes", [])
     filtered = [n for n in notes if n.get("id") != note_id]
     if len(filtered) == len(notes):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found.")
     candidates_table.update({"notes": filtered, "updatedAt": datetime.now(timezone.utc).isoformat()}, Query().id == candidate_id)

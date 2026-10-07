@@ -136,6 +136,23 @@ def test_forgot_password_keeps_confirmation_when_email_delivery_fails(monkeypatc
     assert response["message"] == "If that address is registered, you'll receive a reset link shortly."
 
 
+def test_forgot_password_keeps_confirmation_when_token_setup_fails(monkeypatch):
+    monkeypatch.setattr(
+        main,
+        "get_user_by_email",
+        lambda email: {"id": "registered-user", "is_active": True},
+    )
+
+    def fail_token_creation(user_id):
+        raise RuntimeError("sensitive token-store details")
+
+    monkeypatch.setattr(main, "create_reset_token", fail_token_creation)
+
+    response = main.forgot_password(ForgotPasswordRequest(email="known@example.com"))
+
+    assert response["message"] == "If that address is registered, you'll receive a reset link shortly."
+
+
 def test_change_password_rejects_incorrect_current_password(monkeypatch):
     monkeypatch.setattr(main, "update_user", lambda user_id, payload: pytest.fail("must not update password"))
     user = {"id": "user-id", "hashed_password": bcrypt.hash("correct-password-123")}

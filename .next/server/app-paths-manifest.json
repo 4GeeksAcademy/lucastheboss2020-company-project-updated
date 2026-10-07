@@ -1,6 +1,4 @@
 {
-  "/uis/backoffice/incidents/manager/page": "app/uis/backoffice/incidents/manager/page.js",
-  "/uis/backoffice/incidents/page": "app/uis/backoffice/incidents/page.js",
-  "/api/incidents/route": "app/api/incidents/route.js",
-  "/api/incidents/summary/route": "app/api/incidents/summary/route.js"
+  "/api/candidates/route": "app/api/candidates/route.js",
+  "/api/incidents/analyze/route": "app/api/incidents/analyze/route.js"
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteNote } from "../../../data";
 import { requireAuthentication } from "../../../../_auth";
+import { internalServerError } from "../../../../_request";
+import { candidateMutationError } from "../../../validation";
 
 interface RouteContext {
   params: { id: string; noteId: string };
@@ -10,10 +12,15 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const authError = requireAuthentication(request);
   if (authError) return authError;
 
-  const result = deleteNote(params.id, params.noteId);
+  let result;
+  try {
+    result = deleteNote(params.id, params.noteId);
+  } catch {
+    return internalServerError("The note could not be deleted. Please retry.");
+  }
 
   if (!result.candidate) {
-    return NextResponse.json({ error: result.errors?.join(" ") ?? "Note could not be deleted." }, { status: 400 });
+    return candidateMutationError(result.errors, "Note could not be deleted.");
   }
 
   return NextResponse.json(result.candidate);

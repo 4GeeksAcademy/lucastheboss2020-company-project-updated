@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from pydantic import ValidationError
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -88,7 +90,7 @@ def transform_row(row: dict[str, str], row_number: int) -> tuple[dict[str, Any],
             "origin": "customer",
             "branch": branch,
         }).model_dump(mode="json")
-    except Exception:
+    except ValidationError:
         return None, "transformed manager fields failed shared validation"
 
     record = {
@@ -138,8 +140,17 @@ def main() -> int:
 
     try:
         report = seed_csv(args.csv_path)
-    except (OSError, csv.Error, ValueError) as error:
-        print(f"Unable to seed incidents: {error}", file=sys.stderr)
+    except FileNotFoundError:
+        print("Incident seed CSV was not found.", file=sys.stderr)
+        return 1
+    except PermissionError:
+        print("Incident seed CSV could not be read due to file permissions.", file=sys.stderr)
+        return 1
+    except (csv.Error, UnicodeDecodeError):
+        print("Incident seed CSV could not be parsed. Check its encoding and format.", file=sys.stderr)
+        return 1
+    except ValueError:
+        print("Incident seed data could not be transformed.", file=sys.stderr)
         return 1
 
     print(f"Incident seed complete: {report.inserted} inserted, {report.duplicates} duplicates, {len(report.skipped)} skipped.")

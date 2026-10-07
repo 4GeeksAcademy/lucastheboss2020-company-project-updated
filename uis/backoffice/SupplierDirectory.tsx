@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 
 export interface Supplier {
   id: number;
@@ -58,13 +59,23 @@ function handleUnauthorized(): never {
     localStorage.removeItem(STORAGE_KEY);
     window.location.href = "/login";
   }
-  throw new Error("Session expired. Please log in again.");
+  throw new ApiRequestError("Your session expired. Please sign in again.", 401);
+}
+
+async function supplierRequest<T>(url: string, init?: RequestInit): Promise<T> {
+  try {
+    return await fetchJson<T>(url, init);
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 401) handleUnauthorized();
+    throw error;
+  }
 }
 
 export default function SupplierDirectory() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusUpdateError, setStatusUpdateError] = useState<string | null>(null);
 
   // Filters
   const [countryFilter, setCountryFilter] = useState("");
@@ -89,6 +100,8 @@ export default function SupplierDirectory() {
   const [editingRate, setEditingRate] = useState<number | null>(null);
   const [editRateValue, setEditRateValue] = useState("");
   const [rateUpdateError, setRateUpdateError] = useState<string | null>(null);
+  const [updatingRateId, setUpdatingRateId] = useState<number | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
 
   // Auto-currency when country changes
   useEffect(() => {
@@ -104,12 +117,9 @@ export default function SupplierDirectory() {
       if (countryFilter) params.set("country", countryFilter);
       if (categoryFilter) params.set("category", categoryFilter);
       const url = `${API_BASE}${params.toString() ? "?" + params.toString() : ""}`;
-      const res = await fetch(url, { headers: { ...authHeaders() } });
-      if (res.status === 401) handleUnauthorized();
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      setSuppliers((await res.json()) as Supplier[]);
+      setSuppliers(await supplierRequest<Supplier[]>(url, { headers: { ...authHeaders() } }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load suppliers");
+      setError(userSafeErrorMessage(e, "Could not load suppliers. Please retry."));
     } finally {
       setLoading(false);
     }
@@ -156,21 +166,11 @@ export default function SupplierDirectory() {
       if (formContactEmail.trim()) body.contact_email = formContactEmail.trim();
       if (formNotes.trim()) body.notes = formNotes.trim();
 
-      const res = await fetch(API_BASE, {
+      await supplierRequest<Supplier>(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify(body),
       });
-      if (res.status === 401) handleUnauthorized();
-      if (!res.ok) {
-        const responseBody = await res.json().catch(() => null);
-        const detail = responseBody?.detail
-          ? typeof responseBody.detail === "string"
-            ? responseBody.detail
-            : JSON.stringify(responseBody.detail)
-          : `HTTP ${res.status}`;
-        throw new Error(detail);
-      }
       // Reset form
       setShowForm(false);
       setFormName("");
@@ -185,7 +185,7 @@ export default function SupplierDirectory() {
       setFormErrors({});
       await fetchSuppliers();
     } catch (e) {
-      setFormApiError(e instanceof Error ? e.message : "Failed to create supplier");
+      setFormApiError(userSafeErrorMessage(e, "Could not create the supplier. Please review the form and retry."));
     } finally {
       setFormSubmitting(false);
     }
@@ -199,52 +199,39 @@ export default function SupplierDirectory() {
       setRateUpdateError("Rate must be a positive number");
       return;
     }
+    setUpdatingRateId(supplierId);
     try {
-      const res = await fetch(`${API_BASE}/${supplierId}/rate`, {
+      await supplierRequest<Supplier>(`${API_BASE}/${supplierId}/rate`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ rate_per_shipment: rateNum }),
       });
-      if (res.status === 401) handleUnauthorized();
-      if (!res.ok) {
-        const responseBody = await res.json().catch(() => null);
-        const detail = responseBody?.detail
-          ? typeof responseBody.detail === "string"
-            ? responseBody.detail
-            : JSON.stringify(responseBody.detail)
-          : `HTTP ${res.status}`;
-        throw new Error(detail);
-      }
       setEditingRate(null);
       setEditRateValue("");
       await fetchSuppliers();
     } catch (e) {
-      setRateUpdateError(e instanceof Error ? e.message : "Rate update failed");
+      setRateUpdateError(userSafeErrorMessage(e, "Could not update the supplier rate. Please retry."));
+    } finally {
+      setUpdatingRateId(null);
     }
   }
 
   // ---- Toggle status ----
   async function handleToggleStatus(supplier: Supplier) {
     const newStatus = supplier.status === "active" ? "suspended" : "active";
+    setStatusUpdateError(null);
+    setUpdatingStatusId(supplier.id);
     try {
-      const res = await fetch(`${API_BASE}/${supplier.id}/status`, {
+      await supplierRequest<Supplier>(`${API_BASE}/${supplier.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (res.status === 401) handleUnauthorized();
-      if (!res.ok) {
-        const responseBody = await res.json().catch(() => null);
-        const detail = responseBody?.detail
-          ? typeof responseBody.detail === "string"
-            ? responseBody.detail
-            : JSON.stringify(responseBody.detail)
-          : `HTTP ${res.status}`;
-        throw new Error(detail);
-      }
       await fetchSuppliers();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Status update failed");
+      setStatusUpdateError(userSafeErrorMessage(e, "Could not update the supplier status. Please retry."));
+    } finally {
+      setUpdatingStatusId(null);
     }
   }
 
@@ -259,7 +246,12 @@ export default function SupplierDirectory() {
   if (loading && suppliers.length === 0)
     return <p className="text-gray-500">Loading suppliers…</p>;
   if (error && suppliers.length === 0)
-    return <p className="text-red-500">{error}</p>;
+    return (
+      <div className="message error" role="alert">
+        <p>{error}</p>
+        <button className="secondary" type="button" onClick={fetchSuppliers}>Retry</button>
+      </div>
+    );
 
   return (
     <div className="space-y-6">
@@ -516,11 +508,17 @@ export default function SupplierDirectory() {
       {error && (
         <div className="rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700">
           {error}
+          <button className="secondary compact-button" type="button" onClick={fetchSuppliers} style={{ marginLeft: "0.75rem" }}>Retry list load</button>
         </div>
       )}
       {rateUpdateError && (
         <div className="rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700">
           {rateUpdateError}
+        </div>
+      )}
+      {statusUpdateError && (
+        <div className="rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700" role="alert">
+          {statusUpdateError}
         </div>
       )}
 
@@ -560,9 +558,10 @@ export default function SupplierDirectory() {
                       />
                       <button
                         onClick={() => handleRateUpdate(s.id)}
+                        disabled={updatingRateId === s.id}
                         className="text-xs text-green-600 hover:text-green-800 font-semibold"
                       >
-                        Save
+                        {updatingRateId === s.id ? "Saving…" : "Save"}
                       </button>
                       <button
                         onClick={() => {
@@ -606,13 +605,14 @@ export default function SupplierDirectory() {
                 <td className="px-4 py-3 text-center">
                   <button
                     onClick={() => handleToggleStatus(s)}
+                        disabled={updatingStatusId === s.id}
                     className={`rounded px-3 py-1 text-xs font-semibold border ${
                       s.status === "active"
                         ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
                         : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                     }`}
                   >
-                    {s.status === "active" ? "Suspend" : "Activate"}
+                    {updatingStatusId === s.id ? "Updating…" : s.status === "active" ? "Suspend" : "Activate"}
                   </button>
                 </td>
               </tr>

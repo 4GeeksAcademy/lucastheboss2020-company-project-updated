@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate incidents-trackflow.csv per CONTEXT_2.md spec."""
 import csv
+import sys
 
 carriers_us = ["UPS", "FEDEX", "DHL_US"]
 carriers_es = ["MRW", "SEUR", "DHL_ES", "LOCAL_ES"]
@@ -103,11 +104,15 @@ rows.extend(invalid_cases)
 
 # Write CSV
 headers = ["incident_id","date","country","customer_type","tracking_number","carrier","category","description","status","customer_email","satisfaction_score"]
-with open("data/incidents-trackflow.csv", "w", newline="", encoding="utf-8") as f:
-    w = csv.DictWriter(f, fieldnames=headers)
-    w.writeheader()
-    for r in rows:
-        w.writerow(r)
+try:
+    with open("data/incidents-trackflow.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=headers)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+except OSError:
+    print("Could not write the incident fixture CSV.", file=sys.stderr)
+    sys.exit(1)
 
 print(f"Generated {len(rows)} rows in data/incidents-trackflow.csv")
 # Verify counts

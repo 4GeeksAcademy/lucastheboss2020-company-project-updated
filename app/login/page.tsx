@@ -3,6 +3,7 @@
 import { useAuth } from "../auth/AuthProvider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
@@ -22,21 +23,14 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:8000/auth/login", {
+      const { access_token } = await fetchJson<{ access_token: string }>("http://localhost:8000/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body as { detail?: string }).detail ?? "Login failed");
-      }
-
-      const { access_token } = (await res.json()) as { access_token: string };
       await login(access_token);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "An unexpected error occurred");
+      setError(userSafeErrorMessage(e, "Could not sign in. Check your connection and try again."));
     } finally {
       setSubmitting(false);
     }

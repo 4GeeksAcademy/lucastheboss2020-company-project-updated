@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
+import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 
 interface RegisterErrors {
   email?: string;
@@ -12,32 +13,6 @@ interface RegisterErrors {
   phone?: string;
   address?: string;
   form?: string;
-}
-
-interface FastApiValidationError {
-  loc: (string | number)[];
-  msg: string;
-  type: string;
-}
-
-function mapValidationErrors(detail: unknown): RegisterErrors {
-  if (!Array.isArray(detail)) {
-    return {};
-  }
-
-  const errors: RegisterErrors = {};
-  for (const item of detail as FastApiValidationError[]) {
-    const field = String(item.loc[item.loc.length - 1] ?? "");
-    if (field in errors) continue;
-
-    if (field === "email") errors.email = item.msg;
-    else if (field === "password") errors.password = item.msg;
-    else if (field === "name") errors.name = item.msg;
-    else if (field === "phone") errors.phone = item.msg;
-    else if (field === "address") errors.address = item.msg;
-  }
-
-  return errors;
 }
 
 export default function RegisterPage() {
@@ -74,7 +49,7 @@ export default function RegisterPage() {
     setErrors({});
 
     try {
-      const registerResponse = await fetch("http://localhost:8000/users", {
+      await fetchJson("http://localhost:8000/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -86,36 +61,20 @@ export default function RegisterPage() {
         }),
       });
 
-      if (!registerResponse.ok) {
-        const body = await registerResponse.json().catch(() => ({}));
-        if (registerResponse.status === 422) {
-          const fieldErrors = mapValidationErrors((body as { detail?: unknown }).detail);
-          setErrors(fieldErrors);
-          return;
-        }
-
-        const detail = (body as { detail?: string }).detail;
-        throw new Error(detail ?? "Registration failed");
-      }
-
-      const loginResponse = await fetch("http://localhost:8000/auth/login", {
+      const { access_token } = await fetchJson<{ access_token: string }>("http://localhost:8000/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
       });
-
-      if (!loginResponse.ok) {
-        const body = await loginResponse.json().catch(() => ({}));
-        const detail = (body as { detail?: string }).detail;
-        throw new Error(detail ?? "Login after registration failed");
-      }
-
-      const { access_token } = (await loginResponse.json()) as { access_token: string };
       await login(access_token);
     } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 422 && error.field && error.field in errors) {
+        setErrors({ [error.field]: error.message });
+        return;
+      }
       setErrors((prev) => ({
         ...prev,
-        form: error instanceof Error ? error.message : "Unexpected registration error",
+        form: userSafeErrorMessage(error, "Could not create the account. Check your connection and try again."),
       }));
     } finally {
       setSubmitting(false);
