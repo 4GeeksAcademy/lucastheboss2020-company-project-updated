@@ -17,6 +17,7 @@ __pycache__/
 .coverage
 .coverage.*
 htmlcov/
+coverage/
 **/__pycache__/
 **/data/*.json
 **/data/*.db

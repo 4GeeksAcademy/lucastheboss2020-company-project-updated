@@ -227,6 +227,11 @@ def test_profile_update_creates_a_missing_profile(auth_environment):
     assert profile["name"] == "Created Profile"
 
 
+def test_profile_update_rejects_invalid_field_type():
+    with pytest.raises(ValidationError):
+        ProfileUpdate(phone=12345)
+
+
 def test_forgot_password_sends_link_only_for_active_registered_user(auth_environment):
     user = auth_environment["create_user"](email="reset-user@example.com")
 
