@@ -15,6 +15,7 @@ const BACKOFFICE_LINKS: NavLink[] = [
   { href: "/candidates", label: "Candidates" },
   { href: "/uis/backoffice/suppliers", label: "Suppliers" },
   { href: "/uis/backoffice/incidents", label: "Incident Analysis" },
+  { href: "/uis/backoffice/incidents/manager", label: "Incident Manager" },
   { href: "/candidates/new", label: "New candidate" },
   { href: "/account/profile", label: "Profile" },
 ];

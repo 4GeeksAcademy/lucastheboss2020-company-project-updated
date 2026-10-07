@@ -1,3 +1,9 @@
 fastapi>=0.115.0
 pydantic>=2.0.0
+email-validator
 uvicorn>=0.30.0
+python-dotenv
+tinydb>=4.8.0
+python-jose
+passlib[bcrypt]
+bcrypt<4.1
