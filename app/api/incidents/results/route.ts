@@ -38,8 +38,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ResultsRes
       { analyses },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error retrieving incident analyses:', error);
+  } catch {
+    console.error('Error retrieving incident analyses.');
     return NextResponse.json(
       { error: 'Failed to retrieve analyses' },
       { status: 500 }

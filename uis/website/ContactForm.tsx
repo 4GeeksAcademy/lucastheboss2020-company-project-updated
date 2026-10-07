@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createCandidate } from "../../src/candidates/api";
 import type { CandidateWriteInput } from "../../src/candidates/types";
 import { LOW_VOLUME_WARNING } from "../../src/utils/validations";
+import { userSafeErrorMessage } from "../../src/utils/api-errors";
 
 const serviceOptions = [
   { label: "Warehousing", value: "warehouse-management" },
@@ -90,7 +91,7 @@ export default function ContactForm() {
       setErrorFields([]);
     } catch (error) {
       setStatus("idle");
-      setApiError(error instanceof Error ? error.message : "Your request could not be submitted.");
+      setApiError(userSafeErrorMessage(error, "Your request could not be submitted. Check your connection and retry."));
     }
   }
 

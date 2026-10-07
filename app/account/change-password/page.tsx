@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../../src/utils/api-errors";
 
 const API_BASE = "http://localhost:8000";
 const STORAGE_KEY = "trackflow_token";
@@ -36,7 +37,7 @@ export default function ChangePasswordPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE}/auth/change-password`, {
+      await fetchJson(`${API_BASE}/auth/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,24 +48,17 @@ export default function ChangePasswordPage() {
           new_password: newPassword,
         }),
       });
-
-      if (response.status === 401) {
-        localStorage.removeItem(STORAGE_KEY);
-        window.location.href = "/login";
-        return;
-      }
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const detail = (body as { detail?: string }).detail;
-        throw new Error(detail ?? "Password change failed.");
-      }
-
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setSuccess("Password changed successfully.");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Password change failed.");
+      if (submitError instanceof ApiRequestError && submitError.status === 401) {
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.href = "/login";
+        return;
+      }
+      setError(userSafeErrorMessage(submitError, "Password change failed. Check your connection and try again."));
     } finally {
       setSubmitting(false);
     }

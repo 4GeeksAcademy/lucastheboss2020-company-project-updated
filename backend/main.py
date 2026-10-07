@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .auth import create_access_token, get_current_user
 from .candidates import router as candidates_router
 from .config import get_settings
-from .mailer import EmailDeliveryError, send_password_reset_email
+from .error_handlers import install_api_error_handlers
+from .mailer import send_password_reset_email
 from .models import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
@@ -35,6 +36,7 @@ from urllib.parse import urlencode
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="TrackFlow API")
+install_api_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -90,16 +92,16 @@ def update_my_profile(payload: ProfileUpdate, user: dict = Depends(get_current_u
 def forgot_password(payload: ForgotPasswordRequest):
     user = get_user_by_email(str(payload.email))
     if user and user.get("is_active", False):
-        token, _ = create_reset_token(user["id"])
-        settings = get_settings()
-        reset_url = (
-            f"{settings['frontend_base_url']}/reset-password?"
-            f"{urlencode({'token': token})}"
-        )
         try:
+            token, _ = create_reset_token(user["id"])
+            settings = get_settings()
+            reset_url = (
+                f"{settings['frontend_base_url']}/reset-password?"
+                f"{urlencode({'token': token})}"
+            )
             send_password_reset_email(str(payload.email), reset_url)
-        except EmailDeliveryError:
-            logger.error("Password reset email delivery failed")
+        except Exception:
+            logger.error("Password reset request could not be completed.")
 
     return {
         "message": "If that address is registered, you'll receive a reset link shortly."

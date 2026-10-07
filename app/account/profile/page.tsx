@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../auth/AuthProvider";
+import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../../src/utils/api-errors";
 
 interface ProfileData {
   name: string;
@@ -29,6 +30,7 @@ export default function AccountProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [retryVersion, setRetryVersion] = useState(0);
 
   useEffect(() => {
     if (isLoading) return;
@@ -42,19 +44,10 @@ export default function AccountProfilePage() {
     setLoadingProfile(true);
     setError(null);
 
-    fetch("http://localhost:8000/auth/me", {
+    fetchJson<MeResponse>("http://localhost:8000/auth/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then(async (response) => {
-        if (response.status === 401) {
-          logout();
-          throw new Error("Session expired. Please log in again.");
-        }
-        if (!response.ok) {
-          throw new Error("Failed to load account profile");
-        }
-
-        const data = (await response.json()) as MeResponse;
+      .then((data) => {
         setEmail(data.email);
         setProfile({
           name: data.profile?.name ?? "",
@@ -62,9 +55,12 @@ export default function AccountProfilePage() {
           address: data.profile?.address ?? "",
         });
       })
-      .catch((fetchError: Error) => setError(fetchError.message))
+      .catch((fetchError: unknown) => {
+        if (fetchError instanceof ApiRequestError && fetchError.status === 401) logout();
+        setError(userSafeErrorMessage(fetchError, "Could not load your profile. Please retry."));
+      })
       .finally(() => setLoadingProfile(false));
-  }, [isLoading, logout]);
+  }, [isLoading, logout, retryVersion]);
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
@@ -80,7 +76,7 @@ export default function AccountProfilePage() {
     setSuccess(null);
 
     try {
-      const response = await fetch("http://localhost:8000/profiles/me", {
+      await fetchJson("http://localhost:8000/profiles/me", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -93,20 +89,13 @@ export default function AccountProfilePage() {
         }),
       });
 
-      if (response.status === 401) {
-        logout();
-        throw new Error("Session expired. Please log in again.");
-      }
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const detail = (body as { detail?: string }).detail;
-        throw new Error(detail ?? "Profile update failed");
-      }
-
       setSuccess("Profile updated successfully.");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unexpected profile update error");
+      if (saveError instanceof ApiRequestError && saveError.status === 401) {
+        logout();
+        return;
+      }
+      setError(userSafeErrorMessage(saveError, "Profile update failed. Please retry."));
     } finally {
       setSaving(false);
     }
@@ -127,7 +116,12 @@ export default function AccountProfilePage() {
         </Link>
       </header>
 
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && (
+        <div className="message error" role="alert">
+          <p>{error}</p>
+          <button type="button" className="secondary" onClick={() => setRetryVersion((version) => version + 1)}>Retry</button>
+        </div>
+      )}
       {success && <p className="message" role="status">{success}</p>}
 
       <form onSubmit={handleSave} className="panel space-y-4 max-w-2xl">
