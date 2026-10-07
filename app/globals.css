@@ -264,6 +264,256 @@ a:focus-visible {
   padding: 0.85rem;
 }
 
+.incident-manager {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.incident-manager__header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.incident-manager__language {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.incident-manager__language span {
+  font-weight: 800;
+  margin-right: 0.2rem;
+}
+
+.incident-manager__overview {
+  border-bottom: 1px solid var(--track-border);
+  border-top: 1px solid var(--track-border);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.incident-manager__metrics {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.incident-manager__metrics article {
+  align-content: flex-start;
+  border-left: 3px solid #35b7a0;
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.25rem 0.65rem;
+}
+
+.incident-manager__metrics article span {
+  color: #475569;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.incident-manager__metrics article strong {
+  font-size: 1.5rem;
+}
+
+.incident-manager__metrics .incident-manager__metric-critical {
+  border-color: #b45309;
+}
+
+.incident-manager__metrics .incident-manager__metric-overdue {
+  border-color: #b91c1c;
+}
+
+.incident-manager__breakdowns {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.incident-manager__breakdowns section {
+  border-top: 1px solid var(--track-border);
+  min-width: 0;
+  padding-top: 0.75rem;
+}
+
+.incident-manager__breakdowns h2,
+.incident-manager__registry h2,
+.incident-manager__form h2,
+.incident-manager__details h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+.incident-manager__breakdowns dl,
+.incident-manager__timestamps {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.incident-manager__breakdowns dl > div,
+.incident-manager__timestamps > div {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.incident-manager__breakdowns dt,
+.incident-manager__timestamps dt {
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+
+.incident-manager__breakdowns dd,
+.incident-manager__timestamps dd {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0.15rem;
+  margin: 0;
+  text-align: right;
+}
+
+.incident-manager__breakdowns dd span {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.incident-manager__overdue-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.incident-manager__text-button {
+  background: transparent;
+  color: #7f1d1d;
+  min-height: 2.75rem;
+  padding: 0.3rem 0.5rem;
+  text-decoration: underline;
+}
+
+.incident-manager__workspace {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.incident-manager__form,
+.incident-manager__registry,
+.incident-manager__details {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.incident-manager__branch--highlight {
+  background: #e8f7f4;
+  border: 1px solid #35b7a0;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.incident-manager__branch-hint {
+  color: #075e54;
+  font-size: 0.9rem;
+}
+
+.incident-manager__field-error {
+  color: var(--track-error);
+  font-size: 0.9rem;
+}
+
+.incident-manager__list {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  max-height: 36rem;
+  overflow: auto;
+  padding: 0;
+}
+
+.incident-manager__record-row {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.incident-manager__record {
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid var(--track-border);
+  color: var(--track-ink);
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  min-height: 2.75rem;
+  overflow-wrap: anywhere;
+  padding: 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.incident-manager__row-status {
+  padding: 0 0.25rem 0.5rem;
+}
+
+.incident-manager__row-status span {
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.incident-manager__record:hover,
+.incident-manager__record--selected {
+  border-color: var(--track-mint);
+  box-shadow: inset 3px 0 0 var(--track-mint);
+}
+
+.incident-manager__record-title {
+  font-weight: 800;
+}
+
+.incident-manager__record-date {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.incident-manager__detail-heading {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.incident-manager__detail-heading h3 {
+  font-size: 1.2rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.incident-manager__detail-description {
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.incident-manager__status-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.incident-manager__status-actions > span {
+  font-weight: 800;
+  width: 100%;
+}
+
 @media (min-width: 760px) {
   .filters {
     grid-template-columns: 1.5fr 0.8fr 0.8fr;
@@ -279,6 +529,20 @@ a:focus-visible {
 
   .form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .incident-manager__metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .incident-manager__workspace {
+    align-items: start;
+    grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .incident-manager__record-row {
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.42fr);
   }
 }
 

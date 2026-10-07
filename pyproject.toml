@@ -11,13 +11,13 @@ dependencies = [
     "pydantic>=2.0.0",
     "fastapi>=0.100.0",
 ]
-scripts = { seed = "services.suppliers.seed:main" }
+scripts = { seed = "services.suppliers.seed:main", seed-incidents = "scripts.seed_incidents:main" }
 
 [tool.setuptools.packages.find]
-include = ["services*", "backend*"]
+include = ["services*", "backend*", "scripts*", "packages*"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests", "services/suppliers/tests"]
+testpaths = ["backend/tests", "services/suppliers/tests", "services/incidents/tests"]
 
 [tool.ruff]
 line-length = 120

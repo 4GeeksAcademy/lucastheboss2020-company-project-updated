@@ -28,166 +28,18 @@ from pathlib import Path
 from datetime import datetime
 from collections import Counter
 from typing import Dict, List
-
-# ---------------------------------------------------------------------------
-# TRACKFLOW CONTEXT CONFIGURATION
-# ---------------------------------------------------------------------------
-
-VALID_COUNTRIES = {"US", "ES"}
-
-CARRIERS_BY_COUNTRY = {
-    "US": {"UPS", "FEDEX", "DHL_US"},
-    "ES": {"MRW", "SEUR", "DHL_ES", "LOCAL_ES"},
-}
-ALL_CARRIERS = CARRIERS_BY_COUNTRY["US"] | CARRIERS_BY_COUNTRY["ES"]
-
-VALID_CATEGORIES = {
-    "LOST_PARCEL", "DELAYED_DELIVERY", "WRONG_ADDRESS",
-    "RETURN_REQUEST", "DAMAGE",
-}
-
-VALID_STATUSES = {"OPEN", "CLOSED", "DISCARDED"}
-
-SATISFACTION_MIN = 1
-SATISFACTION_MAX = 5
-
-
-# ---------------------------------------------------------------------------
-# HELPERS
-# ---------------------------------------------------------------------------
-
-def validate_ymd(date_str: str) -> bool:
-    """Return True if date_str is valid YYYY-MM-DD."""
-    if not date_str or not date_str.strip():
-        return False
-    try:
-        datetime.strptime(date_str.strip(), "%Y-%m-%d")
-        return True
-    except ValueError:
-        return False
-
-
-def has_at(email: str) -> bool:
-    """Minimal email check -- must contain @."""
-    return bool(email and "@" in email.strip())
-
-
-def validate_record(row: Dict[str, str]) -> List[str]:
-    """
-    Validate a single incident row.  Returns list of error strings
-    (empty list means the record is valid).
-
-    customer_email is SENSITIVE -- the error message never includes
-    the actual email text.
-    """
-    errors: List[str] = []
-
-    def f(name: str) -> str:
-        return row.get(name, "").strip()
-
-    incident_id = f("incident_id")
-    date_str = f("date")
-    country = f("country").upper()
-    cust_type = f("customer_type").upper()
-    tracking = f("tracking_number")
-    carrier = f("carrier")
-    category = f("category")
-    description = f("description")
-    status = f("status").upper()
-    score_str = f("satisfaction_score")
-    email = f("customer_email")
-
-    # -- incident_id --
-    if not incident_id:
-        errors.append("Missing required field 'incident_id'")
-
-    # -- date --
-    if not date_str:
-        errors.append("Missing required field 'date'")
-    elif not validate_ymd(date_str):
-        errors.append(f"Invalid date '{date_str}'; must be YYYY-MM-DD")
-
-    # -- country --
-    if not country:
-        errors.append("Missing required field 'country'")
-    elif country not in VALID_COUNTRIES:
-        errors.append(f"Invalid country '{f('country')}'; must be US or ES")
-
-    # -- customer_type --
-    if not cust_type:
-        errors.append("Missing required field 'customer_type'")
-    elif cust_type not in ("B2B", "B2C"):
-        errors.append(f"Invalid customer_type '{f('customer_type')}'; must be B2B or B2C")
-
-    # -- tracking_number --
-    if not tracking:
-        errors.append("Missing required field 'tracking_number'")
-    elif len(tracking) < 8:
-        errors.append(f"Invalid tracking number '{tracking}'; must be at least 8 characters")
-
-    # -- carrier --
-    if not carrier:
-        errors.append("Missing required field 'carrier'")
-    elif carrier not in ALL_CARRIERS:
-        errors.append(f"Invalid carrier '{carrier}'; unknown carrier")
-    elif country in VALID_COUNTRIES and carrier not in CARRIERS_BY_COUNTRY.get(country, set()):
-        errors.append(f"Carrier '{carrier}' not valid for country '{country}'")
-
-    # -- category --
-    if not category:
-        errors.append("Missing required field 'category'")
-    elif category not in VALID_CATEGORIES:
-        errors.append(f"Invalid category '{category}'; must be one of: {', '.join(sorted(VALID_CATEGORIES))}")
-
-    # -- description --
-    if not description:
-        errors.append("Missing required field 'description'")
-    elif len(description) < 5:
-        errors.append(f"Description too short ({len(description)} chars); minimum 5 characters")
-
-    # -- status --
-    if not status:
-        errors.append("Missing required field 'status'")
-    elif status not in VALID_STATUSES:
-        errors.append(f"Invalid status '{f('status')}'; must be one of: {', '.join(sorted(VALID_STATUSES))}")
-
-    # -- customer_email (SENSITIVE) --
-    if not email:
-        errors.append("Missing required field 'customer_email'")
-    elif not has_at(email):
-        errors.append("Invalid or missing customer_email")
-
-    # -- satisfaction_score --
-    if status == "CLOSED":
-        if not score_str:
-            errors.append("Closed incident without satisfaction_score")
-        else:
-            try:
-                s = int(score_str)
-                if s < SATISFACTION_MIN or s > SATISFACTION_MAX:
-                    errors.append(
-                        f"Invalid satisfaction_score '{score_str}'; "
-                        f"must be between {SATISFACTION_MIN} and {SATISFACTION_MAX}"
-                    )
-            except (ValueError, TypeError):
-                errors.append(
-                    f"Invalid satisfaction_score '{score_str}'; "
-                    f"must be an integer between {SATISFACTION_MIN} and {SATISFACTION_MAX}"
-                )
-    elif score_str:
-        # score present but not CLOSED -- still validate range
-        try:
-            s = int(score_str)
-            if s < SATISFACTION_MIN or s > SATISFACTION_MAX:
-                errors.append(
-                    f"Invalid satisfaction_score '{score_str}'; "
-                    f"must be between {SATISFACTION_MIN} and {SATISFACTION_MAX}"
-                )
-        except (ValueError, TypeError):
-            pass  # ignore bad value if status is not CLOSED
-
-    return errors
-
+from packages.shared.incident_validation import (
+    ALL_CARRIERS,
+    CARRIERS_BY_COUNTRY,
+    SATISFACTION_MAX,
+    SATISFACTION_MIN,
+    VALID_CATEGORIES,
+    VALID_COUNTRIES,
+    VALID_STATUSES,
+    has_at,
+    validate_record,
+    validate_ymd,
+)
 
 # ---------------------------------------------------------------------------
 # ANALYSIS

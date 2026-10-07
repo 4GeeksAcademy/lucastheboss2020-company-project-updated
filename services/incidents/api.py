@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException, status
 from .models import AnalysisResult, TrackFlowRecord, AnalysisMetrics, InvalidRecordDetail
 from .data import store_analysis, get_analysis, get_all_analyses
+from .manager_api import router as manager_router
 
 app = FastAPI(title="TrackFlow Incidents API")
+app.include_router(manager_router)
 
 
 @app.get("/incidents/analyses")
