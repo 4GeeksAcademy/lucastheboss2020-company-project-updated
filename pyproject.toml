@@ -10,8 +10,17 @@ dependencies = [
     "tinydb>=4.8.0",
     "pydantic>=2.0.0",
     "fastapi>=0.100.0",
+    "sqlmodel>=0.0.48",
+    "psycopg2-binary>=2.9.13",
+    "psycopg[binary]>=3.2.0",
+    "uvicorn[standard]>=0.30.0",
+    "python-dotenv>=1.0",
+    "python-jose>=3.3",
+    "passlib[bcrypt]>=1.7",
+    "bcrypt<4.1",
+    "email-validator>=2.0",
 ]
-scripts = { seed = "services.suppliers.seed:main", seed-incidents = "scripts.seed_incidents:main" }
+scripts = { seed = "services.suppliers.seed:main", seed-incidents = "scripts.seed_incidents:main", seed-inventory = "services.seed_inventory:main" }
 
 [dependency-groups]
 dev = [
@@ -28,7 +37,7 @@ dev = [
 include = ["services*", "backend*", "scripts*", "packages*"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests", "services/suppliers/tests", "services/incidents/tests"]
+testpaths = ["backend/tests", "services/suppliers/tests", "services/incidents/tests", "services/tests"]
 
 [tool.coverage.run]
 branch = true

@@ -57,6 +57,24 @@ npm run test:coverage
 
 The suite checks happy paths, edge cases, and failures such as duplicate users, invalid credentials, inactive accounts, malformed/expired tokens, missing profiles, email delivery failures, and invalid current passwords. Resend is mocked, and test users/tokens live only in TinyDB `MemoryStorage` fixtures.
 
+## Inventory API (Milestone 5)
+
+The inventory service composes the existing TinyDB-authenticated backend with SQLModel inventory tables in Supabase. The inventory tests use an isolated in-memory SQLite database and never connect to the configured Supabase database.
+
+Start the combined API from the repository root:
+
+```bash
+uv run --env-file backend/.env uvicorn services.main:app --reload
+```
+
+Seed the local development inventory after registering a TinyDB user:
+
+```bash
+uv run --env-file backend/.env seed-inventory
+```
+
+The inventory test suite is part of `uv run pytest`. It covers all six protected routes, foreign keys, computed stock per warehouse, inbound/outbound records, tracking-number rules, insufficient-stock rejection without a write, and safe seed behavior. `DATABASE_URL` is loaded from the local env file and is never logged by tests or scripts.
+
 ## Test-Plan Notes
 
 During the test-first setup, the initial `uv run pytest` attempt exposed that the root uv environment lacked auth test dependencies (`python-jose`, passlib/bcrypt, email validation, and the FastAPI test client). These were added to the development-only dependency group; production dependencies remain unchanged, and the root command now passes.

@@ -40,3 +40,21 @@ sample values in `.env.example` are placeholders. Reset links use
 | `/candidates/{id}/notes/{noteId}` | DELETE | 🔒 | Delete note |
 
 🔒 = requires `Authorization: Bearer <token>`
+
+## Milestone 5 Inventory API
+
+The inventory API composes this FastAPI app, so auth remains backed by the existing TinyDB users while inventory records use Supabase PostgreSQL through SQLModel. Keep `DATABASE_URL` in the local environment file; do not commit or print it.
+
+Start the combined application from the repository root:
+
+```bash
+uv run --env-file backend/.env uvicorn services.main:app --reload
+```
+
+Seed the local development inventory after registering an active TinyDB user:
+
+```bash
+uv run --env-file backend/.env seed-inventory
+```
+
+All `/inventory` routes require a bearer token. Stock is calculated per SKU and warehouse from inbound entries minus outbound exits; it is never stored or set directly. The inventory tests use isolated SQLite and never connect to Supabase.
