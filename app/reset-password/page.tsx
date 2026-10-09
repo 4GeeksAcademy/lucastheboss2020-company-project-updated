@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "/api/backend";
 
 export default function ResetPasswordPage() {
   const router = useRouter();

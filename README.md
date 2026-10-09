@@ -64,6 +64,23 @@ npm run build
 - `npm run typecheck` runs the documented TypeScript validation command with `tsc --noEmit`.
 - `npm run build` validates the production Next.js App Router build.
 
+## Reproducible Docker Development
+
+Docker Compose runs the existing Next.js app and the combined FastAPI API as two services. The single Next.js app serves both `/uis/website` and `/uis/backoffice`; API traffic between containers uses the Compose service name `api`.
+
+Prerequisites: Docker Engine/Desktop with the Docker Compose plugin. Configure the non-secret local ports and URLs, and ensure the API's existing `backend/.env` is configured according to [backend/README.md](backend/README.md):
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Open the UI at `http://localhost:3000`; the API health endpoint is `http://localhost:8000/health`. The UI image runs one Next.js development server with hot reload and includes Python 3 for the existing incident CSV analyzer. The API container uses `backend/.env`; secrets are not copied into the UI image or committed.
+
+Stop the services with `docker compose down`. Rebuild after dependency or image changes with `docker compose up --build`. The named `node_modules` and `.next` volumes are preserved by `down`.
+
+For host-based development, run the API on port 8000 and set `API_INTERNAL_URL=http://localhost:8000` in the shell environment. The Docker Compose default is `http://api:8000`, so Docker DNS is used only server-side and never by the browser. Validate orchestration without printing resolved environment values with `docker compose config --quiet`.
+
 ---
 
 ## Milestones (reference)

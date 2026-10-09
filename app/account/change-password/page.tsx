@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../../src/utils/api-errors";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "/api/backend";
 const STORAGE_KEY = "trackflow_token";
 
 export default function ChangePasswordPage() {

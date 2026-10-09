@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { access_token } = await fetchJson<{ access_token: string }>("http://localhost:8000/auth/login", {
+      const { access_token } = await fetchJson<{ access_token: string }>("/api/backend/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

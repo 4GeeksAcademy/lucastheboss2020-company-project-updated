@@ -1,14 +1,20 @@
 /** @type {import('next').NextConfig} */
+const apiInternalUrl = (process.env.API_INTERNAL_URL ?? "http://localhost:8000").replace(/\/+$/, "");
+
 const nextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/backend/:path*",
+        destination: `${apiInternalUrl}/:path*`,
+      },
+      {
         source: "/api/suppliers/:path*",
-        destination: "http://localhost:8001/suppliers/:path*",
+        destination: `${apiInternalUrl}/suppliers/:path*`,
       },
       {
         source: "/api/incidents-service/:path*",
-        destination: "http://localhost:8002/incidents/:path*",
+        destination: `${apiInternalUrl}/incidents/:path*`,
       },
     ];
   },

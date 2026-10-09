@@ -1,9 +1,7 @@
 import { ApiRequestError, fetchJson } from "../utils/api-errors";
 import type { InboundOrderInput, InventoryOrder, InventoryProduct, OutboundOrderInput } from "./types";
 
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_INVENTORY_API_URL || "http://localhost:8000"
-).replace(/\/+$/, "");
+const API_BASE_URL = "/api/backend";
 
 function authHeaders(): Headers {
   const headers = new Headers();

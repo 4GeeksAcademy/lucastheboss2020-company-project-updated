@@ -44,7 +44,7 @@ export default function AccountProfilePage() {
     setLoadingProfile(true);
     setError(null);
 
-    fetchJson<MeResponse>("http://localhost:8000/auth/me", {
+    fetchJson<MeResponse>("/api/backend/auth/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((data) => {
@@ -76,7 +76,7 @@ export default function AccountProfilePage() {
     setSuccess(null);
 
     try {
-      await fetchJson("http://localhost:8000/profiles/me", {
+      await fetchJson("/api/backend/profiles/me", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
