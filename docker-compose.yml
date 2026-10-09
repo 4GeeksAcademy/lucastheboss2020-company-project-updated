@@ -1,0 +1,65 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./services:/app/services
+      - ./packages:/app/packages
+      - ./pyproject.toml:/app/pyproject.toml:ro
+      - ./scripts:/app/scripts
+    networks:
+      - trackflow
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 8
+      start_period: 30s
+
+  ui:
+    build:
+      context: .
+      dockerfile: uis/Dockerfile
+    environment:
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8000}
+      PORT: "3000"
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "${UI_PORT:-3000}:3000"
+    volumes:
+      - ./app:/app/app
+      - ./src:/app/src
+      - ./uis:/app/uis
+      - ./scripts:/app/scripts
+      - ./packages:/app/packages
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./next.config.mjs:/app/next.config.mjs:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ui_node_modules:/app/node_modules
+      - ui_next:/app/.next
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - trackflow
+
+networks:
+  trackflow:
+    name: trackflow-dev
+
+volumes:
+  ui_node_modules:
+  ui_next:

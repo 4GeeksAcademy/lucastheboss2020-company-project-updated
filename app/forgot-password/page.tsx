@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "/api/backend";
 const CONFIRMATION = "If that address is registered, you'll receive a reset link shortly.";
 
 export default function ForgotPasswordPage() {

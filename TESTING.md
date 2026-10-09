@@ -78,3 +78,16 @@ The inventory test suite is part of `uv run pytest`. It covers all six protected
 ## Test-Plan Notes
 
 During the test-first setup, the initial `uv run pytest` attempt exposed that the root uv environment lacked auth test dependencies (`python-jose`, passlib/bcrypt, email validation, and the FastAPI test client). These were added to the development-only dependency group; production dependencies remain unchanged, and the root command now passes.
+
+## Docker Development Smoke Check
+
+After creating the ignored root `.env` from `.env.example` and configuring `backend/.env`, validate and start the two development services:
+
+```bash
+docker compose config --quiet
+docker compose up --build -d
+docker compose ps
+curl -fsS http://localhost:8000/health
+```
+
+Verify the UI at `http://localhost:3000`, the API health response, supplier and incident rewrites, auth proxy calls, and inventory routes. Use `docker compose down` to stop the containers while retaining the dependency and Next cache volumes.

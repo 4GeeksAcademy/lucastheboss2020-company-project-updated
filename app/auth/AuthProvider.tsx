@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = useCallback(async (token: string) => {
     try {
-      const user = await fetchJson<NonNullable<AuthState["user"]>>("http://localhost:8000/auth/me", {
+      const user = await fetchJson<NonNullable<AuthState["user"]>>("/api/backend/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { kind: "valid", user } satisfies SessionCheck;

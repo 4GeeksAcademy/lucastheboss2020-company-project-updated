@@ -49,7 +49,7 @@ export default function RegisterPage() {
     setErrors({});
 
     try {
-      await fetchJson("http://localhost:8000/users", {
+      await fetchJson("/api/backend/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -61,7 +61,7 @@ export default function RegisterPage() {
         }),
       });
 
-      const { access_token } = await fetchJson<{ access_token: string }>("http://localhost:8000/auth/login", {
+      const { access_token } = await fetchJson<{ access_token: string }>("/api/backend/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
