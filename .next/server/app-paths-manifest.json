@@ -1,4 +1,6 @@
 {
-  "/api/candidates/route": "app/api/candidates/route.js",
-  "/api/incidents/analyze/route": "app/api/incidents/analyze/route.js"
+  "/uis/backoffice/inventory/orders/inbound/page": "app/uis/backoffice/inventory/orders/inbound/page.js",
+  "/uis/backoffice/inventory/products/page": "app/uis/backoffice/inventory/products/page.js",
+  "/uis/backoffice/inventory/orders/page": "app/uis/backoffice/inventory/orders/page.js",
+  "/uis/backoffice/inventory/orders/outbound/page": "app/uis/backoffice/inventory/orders/outbound/page.js"
 }

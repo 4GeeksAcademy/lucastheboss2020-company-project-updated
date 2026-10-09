@@ -1,3 +1,30 @@
 {
-  "pages": {}
+  "pages": {
+    "/uis/backoffice/inventory/products/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/uis/backoffice/inventory/products/page.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
+    ],
+    "/uis/backoffice/inventory/orders/inbound/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/uis/backoffice/inventory/orders/inbound/page.js"
+    ],
+    "/uis/backoffice/inventory/orders/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/uis/backoffice/inventory/orders/page.js"
+    ],
+    "/uis/backoffice/inventory/orders/outbound/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/uis/backoffice/inventory/orders/outbound/page.js"
+    ]
+  }
 }

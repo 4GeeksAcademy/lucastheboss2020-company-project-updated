@@ -12,6 +12,7 @@ interface NavLink {
 
 const BACKOFFICE_LINKS: NavLink[] = [
   { href: "/uis/backoffice", label: "Dashboard" },
+  { href: "/uis/backoffice/inventory/products", label: "Inventory" },
   { href: "/candidates", label: "Candidates" },
   { href: "/uis/backoffice/suppliers", label: "Suppliers" },
   { href: "/uis/backoffice/incidents", label: "Incident Analysis" },
@@ -52,7 +53,7 @@ export default function Navigation() {
             key={link.href}
             className="button secondary"
             href={link.href}
-            style={{ background: pathname === link.href ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}
+            style={{ background: pathname === link.href || (link.href === "/uis/backoffice/inventory/products" && pathname.startsWith("/uis/backoffice/inventory")) ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}
           >
             {link.label}
           </Link>
