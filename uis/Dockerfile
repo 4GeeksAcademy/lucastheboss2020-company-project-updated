@@ -2,13 +2,16 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache python3
+RUN apk add --no-cache bash python3
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY uis/website/package.json uis/website/package-lock.json ./uis/website/
+RUN cd /app/uis/website && npm ci
+
+COPY uis/backoffice/package.json uis/backoffice/package-lock.json ./uis/backoffice/
+RUN cd /app/uis/backoffice && npm ci
 
 COPY . .
 
-EXPOSE 3000
+EXPOSE 3000 3001
 
-CMD ["sh", "/app/uis/start.sh"]
+CMD ["bash", "/app/uis/start.sh"]

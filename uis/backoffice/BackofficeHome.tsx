@@ -13,6 +13,8 @@ function formatServices(services: string[]): string {
   return services.map((service) => service.replace(/-/g, " ")).join(", ");
 }
 
+const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL ?? "http://localhost:3000";
+
 export default function BackofficeHome() {
   const router = useRouter();
   const pathname = usePathname();
@@ -57,7 +59,7 @@ export default function BackofficeHome() {
         <p>Review e-commerce companies requesting warehouse management, last-mile delivery, or reverse logistics support.</p>
         <div className="actions">
           <Link className="button" href="/uis/backoffice/inventory/products">Inventory</Link>
-          <Link className="button secondary" href="/uis/website#contact-form">View public lead form</Link>
+          <Link className="button secondary" href={`${websiteUrl}/uis/website#contact-form`}>View public lead form</Link>
           <Link className="button" href="/candidates/new">Add lead manually</Link>
           <Link className="button secondary" href="/uis/backoffice/incidents">Incident Analysis</Link>
           <Link className="button secondary" href="/uis/backoffice/incidents/manager">Incident Manager</Link>
