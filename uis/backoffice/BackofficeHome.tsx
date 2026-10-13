@@ -1,13 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { fetchCandidates } from "../../src/candidates/api";
 import type { CandidateListResponse } from "../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES } from "../../src/candidates/types";
-import BackofficeReports from "./BackofficeReports";
 import { userSafeErrorMessage } from "../../src/utils/api-errors";
+
+const BackofficeReports = dynamic(() => import("./BackofficeReports"), {
+  ssr: false,
+  loading: () => <p className="message loading">Loading reports and analytics...</p>,
+});
 
 function formatServices(services: string[]): string {
   return services.map((service) => service.replace(/-/g, " ")).join(", ");

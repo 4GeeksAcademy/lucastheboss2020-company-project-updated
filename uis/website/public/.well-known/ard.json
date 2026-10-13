@@ -1,0 +1,16 @@
+{
+  "specVersion": "1.0",
+  "entries": [
+    {
+      "identifier": "urn:trackflow:website:contact-request",
+      "displayName": "TrackFlow Public Contact Endpoint",
+      "type": "application/json",
+      "url": "https://trackflow.example.com/api/candidates",
+      "representativeQueries": [
+        "request information about logistics services",
+        "submit a lead request for warehouse management",
+        "contact trackflow commercial team"
+      ]
+    }
+  ]
+}

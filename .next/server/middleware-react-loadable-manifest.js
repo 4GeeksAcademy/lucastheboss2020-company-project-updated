@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}";
+self.__REACT_LOADABLE_MANIFEST='{"uis/backoffice/BackofficeHome.tsx -> ./BackofficeReports":{"id":1350,"files":["static/chunks/350.8966ea7013f3ff3e.js"]}}';
