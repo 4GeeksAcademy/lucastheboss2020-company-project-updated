@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useAsyncResource } from "../../../src/hooks/useAsyncResource";
 import { fetchInventoryOrders } from "../../../src/inventory/api";
 import type { InventoryOrder } from "../../../src/inventory/types";
-import { userSafeErrorMessage } from "../../../src/utils/api-errors";
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -14,23 +13,12 @@ function formatDate(value: string): string {
 }
 
 export default function InventoryOrders() {
-  const [orders, setOrders] = useState<InventoryOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [retryVersion, setRetryVersion] = useState(0);
-
-  useEffect(() => {
-    let ignore = false;
-    setLoading(true);
-    setError("");
-    fetchInventoryOrders()
-      .then((result) => { if (!ignore) setOrders(result); })
-      .catch((fetchError: unknown) => {
-        if (!ignore) setError(userSafeErrorMessage(fetchError, "Order history could not be loaded. Please retry."));
-      })
-      .finally(() => { if (!ignore) setLoading(false); });
-    return () => { ignore = true; };
-  }, [retryVersion]);
+  const { data, loading, error, retry } = useAsyncResource(
+    "inventory-orders",
+    fetchInventoryOrders,
+    "Order history could not be loaded. Please retry.",
+  );
+  const orders: InventoryOrder[] = data ?? [];
 
   return (
     <section className="inventory-page">
@@ -49,7 +37,7 @@ export default function InventoryOrders() {
       {error && (
         <div className="message error" role="alert">
           <p>{error}</p>
-          <button className="secondary" type="button" onClick={() => setRetryVersion((version) => version + 1)}>Retry</button>
+          <button className="secondary" type="button" onClick={retry}>Retry</button>
         </div>
       )}
       {!loading && !error && orders.length === 0 && <p className="message">No inventory movements have been recorded.</p>}

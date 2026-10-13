@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useAsyncResource } from "../../../src/hooks/useAsyncResource";
 import { fetchInventoryProducts } from "../../../src/inventory/api";
 import type { InventoryProduct } from "../../../src/inventory/types";
-import { userSafeErrorMessage } from "../../../src/utils/api-errors";
 
 // Keep this threshold visible so operations can tune it to TrackFlow's stock policy.
 const LOW_STOCK_THRESHOLD = 20;
@@ -20,23 +19,12 @@ function productLabel(product: InventoryProduct): string {
 }
 
 export default function InventoryProducts() {
-  const [products, setProducts] = useState<InventoryProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [retryVersion, setRetryVersion] = useState(0);
-
-  useEffect(() => {
-    let ignore = false;
-    setLoading(true);
-    setError("");
-    fetchInventoryProducts()
-      .then((result) => { if (!ignore) setProducts(result); })
-      .catch((fetchError: unknown) => {
-        if (!ignore) setError(userSafeErrorMessage(fetchError, "Products could not be loaded. Please retry."));
-      })
-      .finally(() => { if (!ignore) setLoading(false); });
-    return () => { ignore = true; };
-  }, [retryVersion]);
+  const { data, loading, error, retry } = useAsyncResource(
+    "inventory-products",
+    fetchInventoryProducts,
+    "Products could not be loaded. Please retry.",
+  );
+  const products: InventoryProduct[] = data ?? [];
 
   const totalUnits = products.reduce((sum, product) => sum + product.current_stock, 0);
   const lowCount = products.filter((product) => product.current_stock < LOW_STOCK_THRESHOLD).length;
@@ -59,7 +47,7 @@ export default function InventoryProducts() {
       {error && (
         <div className="message error" role="alert">
           <p>{error}</p>
-          <button type="button" className="secondary" onClick={() => setRetryVersion((version) => version + 1)}>Retry</button>
+          <button type="button" className="secondary" onClick={retry}>Retry</button>
         </div>
       )}
       {!loading && !error && products.length === 0 && (
