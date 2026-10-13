@@ -3,19 +3,13 @@
 import React, { useState, useCallback } from 'react';
 import type { AnalysisResult } from '../../src/incidents/types';
 import { ApiRequestError, fetchResponse, parseJsonResponse, userSafeErrorMessage } from '../../src/utils/api-errors';
+import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from '../../src/utils/auth-headers';
 
 type AnalysisState = AnalysisResult | null;
-const STORAGE_KEY = 'trackflow_token';
 
 interface UploadError {
   message: string;
   details?: string;
-}
-
-function authHeaders(): HeadersInit {
-  if (typeof window === 'undefined') return {};
-  const token = localStorage.getItem(STORAGE_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export function IncidentAnalyzer() {
@@ -33,7 +27,7 @@ export function IncidentAnalyzer() {
 
   function getRequestError(error: unknown, fallback: string): string {
     if (error instanceof ApiRequestError && error.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(TRACKFLOW_TOKEN_KEY);
       window.location.assign('/login');
     }
     return userSafeErrorMessage(error, fallback);
@@ -48,7 +42,7 @@ export function IncidentAnalyzer() {
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const response = await fetchResponse('/api/incidents/results', { headers: { ...authHeaders() } });
+      const response = await fetchResponse('/api/incidents/results', { headers: { ...trackFlowAuthHeaders() } });
       const data = await parseJsonResponse<{ analyses?: AnalysisResult[] }>(response);
       setHistory(Array.isArray(data.analyses) ? data.analyses : []);
     } catch (requestError) {
@@ -74,7 +68,7 @@ export function IncidentAnalyzer() {
 
         const response = await fetchResponse('/api/incidents/analyze', {
           method: 'POST',
-          headers: { ...authHeaders() },
+          headers: { ...trackFlowAuthHeaders() },
           body: formData,
         });
 
@@ -137,7 +131,7 @@ export function IncidentAnalyzer() {
     let anchor: HTMLAnchorElement | null = null;
     setExporting(true);
     try {
-      const response = await fetchResponse(`/api/incidents/results/${analysis.id}/export`, { headers: { ...authHeaders() } });
+      const response = await fetchResponse(`/api/incidents/results/${analysis.id}/export`, { headers: { ...trackFlowAuthHeaders() } });
       if (!response.ok) await parseJsonResponse<never>(response);
       if (!response.headers.get('content-type')?.toLowerCase().includes('text/csv')) {
         throw new ApiRequestError('The analysis export could not be prepared.', response.status);
@@ -170,7 +164,7 @@ export function IncidentAnalyzer() {
     setSelectedHistoryLoading(true);
     setError(null);
     try {
-      const response = await fetchResponse(`/api/incidents/results?id=${id}`, { headers: { ...authHeaders() } });
+      const response = await fetchResponse(`/api/incidents/results?id=${id}`, { headers: { ...trackFlowAuthHeaders() } });
       const data = await parseJsonResponse<{ analyses?: AnalysisResult[] }>(response);
       if (data.analyses && data.analyses.length > 0) {
         setAnalysis(data.analyses[0]);

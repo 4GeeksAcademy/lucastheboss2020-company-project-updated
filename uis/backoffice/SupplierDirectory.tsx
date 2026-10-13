@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
+import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from "../../src/utils/auth-headers";
 
 export interface Supplier {
   id: number;
@@ -26,7 +27,6 @@ interface FormErrors {
 }
 
 const API_BASE = "/api/suppliers";
-const STORAGE_KEY = "trackflow_token";
 
 // TrackFlow constants per CONTEXT_3.md
 const COUNTRIES = ["USA", "Spain"];
@@ -48,15 +48,9 @@ function formatCategory(cat: string): string {
     .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
-function authHeaders(): HeadersInit {
-  if (typeof window === "undefined") return {};
-  const token = localStorage.getItem(STORAGE_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 function handleUnauthorized(): never {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TRACKFLOW_TOKEN_KEY);
     window.location.href = "/login";
   }
   throw new ApiRequestError("Your session expired. Please sign in again.", 401);
@@ -117,7 +111,7 @@ export default function SupplierDirectory() {
       if (countryFilter) params.set("country", countryFilter);
       if (categoryFilter) params.set("category", categoryFilter);
       const url = `${API_BASE}${params.toString() ? "?" + params.toString() : ""}`;
-      setSuppliers(await supplierRequest<Supplier[]>(url, { headers: { ...authHeaders() } }));
+      setSuppliers(await supplierRequest<Supplier[]>(url, { headers: { ...trackFlowAuthHeaders() } }));
     } catch (e) {
       setError(userSafeErrorMessage(e, "Could not load suppliers. Please retry."));
     } finally {
@@ -168,7 +162,7 @@ export default function SupplierDirectory() {
 
       await supplierRequest<Supplier>(API_BASE, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json", ...trackFlowAuthHeaders() },
         body: JSON.stringify(body),
       });
       // Reset form
@@ -203,7 +197,7 @@ export default function SupplierDirectory() {
     try {
       await supplierRequest<Supplier>(`${API_BASE}/${supplierId}/rate`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json", ...trackFlowAuthHeaders() },
         body: JSON.stringify({ rate_per_shipment: rateNum }),
       });
       setEditingRate(null);
@@ -224,7 +218,7 @@ export default function SupplierDirectory() {
     try {
       await supplierRequest<Supplier>(`${API_BASE}/${supplier.id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json", ...trackFlowAuthHeaders() },
         body: JSON.stringify({ status: newStatus }),
       });
       await fetchSuppliers();

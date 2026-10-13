@@ -6,9 +6,9 @@ import type {
   IncidentSummary,
 } from "./manager-types";
 import { ApiRequestError, fetchJson } from "../utils/api-errors";
+import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from "../utils/auth-headers";
 
 const API_BASE = "/api/incidents";
-const STORAGE_KEY = "trackflow_token";
 
 export class IncidentApiError extends ApiRequestError {
   constructor(message: string, status?: number, field?: string) {
@@ -17,26 +17,20 @@ export class IncidentApiError extends ApiRequestError {
   }
 }
 
-function authHeaders(): HeadersInit {
-  if (typeof window === "undefined") return {};
-  const token = localStorage.getItem(STORAGE_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     return await fetchJson<T>(path, {
       ...init,
       cache: "no-store",
       headers: {
-        ...authHeaders(),
+        ...trackFlowAuthHeaders(),
         ...init.headers,
       },
     });
   } catch (error) {
     if (error instanceof ApiRequestError) {
       if (error.status === 401 && typeof window !== "undefined") {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(TRACKFLOW_TOKEN_KEY);
         window.location.assign("/login");
       }
       throw new IncidentApiError(error.message, error.status, error.field);

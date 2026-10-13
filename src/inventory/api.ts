@@ -1,20 +1,12 @@
 import { ApiRequestError, fetchJson } from "../utils/api-errors";
+import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from "../utils/auth-headers";
 import type { InboundOrderInput, InventoryOrder, InventoryProduct, OutboundOrderInput } from "./types";
 
 const API_BASE_URL = "/api/backend";
 
-function authHeaders(): Headers {
-  const headers = new Headers();
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("trackflow_token");
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-  }
-  return headers;
-}
-
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  authHeaders().forEach((value, key) => headers.set(key, value));
+  for (const [key, value] of Object.entries(trackFlowAuthHeaders())) headers.set(key, value);
 
   try {
     return await fetchJson<T>(`${API_BASE_URL}${path}`, {
@@ -24,7 +16,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     });
   } catch (error) {
     if (error instanceof ApiRequestError && error.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("trackflow_token");
+      localStorage.removeItem(TRACKFLOW_TOKEN_KEY);
       window.location.assign("/login");
     }
     throw error;
