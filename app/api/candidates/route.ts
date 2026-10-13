@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCandidate, listCandidates } from "./data";
 import type { CandidateWriteInput } from "../../../src/candidates/types";
-import { hasValidBearerToken, unauthorized } from "../_auth";
+import { requireAuthentication } from "../_auth";
 import { internalServerError, readJsonObject } from "../_request";
 import { isCandidateWriteInput } from "./validation";
 
 export async function GET(request: NextRequest) {
-  if (!hasValidBearerToken(request)) {
-    return unauthorized();
-  }
+  const authError = await requireAuthentication(request);
+  if (authError) return authError;
   try {
     const url = new URL(request.url);
     return NextResponse.json(listCandidates(url.searchParams));

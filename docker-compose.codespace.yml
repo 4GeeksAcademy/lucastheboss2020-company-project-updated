@@ -1,0 +1,13 @@
+services:
+  api:
+    network_mode: host
+    networks: !reset []
+    ports: !reset []
+
+  ui:
+    network_mode: host
+    networks: !reset []
+    ports: !reset []
+    environment:
+      API_INTERNAL_URL: http://localhost:8000
+      BACKOFFICE_INTERNAL_URL: http://localhost:3001

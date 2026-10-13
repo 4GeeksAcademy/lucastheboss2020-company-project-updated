@@ -9,7 +9,7 @@ interface RouteContext {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
-  const authError = requireAuthentication(request);
+  const authError = await requireAuthentication(request);
   if (authError) return authError;
 
   let result;

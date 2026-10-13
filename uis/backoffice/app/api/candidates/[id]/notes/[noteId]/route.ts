@@ -1,0 +1,1 @@
+export { DELETE } from "../../../../../../../../app/api/candidates/[id]/notes/[noteId]/route";

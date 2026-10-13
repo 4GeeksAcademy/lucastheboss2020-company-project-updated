@@ -21,7 +21,7 @@ const execFileAsync = promisify(execFile);
 // Configuration
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const ALLOWED_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel'];
-const PYTHON_SCRIPT = path.join(process.cwd(), 'scripts/analyze_incidents.py');
+const PYTHON_SCRIPT = path.join(process.env.TRACKFLOW_REPO_ROOT ?? process.cwd(), 'scripts/analyze_incidents.py');
 
 interface PythonAnalysisOutput {
   error?: string;

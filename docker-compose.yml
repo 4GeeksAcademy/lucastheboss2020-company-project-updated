@@ -6,7 +6,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3001}
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
@@ -33,11 +33,15 @@ services:
       context: .
       dockerfile: uis/Dockerfile
     environment:
-      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8000}
-      PORT: "3000"
+      API_INTERNAL_URL: http://api:8000
+      BACKOFFICE_INTERNAL_URL: http://ui:3001
+      NEXT_PUBLIC_WEBSITE_URL: ${NEXT_PUBLIC_WEBSITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_BACKOFFICE_URL: ${NEXT_PUBLIC_BACKOFFICE_URL:-http://localhost:3001}
+      TRACKFLOW_REPO_ROOT: /app
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
       - "${UI_PORT:-3000}:3000"
+      - "${BACKOFFICE_PORT:-3001}:3001"
     volumes:
       - ./app:/app/app
       - ./src:/app/src
@@ -48,8 +52,10 @@ services:
       - ./package-lock.json:/app/package-lock.json:ro
       - ./next.config.mjs:/app/next.config.mjs:ro
       - ./tsconfig.json:/app/tsconfig.json:ro
-      - ui_node_modules:/app/node_modules
-      - ui_next:/app/.next
+      - ui_website_node_modules:/app/uis/website/node_modules
+      - ui_backoffice_node_modules:/app/uis/backoffice/node_modules
+      - ui_website_next:/app/uis/website/.next
+      - ui_backoffice_next:/app/uis/backoffice/.next
     depends_on:
       api:
         condition: service_healthy
@@ -61,5 +67,7 @@ networks:
     name: trackflow-dev
 
 volumes:
-  ui_node_modules:
-  ui_next:
+  ui_website_node_modules:
+  ui_backoffice_node_modules:
+  ui_website_next:
+  ui_backoffice_next:

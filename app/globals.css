@@ -879,6 +879,13 @@ a:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.login-forgot-link {
+  align-items: center;
+  display: inline-flex;
+  min-height: 28px;
+  padding: 4px;
+}
+
 .visually-hidden {
   clip: rect(0, 0, 0, 0);
   clip-path: inset(50%);

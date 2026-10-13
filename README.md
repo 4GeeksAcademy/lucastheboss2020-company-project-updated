@@ -66,7 +66,7 @@ npm run build
 
 ## Reproducible Docker Development
 
-Docker Compose runs the existing Next.js app and the combined FastAPI API as two services. The single Next.js app serves both `/uis/website` and `/uis/backoffice`; API traffic between containers uses the Compose service name `api`.
+Docker Compose runs the public website and internal backoffice as separate Next.js development servers in one UI container, plus the combined FastAPI API in its own container. The website listens on port `3000`, the backoffice on `3001`, and API traffic between containers uses the Compose service name `api`.
 
 Prerequisites: Docker Engine/Desktop with the Docker Compose plugin. Configure the non-secret local ports and URLs, and ensure the API's existing `backend/.env` is configured according to [backend/README.md](backend/README.md):
 
@@ -75,11 +75,21 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open the UI at `http://localhost:3000`; the API health endpoint is `http://localhost:8000/health`. The UI image runs one Next.js development server with hot reload and includes Python 3 for the existing incident CSV analyzer. The API container uses `backend/.env`; secrets are not copied into the UI image or committed.
+Open the public website at `http://localhost:3000/uis/website` and the backoffice at `http://localhost:3001/uis/backoffice`; the API health endpoint is `http://localhost:8000/health`. Each UI app runs `npm ci` from its own lockfile and uses hot reload. The shared UI image includes Python 3 for the incident CSV analyzer. The API container requires `backend/.env` with `DATABASE_URL`; that file is passed only to the API container, not copied into the UI image or committed.
+
+The website's public lead POST is forwarded to the backoffice Next process at port 3001 so both screens use the same in-memory candidate store. Standard Compose resolves that process through the `ui` service name; the Codespaces host-network override uses loopback because Docker DNS is disabled there. UI-to-FastAPI calls target the Compose service name `api` in standard Docker.
 
 Stop the services with `docker compose down`. Rebuild after dependency or image changes with `docker compose up --build`. The named `node_modules` and `.next` volumes are preserved by `down`.
 
 For host-based development, run the API on port 8000 and set `API_INTERNAL_URL=http://localhost:8000` in the shell environment. The Docker Compose default is `http://api:8000`, so Docker DNS is used only server-side and never by the browser. Validate orchestration without printing resolved environment values with `docker compose config --quiet`.
+
+Some nested Docker/Codespaces environments block outbound DNS and bridge-network traffic. If the default API container cannot resolve its configured database host, use the tested Codespaces-only host-network override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.codespace.yml up --build
+```
+
+This override shares the host network namespace and uses `localhost:8000`; it is only for isolated Codespaces environments. Keep the default `docker compose up --build` for standard Docker hosts, where services communicate through the `api` service name.
 
 ---
 

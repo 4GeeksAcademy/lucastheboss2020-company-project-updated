@@ -1,0 +1,1 @@
+export { GET } from "../../../../../../app/api/incidents/summary/route";

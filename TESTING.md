@@ -90,4 +90,6 @@ docker compose ps
 curl -fsS http://localhost:8000/health
 ```
 
-Verify the UI at `http://localhost:3000`, the API health response, supplier and incident rewrites, auth proxy calls, and inventory routes. Use `docker compose down` to stop the containers while retaining the dependency and Next cache volumes.
+Verify the public website at `http://localhost:3000/uis/website`, the backoffice at `http://localhost:3001/uis/backoffice`, the API health response, supplier and incident rewrites, auth proxy calls, and inventory routes. Use `docker compose down` to stop the containers while retaining both apps' dependency and Next cache volumes.
+
+In Codespaces environments where bridge networking blocks outbound DNS, use `docker compose -f docker-compose.yml -f docker-compose.codespace.yml up --build -d`; this host-network override is specific to Codespaces.

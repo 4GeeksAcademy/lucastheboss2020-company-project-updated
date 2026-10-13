@@ -1,0 +1,27 @@
+{
+  "specVersion": "1.0",
+  "entries": [
+    {
+      "identifier": "urn:trackflow:backoffice:logistics-leads",
+      "displayName": "TrackFlow Lead Operations API",
+      "type": "application/json",
+      "url": "https://trackflow.example.com/api/candidates",
+      "representativeQueries": [
+        "list logistics leads by status",
+        "filter lead candidates by stage",
+        "review lead candidate details"
+      ]
+    },
+    {
+      "identifier": "urn:trackflow:backoffice:incident-analysis",
+      "displayName": "TrackFlow Incident Analysis API",
+      "type": "application/json",
+      "url": "https://trackflow.example.com/api/incidents/results",
+      "representativeQueries": [
+        "analyze incident csv upload",
+        "show incident analysis history",
+        "export incident analysis summary"
+      ]
+    }
+  ]
+}

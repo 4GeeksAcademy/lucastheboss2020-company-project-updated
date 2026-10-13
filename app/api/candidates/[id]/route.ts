@@ -10,7 +10,7 @@ interface RouteContext {
 }
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
-  const authError = requireAuthentication(request);
+  const authError = await requireAuthentication(request);
   if (authError) return authError;
 
   let candidate;
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  const authError = requireAuthentication(request);
+  const authError = await requireAuthentication(request);
   if (authError) return authError;
 
   const parsed = await readJsonObject(request);
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteContext) {
-  const authError = requireAuthentication(request);
+  const authError = await requireAuthentication(request);
   if (authError) return authError;
 
   const parsed = await readJsonObject(request);
