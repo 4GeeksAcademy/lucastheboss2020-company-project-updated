@@ -1,5 +1,7 @@
 import logging
+import time
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from .auth import create_access_token, get_current_user
 from .candidates import router as candidates_router
@@ -42,6 +44,26 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="TrackFlow API")
 install_api_error_handlers(app)
+
+
+@app.middleware("http")
+async def timing_middleware(request: Request, call_next):
+    """Log request duration without query strings or user-specific values."""
+    start = time.perf_counter()
+    status_code = "exception"
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        duration_ms = (time.perf_counter() - start) * 1000
+        logger.info(
+            "%s %s -> %s | %.1fms",
+            request.method,
+            request.url.path,
+            status_code,
+            duration_ms,
+        )
 
 app.add_middleware(
     CORSMiddleware,
