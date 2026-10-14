@@ -15,7 +15,8 @@ from services.schemas import (
     StockEntryCreate,
     StockEntryRead,
     StockExitCreate,
-    InventoryOrderRead,
+    InventoryOrderListItem,
+    InventoryOrderProductSummary,
     StockExitRead,
 )
 
@@ -196,7 +197,7 @@ def create_outbound_order(
     return StockExitRead(**exit_record.model_dump(), sku=SKUSummary.model_validate(product))
 
 
-@router.get("/orders", response_model=list[InventoryOrderRead])
+@router.get("/orders", response_model=list[InventoryOrderListItem])
 def list_orders(
     session: Session = Depends(get_db),
     _user: dict = Depends(get_current_user),
@@ -216,10 +217,10 @@ def list_orders(
         _log_database_error("order listing", error)
         raise HTTPException(status_code=500, detail="Orders could not be loaded. Please retry.") from None
 
-    orders: list[InventoryOrderRead] = []
+    orders: list[InventoryOrderListItem] = []
     for entry, product in inbound:
         orders.append(
-            InventoryOrderRead(
+            InventoryOrderListItem(
                 movement_type="inbound",
                 id=entry.id,
                 sku_id=entry.sku_id,
@@ -227,13 +228,13 @@ def list_orders(
                 warehouse=entry.warehouse,
                 created_at=entry.created_at,
                 user_uuid=entry.user_uuid,
-                sku=SKUSummary.model_validate(product),
+                sku=InventoryOrderProductSummary.model_validate(product),
                 reference=entry.reference,
             )
         )
     for exit_record, product in outbound:
         orders.append(
-            InventoryOrderRead(
+            InventoryOrderListItem(
                 movement_type="outbound",
                 id=exit_record.id,
                 sku_id=exit_record.sku_id,
@@ -241,7 +242,7 @@ def list_orders(
                 warehouse=exit_record.warehouse,
                 created_at=exit_record.created_at,
                 user_uuid=exit_record.user_uuid,
-                sku=SKUSummary.model_validate(product),
+                sku=InventoryOrderProductSummary.model_validate(product),
                 exit_type=exit_record.exit_type,
                 tracking_number=exit_record.tracking_number,
             )

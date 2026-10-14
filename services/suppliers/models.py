@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 from enum import Enum
 from typing import Optional
 from datetime import datetime, timezone
@@ -78,6 +78,43 @@ class SupplierInput(BaseModel):
 class Supplier(SupplierInput):
     id: int
     updated_at: str
+
+
+class SupplierRead(BaseModel):
+    """Output DTO compatible with both persisted supplier record generations."""
+
+    id: int
+    name: str
+    country: str
+    rate_per_shipment: float
+    currency: str
+    status: str
+    updated_at: str
+    categories: list[str] = Field(default_factory=list)
+    services: list[str] | None = None
+    service_zone: str | None = None
+    contact_email: str | None = None
+    notes: str | None = None
+
+
+class SupplierListRead(BaseModel):
+    """Supplier fields consumed by the directory list, without contact details."""
+
+    id: int
+    name: str
+    country: str
+    categories: list[str] = Field(
+        validation_alias=AliasChoices("categories", "services"),
+        default_factory=list,
+    )
+    rate_per_shipment: float
+    currency: str
+    status: str
+    updated_at: str
+
+
+class SupplierCategoriesResponse(BaseModel):
+    categories: list[str]
 
 
 class RateUpdate(BaseModel):

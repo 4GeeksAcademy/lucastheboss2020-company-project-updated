@@ -12,8 +12,11 @@ from .manager_models import (
     IncidentBranch,
     IncidentCategory,
     IncidentCreate,
+    IncidentListItem,
     IncidentOrigin,
+    IncidentResponse,
     IncidentStatus,
+    IncidentSummaryResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,7 +71,7 @@ async def _json_body(request: Request) -> dict[str, Any] | JSONResponse:
     return body
 
 
-@router.get("/api/incidents")
+@router.get("/api/incidents", response_model=list[IncidentListItem])
 def list_manager_incidents(
     status: str | None = None,
     origin: str | None = None,
@@ -89,7 +92,7 @@ def list_manager_incidents(
         return _internal_error()
 
 
-@router.post("/api/incidents", status_code=201)
+@router.post("/api/incidents", response_model=IncidentResponse, status_code=201)
 async def create_manager_incident(
     request: Request,
     _user: dict = Depends(get_current_user),
@@ -106,7 +109,7 @@ async def create_manager_incident(
         return _internal_error()
 
 
-@router.get("/api/incidents/summary")
+@router.get("/api/incidents/summary", response_model=IncidentSummaryResponse)
 def get_manager_summary(_user: dict = Depends(get_current_user)):
     try:
         return manager_data.get_summary()
@@ -114,7 +117,7 @@ def get_manager_summary(_user: dict = Depends(get_current_user)):
         return _internal_error()
 
 
-@router.get("/api/incidents/{incident_id}")
+@router.get("/api/incidents/{incident_id}", response_model=IncidentResponse)
 def get_manager_incident(
     incident_id: str,
     _user: dict = Depends(get_current_user),
@@ -131,7 +134,7 @@ def get_manager_incident(
         return _internal_error()
 
 
-@router.patch("/api/incidents/{incident_id}/status")
+@router.patch("/api/incidents/{incident_id}/status", response_model=IncidentResponse)
 async def update_manager_incident_status(
     incident_id: str,
     request: Request,

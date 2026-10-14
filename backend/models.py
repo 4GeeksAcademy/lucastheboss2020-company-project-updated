@@ -33,6 +33,15 @@ class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RegistrationResponse(BaseModel):
+    """Minimal acknowledgement returned by the unauthenticated registration flow."""
+
+    id: str
+    is_active: bool
+    role: Role
+    created_at: datetime
+
+
 class ProfileUpdate(BaseModel):
     name: str | None = None
     phone: str | None = None
@@ -45,6 +54,14 @@ class ProfilePublic(BaseModel):
     name: str | None = None
     phone: str | None = None
     address: str | None = None
+
+
+class CurrentUserResponse(UserPublic):
+    profile: ProfilePublic | None = None
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class LoginRequest(BaseModel):
@@ -92,6 +109,57 @@ class CandidateWrite(BaseModel):
 class CandidatePatch(BaseModel):
     status: str | None = None
     stage: str | None = None
+
+
+class CandidateNoteRead(BaseModel):
+    id: str
+    body: str
+    createdAt: str
+
+
+class CandidateRead(BaseModel):
+    companyName: str
+    contactPerson: str
+    corporateEmail: EmailStr
+    phone: str
+    companyWebsite: str | None = None
+    operatingCountry: str
+    productType: str
+    monthlyVolume: str
+    servicesOfInterest: list[str]
+    current3pl: str
+    comments: str | None = None
+    privacyAccepted: bool
+    status: str
+    stage: str
+    assignedTo: str
+    id: str
+    notes: list[CandidateNoteRead] = Field(default_factory=list)
+    createdAt: str
+    updatedAt: str
+
+
+class CandidateListItem(BaseModel):
+    """Candidate fields needed for list views; notes stay on detail responses."""
+
+    companyName: str
+    contactPerson: str
+    corporateEmail: EmailStr
+    operatingCountry: str
+    productType: str
+    monthlyVolume: str
+    servicesOfInterest: list[str]
+    status: str
+    stage: str
+    id: str
+
+
+class CandidateListRead(BaseModel):
+    data: list[CandidateListItem]
+    page: int
+    pageSize: int
+    total: int
+    totalPages: int
 
 
 class NoteCreate(BaseModel):

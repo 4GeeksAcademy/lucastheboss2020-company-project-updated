@@ -100,7 +100,9 @@ def test_inbound_records_authenticated_user_and_joined_sku(inventory_client):
     assert response.json()["sku"]["sku"] == product["sku"]
     assert orders.status_code == 200
     assert orders.json()[0]["movement_type"] == "inbound"
-    assert orders.json()[0]["sku"]["client_name"] == "PureStep Footwear"
+    assert orders.json()[0]["sku"]["name"] == product["name"]
+    assert set(orders.json()[0]["sku"]) == {"name", "sku"}
+    assert "client_name" not in orders.json()[0]["sku"]
 
 
 def test_outbound_cannot_oversell_and_failure_does_not_persist(inventory_client):

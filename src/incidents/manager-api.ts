@@ -1,6 +1,7 @@
 import type {
   IncidentCreateInput,
   IncidentFilters,
+  IncidentListItem,
   IncidentRecord,
   IncidentStatus,
   IncidentSummary,
@@ -39,7 +40,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 }
 
-export function listIncidents(filters: IncidentFilters = {}): Promise<IncidentRecord[]> {
+export function listIncidents(filters: IncidentFilters = {}): Promise<IncidentListItem[]> {
   const params = new URLSearchParams();
   for (const key of ["status", "origin", "branch", "category"] as const) {
     const value = filters[key];
