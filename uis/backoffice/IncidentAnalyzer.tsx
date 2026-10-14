@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import type { AnalysisResult } from '../../src/incidents/types';
 import { ApiRequestError, fetchResponse, parseJsonResponse, userSafeErrorMessage } from '../../src/utils/api-errors';
 import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from '../../src/utils/auth-headers';
 
 type AnalysisState = AnalysisResult | null;
+
+const IncidentInvalidRecordDetails = dynamic(() => import("./IncidentInvalidRecordDetails"), {
+  loading: () => <p className="message loading" role="status">Loading invalid-record details…</p>,
+});
 
 interface UploadError {
   message: string;
@@ -350,20 +355,7 @@ export function IncidentAnalyzer() {
                 </button>
               </header>
               {expandedInvalidRecords && (
-                <div className="detail-grid">
-                  {displayAnalysis.invalid_records.map((record) => {
-                    const rec = record as any;
-                    const idField = rec.incident_id || 'N/A';
-                    return (
-                      <article className="candidate-card" key={rec.row_number}>
-                        <p><strong>Row {rec.row_number}</strong> · ID: {idField}</p>
-                        <ul>
-                          {rec.errors.map((error: string) => <li key={error}>{error}</li>)}
-                        </ul>
-                      </article>
-                    );
-                  })}
-                </div>
+                <IncidentInvalidRecordDetails records={displayAnalysis.invalid_records} />
               )}
             </section>
           </>

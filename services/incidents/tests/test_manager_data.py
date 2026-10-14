@@ -19,7 +19,9 @@ def manager_store(monkeypatch):
     db = TinyDB(storage=MemoryStorage)
     monkeypatch.setattr(manager_data, "_incidents", db.table("incidents"))
     monkeypatch.setattr(manager_data, "_seed_keys", db.table("incident_seed_keys"))
+    manager_data.invalidate_summary_cache()
     yield db
+    manager_data.invalidate_summary_cache()
     db.close()
 
 
@@ -61,6 +63,47 @@ def test_incident_filters_can_be_combined(manager_store):
     )
 
     assert [record["id"] for record in result] == [matching["id"]]
+
+
+def test_list_cache_is_keyed_by_filters_returns_copies_and_expires(monkeypatch, manager_store):
+    manager_data.create_incident(new_payload())
+    clock = [100.0]
+    monkeypatch.setattr(manager_data, "monotonic", lambda: clock[0])
+    manager_data.invalidate_summary_cache()
+
+    first = manager_data.list_incidents(status="open")
+    first[0]["title"] = "caller mutation"
+    assert manager_data.list_incidents(status="open")[0]["title"] == "Parcel located"
+    assert manager_data.list_incidents(status="resolved") == []
+
+    clock[0] += manager_data._LIST_CACHE_TTL_SECONDS + 0.01
+    original_all = manager_data._incidents.all
+    calls = 0
+
+    def tracked_all():
+        nonlocal calls
+        calls += 1
+        return original_all()
+
+    monkeypatch.setattr(manager_data._incidents, "all", tracked_all)
+    manager_data.list_incidents(status="open")
+    assert calls == 1
+
+
+def test_incident_mutations_invalidate_list_cache(manager_store):
+    incident = manager_data.create_incident(new_payload())
+    assert len(manager_data.list_incidents(status="open")) == 1
+
+    manager_data.update_incident_status(incident["id"], IncidentStatus.IN_PROGRESS)
+    assert manager_data.list_incidents(status="open") == []
+    assert len(manager_data.list_incidents(status="in_progress")) == 1
+
+
+def test_list_cache_is_bounded_when_many_filter_combinations_are_requested(manager_store):
+    for index in range(manager_data._LIST_CACHE_MAX_ENTRIES + 5):
+        manager_data.list_incidents(category=f"category-{index}")
+
+    assert len(manager_data._list_cache) <= manager_data._LIST_CACHE_MAX_ENTRIES
 
 
 def test_only_allowed_status_transitions_are_accepted(manager_store):
@@ -159,6 +202,59 @@ def test_empty_summary_returns_all_zero_metrics(manager_store):
     assert all(value == 0 for value in summary["by_branch"].values())
     assert all(value == 0 for value in summary["critical_open_by_branch"].values())
     assert summary["unresolved_over_24_hours"] == {"count": 0, "incidents": []}
+
+
+def test_live_summary_cache_returns_copies_and_expires(monkeypatch, manager_store):
+    manager_data.create_incident(new_payload())
+    clock = [100.0]
+    monkeypatch.setattr(manager_data, "monotonic", lambda: clock[0])
+    manager_data.invalidate_summary_cache()
+
+    first = manager_data.get_summary()
+    first["by_status"]["open"] = 999
+    assert manager_data.get_summary()["by_status"]["open"] == 1
+
+    calls = 0
+    original = manager_data._build_summary
+
+    def tracked_build(records, current_time):
+        nonlocal calls
+        calls += 1
+        return original(records, current_time)
+
+    monkeypatch.setattr(manager_data, "_build_summary", tracked_build)
+    manager_data.get_summary()
+    assert calls == 0
+
+    clock[0] += manager_data._SUMMARY_CACHE_TTL_SECONDS + 0.01
+    manager_data.get_summary()
+    assert calls == 1
+
+
+def test_incident_mutations_invalidate_live_summary_cache(manager_store):
+    manager_data.invalidate_summary_cache()
+    assert manager_data.get_summary()["total"] == 0
+
+    incident = manager_data.create_incident(new_payload())
+    assert manager_data.get_summary()["total"] == 1
+
+    manager_data.update_incident_status(incident["id"], IncidentStatus.IN_PROGRESS)
+    summary = manager_data.get_summary()
+    assert summary["by_status"]["open"] == 0
+    assert summary["by_status"]["in_progress"] == 1
+
+
+def test_explicit_summary_time_bypasses_live_cache(manager_store, monkeypatch):
+    manager_data.create_incident(new_payload())
+    live_summary = manager_data.get_summary()
+    assert live_summary["total"] == 1
+
+    def unexpected_cache_clock():
+        raise AssertionError("deterministic summary timestamps must bypass the live cache")
+
+    monkeypatch.setattr(manager_data, "monotonic", unexpected_cache_clock)
+    summary = manager_data.get_summary(datetime(2026, 10, 5, 12, tzinfo=timezone.utc))
+    assert summary["total"] == 1
 
 
 def test_seed_insert_uses_separate_idempotency_metadata(manager_store):

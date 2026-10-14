@@ -15,10 +15,12 @@ def client(monkeypatch):
     db = TinyDB(storage=MemoryStorage)
     monkeypatch.setattr(manager_data, "_incidents", db.table("incidents"))
     monkeypatch.setattr(manager_data, "_seed_keys", db.table("incident_seed_keys"))
+    manager_data.invalidate_summary_cache()
     app.dependency_overrides[get_current_user] = lambda: {"id": "test-user", "email": "test@example.com"}
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.pop(get_current_user, None)
+    manager_data.invalidate_summary_cache()
     db.close()
 
 

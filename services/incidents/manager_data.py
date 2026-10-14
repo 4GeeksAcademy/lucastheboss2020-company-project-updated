@@ -1,7 +1,9 @@
 from collections import Counter
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from threading import RLock
+from time import monotonic
 from typing import Any
 
 from tinydb import Query, TinyDB
@@ -23,10 +25,23 @@ _db = TinyDB(DATA_DIR / "incidents-manager.json")
 _incidents = _db.table("incidents")
 _seed_keys = _db.table("incident_seed_keys")
 _lock = RLock()
+_SUMMARY_CACHE_TTL_SECONDS = 5.0
+_LIST_CACHE_TTL_SECONDS = 5.0
+_LIST_CACHE_MAX_ENTRIES = 128
+_summary_cache: dict[str, Any] = {"expires_at": 0.0, "value": None}
+_list_cache: dict[tuple[str | None, str | None, str | None, str | None], dict[str, Any]] = {}
 
 
 class InvalidStatusTransition(ValueError):
     pass
+
+
+def invalidate_summary_cache() -> None:
+    """Drop incident read snapshots after an incident mutation."""
+    with _lock:
+        _summary_cache["expires_at"] = 0.0
+        _summary_cache["value"] = None
+        _list_cache.clear()
 
 
 def get_incident(incident_id: str) -> dict[str, Any] | None:
@@ -40,17 +55,36 @@ def list_incidents(
     branch: str | None = None,
     category: str | None = None,
 ) -> list[dict[str, Any]]:
-    records = _incidents.all()
-    filters = {
-        "status": status,
-        "origin": origin,
-        "branch": branch,
-        "category": category,
-    }
-    for field, value in filters.items():
-        if value is not None:
-            records = [record for record in records if record.get(field) == value]
-    return sorted(records, key=lambda record: record.get("created_at", ""), reverse=True)
+    cache_key = (status, origin, branch, category)
+    now = monotonic()
+    with _lock:
+        cached = _list_cache.get(cache_key)
+        if cached is not None and now < cached["expires_at"]:
+            return deepcopy(cached["value"])
+
+        records = _incidents.all()
+        filters = {
+            "status": status,
+            "origin": origin,
+            "branch": branch,
+            "category": category,
+        }
+        for field, value in filters.items():
+            if value is not None:
+                records = [record for record in records if record.get(field) == value]
+        result = sorted(records, key=lambda record: record.get("created_at", ""), reverse=True)
+
+        # Bound memory if callers issue many distinct filter combinations.
+        expired_keys = [key for key, entry in _list_cache.items() if now >= entry["expires_at"]]
+        for key in expired_keys:
+            del _list_cache[key]
+        if len(_list_cache) >= _LIST_CACHE_MAX_ENTRIES and cache_key not in _list_cache:
+            _list_cache.pop(next(iter(_list_cache)))
+        _list_cache[cache_key] = {
+            "expires_at": now + _LIST_CACHE_TTL_SECONDS,
+            "value": result,
+        }
+        return deepcopy(result)
 
 
 def create_incident(payload: IncidentCreate) -> dict[str, Any]:
@@ -62,6 +96,7 @@ def create_incident(payload: IncidentCreate) -> dict[str, Any]:
     ).model_dump(mode="json")
     with _lock:
         _incidents.insert(record)
+        invalidate_summary_cache()
     return record
 
 
@@ -81,6 +116,7 @@ def update_incident_status(incident_id: str, new_status: IncidentStatus) -> dict
             {"status": new_status.value, "updated_at": utc_isoformat()},
             Query().id == incident_id,
         )
+        invalidate_summary_cache()
         return get_incident(incident_id)
 
 
@@ -99,9 +135,7 @@ def _parse_datetime(value: str) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
-def get_summary(now: datetime | None = None) -> dict[str, Any]:
-    records = _incidents.all()
-    current_time = now or datetime.now(timezone.utc)
+def _build_summary(records: list[dict[str, Any]], current_time: datetime) -> dict[str, Any]:
     if current_time.tzinfo is None:
         current_time = current_time.replace(tzinfo=timezone.utc)
     cutoff = current_time.astimezone(timezone.utc) - timedelta(hours=24)
@@ -133,6 +167,29 @@ def get_summary(now: datetime | None = None) -> dict[str, Any]:
     }
 
 
+def get_summary(now: datetime | None = None) -> dict[str, Any]:
+    """Return the incident summary, caching live requests briefly.
+
+    Explicit timestamps are used by deterministic callers/tests and intentionally
+    bypass the wall-clock cache. Cached snapshots expire quickly and are cleared
+    synchronously by every supported incident write path.
+    """
+    if now is not None:
+        return _build_summary(_incidents.all(), now)
+
+    current_time = datetime.now(timezone.utc)
+    now_monotonic = monotonic()
+    with _lock:
+        cached = _summary_cache["value"]
+        if cached is not None and now_monotonic < _summary_cache["expires_at"]:
+            return deepcopy(cached)
+
+        summary = _build_summary(_incidents.all(), current_time)
+        _summary_cache["value"] = summary
+        _summary_cache["expires_at"] = now_monotonic + _SUMMARY_CACHE_TTL_SECONDS
+        return deepcopy(summary)
+
+
 def insert_seed_incident(record: dict[str, Any], dedupe_key: str) -> bool:
     query = Query()
     with _lock:
@@ -142,4 +199,5 @@ def insert_seed_incident(record: dict[str, Any], dedupe_key: str) -> bool:
             return False
         _incidents.insert(record)
         _seed_keys.insert({"key": dedupe_key, "incident_id": record["id"]})
+        invalidate_summary_cache()
     return True
