@@ -110,3 +110,26 @@ class InventoryOrderRead(BaseModel):
     reference: str | None = None
     exit_type: ExitType | None = None
     tracking_number: str | None = None
+
+
+class InventoryOrderProductSummary(BaseModel):
+    name: str
+    sku: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InventoryOrderListItem(BaseModel):
+    """Fields displayed in the movement-history table."""
+
+    movement_type: Literal["inbound", "outbound"]
+    id: int
+    sku_id: int
+    quantity: int
+    warehouse: Warehouse
+    created_at: datetime
+    user_uuid: str
+    sku: InventoryOrderProductSummary
+    reference: str | None = None
+    exit_type: ExitType | None = None
+    tracking_number: str | None = None

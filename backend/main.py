@@ -8,12 +8,17 @@ from .error_handlers import install_api_error_handlers
 from .mailer import send_password_reset_email
 from .models import (
     ChangePasswordRequest,
+    CurrentUserResponse,
     ForgotPasswordRequest,
     LoginRequest,
+    MessageResponse,
+    ProfilePublic,
     ProfileUpdate,
+    RegistrationResponse,
     ResetPasswordRequest,
     TokenResponse,
     UserCreate,
+    UserPublic,
     UserUpdate,
 )
 from .password_resets import (
@@ -49,7 +54,7 @@ app.add_middleware(
 app.include_router(candidates_router)
 
 
-@app.get("/health")
+@app.get("/health", response_model=dict[str, str])
 def health():
     return {"status": "ok"}
 
@@ -68,13 +73,13 @@ def login(payload: LoginRequest):
     return TokenResponse(access_token=create_access_token(user["id"]))
 
 
-@app.get("/auth/me")
+@app.get("/auth/me", response_model=CurrentUserResponse)
 def me(user: dict = Depends(get_current_user)):
     profile = get_profile(user["id"])
     return {**public_user(user), "profile": profile}
 
 
-@app.post("/users", status_code=status.HTTP_201_CREATED)
+@app.post("/users", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
 def register_user(payload: UserCreate):
     try:
         user = create_user(payload)
@@ -83,12 +88,12 @@ def register_user(payload: UserCreate):
     return public_user(user)
 
 
-@app.put("/profiles/me")
+@app.put("/profiles/me", response_model=ProfilePublic)
 def update_my_profile(payload: ProfileUpdate, user: dict = Depends(get_current_user)):
     return update_profile(user["id"], payload)
 
 
-@app.post("/auth/forgot-password")
+@app.post("/auth/forgot-password", response_model=MessageResponse)
 def forgot_password(payload: ForgotPasswordRequest):
     user = get_user_by_email(str(payload.email))
     if user and user.get("is_active", False):
@@ -108,7 +113,7 @@ def forgot_password(payload: ForgotPasswordRequest):
     }
 
 
-@app.post("/auth/reset-password")
+@app.post("/auth/reset-password", response_model=MessageResponse)
 def reset_password(payload: ResetPasswordRequest):
     try:
         redeem_reset_token(payload.token, payload.new_password)
@@ -120,7 +125,7 @@ def reset_password(payload: ResetPasswordRequest):
     return {"message": "Password reset successfully"}
 
 
-@app.post("/auth/change-password")
+@app.post("/auth/change-password", response_model=MessageResponse)
 def change_password(
     payload: ChangePasswordRequest,
     user: dict = Depends(get_current_user),

@@ -71,6 +71,56 @@ class IncidentRecord(IncidentCreate):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class IncidentResponse(BaseModel):
+    """Serialized public incident shape used by the manager API."""
+
+    id: str
+    title: str
+    description: str
+    category: IncidentCategory
+    status: IncidentStatus
+    origin: IncidentOrigin
+    branch: IncidentBranch
+    created_at: str
+    updated_at: str
+
+
+class IncidentListItem(BaseModel):
+    """Fields rendered in the incident register before details are opened."""
+
+    id: str
+    title: str
+    category: IncidentCategory
+    status: IncidentStatus
+    branch: IncidentBranch
+    created_at: str
+
+
+class IncidentSummaryListItem(BaseModel):
+    """Fields needed to identify and triage an incident in a summary list."""
+
+    id: str
+    title: str
+    status: IncidentStatus
+    branch: IncidentBranch
+    created_at: str
+
+
+class IncidentSummaryResponse(BaseModel):
+    total: int
+    by_status: dict[str, int]
+    by_category: dict[str, int]
+    by_origin: dict[str, int]
+    by_branch: dict[str, int]
+    critical_open_by_branch: dict[str, int]
+    unresolved_over_24_hours: "OverdueIncidentsResponse"
+
+
+class OverdueIncidentsResponse(BaseModel):
+    count: int
+    incidents: list[IncidentSummaryListItem]
+
+
 ALLOWED_STATUS_TRANSITIONS: dict[IncidentStatus, set[IncidentStatus]] = {
     IncidentStatus.OPEN: {IncidentStatus.IN_PROGRESS, IncidentStatus.DISCARDED},
     IncidentStatus.IN_PROGRESS: {IncidentStatus.RESOLVED, IncidentStatus.DISCARDED},

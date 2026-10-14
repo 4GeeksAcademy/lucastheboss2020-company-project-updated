@@ -1,11 +1,12 @@
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from typing import Optional
 
 
 class TrackFlowRecord(BaseModel):
     """TrackFlow logistics incident record."""
+
     incident_id: str = Field(min_length=1)
-    date: str  # YYYY-MM-DD
+    date: str
     country: str = Field(pattern=r"^(US|ES)$")
     customer_type: str = Field(pattern=r"^(B2B|B2C)$")
     tracking_number: str = Field(min_length=8)
@@ -18,7 +19,8 @@ class TrackFlowRecord(BaseModel):
 
 
 class AnalysisMetrics(BaseModel):
-    """Analysis metrics computed from a TrackFlow CSV file."""
+    """Metrics calculated from a TrackFlow incident CSV."""
+
     total_processed: int
     valid_records: int
     invalid_records: int
@@ -31,40 +33,57 @@ class AnalysisMetrics(BaseModel):
 
 
 class InvalidRecordDetail(BaseModel):
-    """Details of an invalid record."""
+    """Validation details for a CSV row; analyzer generations used two ID names."""
+
+    model_config = ConfigDict(extra="ignore")
+
     row_number: int
-    incident_id: str
+    incident_id: str = Field(
+        default="N/A",
+        validation_alias=AliasChoices("incident_id", "tracking_id"),
+    )
     errors: list[str]
 
 
 class AnalysisResult(BaseModel):
-    """Complete analysis result."""
+    """Canonical stored analysis response used by the TrackFlow UI."""
+
+    model_config = ConfigDict(extra="ignore")
+
     id: str
     timestamp: int
     filename: str
-    format: str = "trackflow"
+    format: str | None = None
     metrics: AnalysisMetrics
-    invalid_records: list[InvalidRecordDetail]
+    invalid_records: list[InvalidRecordDetail] = Field(default_factory=list)
     valid_record_count: int
+
+
+class AnalysisCreateRequest(BaseModel):
+    """Validated analyzer payload accepted when storing a new result."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    filename: str
+    format: str | None = None
+    metrics: AnalysisMetrics
+    invalid_records: list[InvalidRecordDetail] = Field(default_factory=list)
+    valid_record_count: int
+
+
+class AnalysisListMetrics(BaseModel):
+    """Record counts sufficient for a compact analysis-history row."""
+
+    total_processed: int
     valid_records: int
     invalid_records: int
-    carrier_breakdown: dict
-    category_breakdown: dict
-    status_breakdown: dict
-    average_declared_value: Optional[float] = None
 
 
-class InvalidRecordDetail(BaseModel):
-    row_number: int
-    tracking_id: str
-    errors: list[str]
+class AnalysisListItem(BaseModel):
+    """Metadata and counts needed to select an analysis from history."""
 
-
-class AnalysisResult(BaseModel):
-    """Complete analysis result for a TRF CSV upload."""
     id: str
     timestamp: int
     filename: str
-    metrics: AnalysisMetrics
-    invalid_records: list[InvalidRecordDetail]
-    valid_record_count: int
+    format: str | None = None
+    metrics: AnalysisListMetrics

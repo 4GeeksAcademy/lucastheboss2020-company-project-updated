@@ -18,6 +18,7 @@ import {
   type IncidentCategory,
   type IncidentCreateInput,
   type IncidentFilters,
+  type IncidentListItem,
   type IncidentOrigin,
   type IncidentRecord,
   type IncidentStatus,
@@ -232,7 +233,7 @@ function formatDate(value: string, language: Language): string {
 
 export default function IncidentManager() {
   const [language, setLanguage] = useState<Language>("en");
-  const [records, setRecords] = useState<IncidentRecord[]>([]);
+  const [records, setRecords] = useState<IncidentListItem[]>([]);
   const [summary, setSummary] = useState<IncidentSummary | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<IncidentRecord | null>(null);

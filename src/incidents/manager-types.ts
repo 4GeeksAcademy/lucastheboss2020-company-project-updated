@@ -37,6 +37,10 @@ export interface IncidentRecord {
   updated_at: string;
 }
 
+export type IncidentListItem = Pick<IncidentRecord, "id" | "title" | "category" | "status" | "branch" | "created_at">;
+
+export type IncidentSummaryListItem = Pick<IncidentRecord, "id" | "title" | "status" | "branch" | "created_at">;
+
 export interface IncidentCreateInput {
   title: string;
   description: string;
@@ -61,6 +65,6 @@ export interface IncidentSummary {
   critical_open_by_branch: Record<IncidentBranch, number>;
   unresolved_over_24_hours: {
     count: number;
-    incidents: IncidentRecord[];
+    incidents: IncidentSummaryListItem[];
   };
 }
