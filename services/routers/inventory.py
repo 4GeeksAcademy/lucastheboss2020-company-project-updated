@@ -11,7 +11,7 @@ from backend.telemetry.inventory_events import (
     emit_stock_threshold_triggered,
     inventory_context,
 )
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlmodel import Session, select
@@ -316,3 +316,30 @@ def list_orders(
         )
     orders.sort(key=lambda order: (order.created_at, order.id), reverse=True)
     return orders
+
+
+@router.patch("/products/{product_id}")
+def reject_direct_stock_edit(
+    product_id: int,
+    request: Request,
+    session: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """MANDATORY (CONTEXT_6 §5): reject any direct stock modification attempt
+    outside an inbound/outbound order. Always returns 405."""
+    try:
+        product = session.get(SKU, product_id)
+        if product is not None:
+            emit_direct_stock_edit_rejected(
+                context=inventory_context(warehouse=product.warehouse, product=product),
+                attempted_quantity=0,
+                target_field="current_stock",
+                reason="not_supported",
+                user_id=user["id"],
+            )
+    except SQLAlchemyError:
+        pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Direct stock modification is not supported. Use inbound/outbound orders.",
+    )

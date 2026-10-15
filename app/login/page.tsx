@@ -3,7 +3,8 @@
 import { useAuth } from "../auth/AuthProvider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
+import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
+import { track } from "../../src/telemetry/TelemetryService";
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
@@ -29,7 +30,14 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       await login(access_token);
+      track("auth_login_succeeded", { method: "password" });
     } catch (e) {
+      let reason = "invalid_credentials";
+      if (e instanceof ApiRequestError) {
+        if (e.status === 422) reason = "invalid_format";
+        else if (e.status === 403) reason = "account_disabled";
+      }
+      track("auth_login_failed", { reason, method: "password" });
       setError(userSafeErrorMessage(e, "Could not sign in. Check your connection and try again."));
     } finally {
       setSubmitting(false);

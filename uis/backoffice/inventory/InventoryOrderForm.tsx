@@ -12,6 +12,7 @@ import {
 } from "../../../src/inventory/api";
 import type { InventoryExitType, InventoryProduct } from "../../../src/inventory/types";
 import { userSafeErrorMessage } from "../../../src/utils/api-errors";
+import { track } from "../../../src/telemetry/TelemetryService";
 
 type OrderMode = "inbound" | "outbound";
 
@@ -21,6 +22,16 @@ interface InventoryOrderFormProps {
 
 function warehouseName(code: InventoryProduct["warehouse"]): string {
   return code === "LA" ? "Los Angeles" : "Zaragoza";
+}
+
+/** Normalise warehouse code to event-schemas.json warehouse key. */
+function telemetryWarehouse(code: InventoryProduct["warehouse"]): string {
+  return code === "LA" ? "los_angeles" : "zaragoza";
+}
+
+/** Derive a stable client_id from client_name (mirrors backend context.py slugs). */
+function clientSlug(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, "-");
 }
 
 export default function InventoryOrderForm({ mode }: InventoryOrderFormProps) {
@@ -91,10 +102,12 @@ export default function InventoryOrderForm({ mode }: InventoryOrderFormProps) {
 
     if (!selectedProduct) {
       setSubmitError("Select a product before submitting.");
+      track("inventory_order_validation_error", { flow: mode, field: "product", error_code: "no_product_selected" });
       return;
     }
     if (!Number.isInteger(parsedQuantity) || parsedQuantity < 1) {
       setSubmitError("Enter a whole-number quantity greater than zero.");
+      track("inventory_order_validation_error", { flow: mode, field: "quantity", error_code: "invalid_quantity" });
       return;
     }
     if (mode === "outbound" && currentStock === null) {
@@ -103,32 +116,55 @@ export default function InventoryOrderForm({ mode }: InventoryOrderFormProps) {
     }
     if (mode === "inbound" && !reference.trim()) {
       setSubmitError("Enter the receipt reference.");
+      track("inventory_order_validation_error", { flow: mode, field: "reference", error_code: "missing_reference" });
       return;
     }
     if (mode === "outbound" && exitType === "dispatch" && !trackingNumber.trim()) {
       setSubmitError("Enter a carrier tracking number for a dispatch.");
+      track("inventory_order_validation_error", { flow: mode, field: "tracking_number", error_code: "missing_tracking" });
       return;
     }
 
     setSubmitting(true);
     try {
+      let orderId: number | null = null;
       if (mode === "inbound") {
-        await createInboundOrder({
+        const order = await createInboundOrder({
           sku_id: selectedProduct.id,
           quantity: parsedQuantity,
           reference: reference.trim(),
           warehouse: selectedProduct.warehouse,
         });
+        orderId = order.id;
         setSuccess("Receipt recorded. Inventory has been updated.");
+        track("inbound_order_created", {
+          warehouse: telemetryWarehouse(selectedProduct.warehouse),
+          client_id: clientSlug(selectedProduct.client_name),
+          product_id: selectedProduct.id,
+          product_category: selectedProduct.category,
+          quantity: parsedQuantity,
+          order_id: String(order.id),
+          reference: reference.trim(),
+        });
       } else {
-        await createOutboundOrder({
+        const order = await createOutboundOrder({
           sku_id: selectedProduct.id,
           quantity: parsedQuantity,
           exit_type: exitType,
           tracking_number: exitType === "dispatch" ? trackingNumber.trim() : null,
           warehouse: selectedProduct.warehouse,
         });
+        orderId = order.id;
         setSuccess("Stock exit recorded.");
+        track("outbound_order_created", {
+          warehouse: telemetryWarehouse(selectedProduct.warehouse),
+          client_id: clientSlug(selectedProduct.client_name),
+          product_id: selectedProduct.id,
+          product_category: selectedProduct.category,
+          quantity: parsedQuantity,
+          order_id: String(order.id),
+          exit_type: exitType,
+        });
       }
       setSelectedId("");
       setQuantity("");
@@ -137,6 +173,23 @@ export default function InventoryOrderForm({ mode }: InventoryOrderFormProps) {
       setCurrentStock(null);
     } catch (error) {
       setSubmitError(userSafeErrorMessage(error, "The order could not be saved. Please retry."));
+      if (mode === "outbound") {
+        track("outbound_order_rejected", {
+          warehouse: telemetryWarehouse(selectedProduct?.warehouse ?? "LA"),
+          client_id: clientSlug(selectedProduct?.client_name ?? "unknown"),
+          product_id: selectedProduct?.id ?? 0,
+          product_category: selectedProduct?.category ?? "unknown",
+          quantity: parsedQuantity,
+          available_stock: currentStock ?? 0,
+          reason: "validation_failed",
+        });
+      } else {
+        track("inventory_order_validation_error", {
+          flow: "inbound",
+          field: "submit",
+          error_code: "api_failure",
+        });
+      }
     } finally {
       setSubmitting(false);
     }
