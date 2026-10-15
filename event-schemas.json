@@ -1,0 +1,845 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://trackflow.com/schemas/event-schemas.json",
+  "title": "TrackFlow Telemetry Event Schemas",
+  "description": "Single source of truth for TrackFlow telemetry events. Documented custom registry PLUS JSON Schema draft-07 validation for every event. Every event = standard Event Envelope + allowlisted properties. additionalProperties=false rejects any accidental data leakage at ingest.",
+  "version": "1.0.0",
+  "meta": {
+    "schemaVersion": 1,
+    "envelopeVersion": "1.0.0",
+    "owner": "trackflow-tech",
+    "date": "2026-10-15",
+    "classification": { "MANDATORY": 5, "OPPORTUNITY": 30, "TOTAL": 35 },
+    "warehouseMapping": { "LA": "los_angeles", "ZGZ": "zaragoza" }
+  },
+  "taxonomy": {
+    "pattern": "^[a-z]+_[a-z]+(?:_[a-z]+)*$",
+    "format": "entity_action (lowercase snake_case)",
+    "entities": ["auth","session","inventory","product","order","stock","incident","candidate","lead","supplier","api","frontend","page","flow"],
+    "verbs": ["created","updated","rejected","triggered","detected","failed","succeeded","expired","ended","changed","viewed","abandoned","loaded","recorded","completed","requested","occurred"]
+  },
+  "catalog": [
+    { "event_type": "inbound_order_created", "category": "inventory/business", "classification": "MANDATORY", "delivery": "stream", "pii": false },
+    { "event_type": "outbound_order_created", "category": "inventory/business", "classification": "MANDATORY", "delivery": "stream", "pii": false },
+    { "event_type": "stock_threshold_triggered", "category": "inventory/business", "classification": "MANDATORY", "delivery": "stream", "pii": false },
+    { "event_type": "direct_stock_edit_rejected", "category": "inventory/business", "classification": "MANDATORY", "delivery": "stream", "pii": false },
+    { "event_type": "inventory_discrepancy_detected", "category": "inventory/business", "classification": "MANDATORY", "delivery": "batch", "pii": false },
+    { "event_type": "outbound_order_rejected", "category": "inventory/business", "classification": "OPPORTUNITY", "delivery": "stream", "pii": false },
+    { "event_type": "inventory_order_validation_error", "category": "inventory/business", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "inventory_product_created", "category": "inventory/business", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "inventory_products_viewed", "category": "inventory/business", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "auth_login_succeeded", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "auth_login_failed", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "stream", "pii": "sanitised" },
+    { "event_type": "session_expired", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "auth_registration_created", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "auth_registration_failed", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": "sanitised" },
+    { "event_type": "auth_password_reset_requested", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": "sanitised" },
+    { "event_type": "auth_password_reset_completed", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "auth_password_changed", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "session_ended", "category": "authentication", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "api_latency_recorded", "category": "performance", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "frontend_page_load", "category": "performance", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "frontend_error_uncaught", "category": "errors", "classification": "OPPORTUNITY", "delivery": "stream", "pii": false },
+    { "event_type": "api_error", "category": "errors", "classification": "OPPORTUNITY", "delivery": "stream", "pii": false },
+    { "event_type": "page_view", "category": "navigation", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "flow_abandoned", "category": "navigation", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "candidate_created", "category": "crm/leads", "classification": "OPPORTUNITY", "delivery": "batch", "pii": "sanitised" },
+    { "event_type": "candidate_status_updated", "category": "crm/leads", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "lead_form_validation_failed", "category": "crm/leads", "classification": "OPPORTUNITY", "delivery": "batch", "pii": "sanitised" },
+    { "event_type": "incident_created", "category": "incidents", "classification": "OPPORTUNITY", "delivery": "stream", "pii": false },
+    { "event_type": "incident_created_validation_error", "category": "incidents", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "incident_status_changed", "category": "incidents", "classification": "OPPORTUNITY", "delivery": "stream", "pii": false },
+    { "event_type": "incident_status_transition_rejected", "category": "incidents", "classification": "OPPORTUNITY", "delivery": "stream", "pii": false },
+    { "event_type": "incident_analysis_completed", "category": "incidents", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "supplier_created", "category": "suppliers", "classification": "OPPORTUNITY", "delivery": "batch", "pii": "sanitised" },
+    { "event_type": "supplier_created_validation_error", "category": "suppliers", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false },
+    { "event_type": "supplier_updated", "category": "suppliers", "classification": "OPPORTUNITY", "delivery": "batch", "pii": false }
+  ],
+  "$defs": {
+    "envelope": {
+      "eventId": { "type": "string", "format": "uuid", "description": "Unique event identifier (UUID v4)" },
+      "timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601 / RFC 3339 UTC e.g. 2026-10-15T09:30:00Z" },
+      "sessionId": { "type": "string", "format": "uuid", "description": "Client session scope (localStorage tf_session_id)" },
+      "userId": { "type": "string", "minLength": 1, "description": "TinyDB user UUID, or 'anonymous' for pre-auth/public flows" },
+      "schemaVersion": { "const": 1, "type": "integer", "description": "Version of the event schema" },
+      "requestId": { "type": "string", "format": "uuid", "description": "Correlation id; X-Request-Id header joins FE-BE-logs-DB" }
+    },
+    "valueTypes": {
+      "skuId": { "type": "integer", "minimum": 1, "description": "inventory_skus.id" },
+      "quantity": { "type": "integer", "minimum": 1, "description": "positive unit count" },
+      "nonNegativeInt": { "type": "integer", "minimum": 0 },
+      "durationMs": { "type": "number", "minimum": 0 },
+      "statusCode": { "type": "integer", "minimum": 100, "maximum": 599 },
+      "route": { "type": "string", "minLength": 1, "pattern": "^\\/[A-Za-z0-9_\\-\\[\\]/{}]*$", "description": "normalized route template, no query string, no dynamic id values" },
+      "country": { "enum": ["US", "ES"] }
+    },
+    "enums": {
+      "warehouse": { "enum": ["los_angeles", "zaragoza"], "description": "CONTEXT_6 normalized values; maps LA->los_angeles, ZGZ->zaragoza" },
+      "product_category": { "enum": ["fashion", "electronics", "cosmetics"] },
+      "exit_type": { "enum": ["dispatch", "loss"] }
+    },
+    "base": {
+      "eventId": { "$ref": "#/$defs/envelope/eventId" },
+      "timestamp": { "$ref": "#/$defs/envelope/timestamp" },
+      "sessionId": { "$ref": "#/$defs/envelope/sessionId" },
+      "userId": { "$ref": "#/$defs/envelope/userId" },
+      "schemaVersion": { "$ref": "#/$defs/envelope/schemaVersion" },
+      "requestId": { "$ref": "#/$defs/envelope/requestId" },
+      "warehouse": { "$ref": "#/$defs/enums/warehouse" },
+      "client_id": { "type": "string", "minLength": 1, "description": "stable slug derived from client_name (see plan Appendix A)" },
+      "product_id": { "$ref": "#/$defs/valueTypes/skuId" },
+      "product_category": { "$ref": "#/$defs/enums/product_category" },
+      "quantity": { "$ref": "#/$defs/valueTypes/quantity" }
+    },
+    "events": {
+      "inbound_order_created": {
+        "title": "inbound_order_created", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "inbound_order_created" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["warehouse","client_id","product_id","product_category","quantity"],
+            "properties": {
+              "warehouse": { "$ref": "#/$defs/base/warehouse" }, "client_id": { "$ref": "#/$defs/base/client_id" },
+              "product_id": { "$ref": "#/$defs/base/product_id" }, "product_category": { "$ref": "#/$defs/base/product_category" },
+              "quantity": { "$ref": "#/$defs/base/quantity" },
+              "order_id": { "type": "string", "description": "internal stock entry id" },
+              "reference": { "type": "string", "maxLength": 120, "description": "client dispatch/PO reference" },
+              "stock_after": { "$ref": "#/$defs/valueTypes/nonNegativeInt" },
+              "country": { "$ref": "#/$defs/valueTypes/country" }
+            }
+          }
+        }
+      },
+      "outbound_order_created": {
+        "title": "outbound_order_created", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "outbound_order_created" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["warehouse","client_id","product_id","product_category","quantity"],
+            "properties": {
+              "warehouse": { "$ref": "#/$defs/base/warehouse" }, "client_id": { "$ref": "#/$defs/base/client_id" },
+              "product_id": { "$ref": "#/$defs/base/product_id" }, "product_category": { "$ref": "#/$defs/base/product_category" },
+              "quantity": { "$ref": "#/$defs/base/quantity" },
+              "order_id": { "type": "string", "description": "internal stock exit id" },
+              "exit_type": { "$ref": "#/$defs/enums/exit_type" },
+              "stock_after": { "$ref": "#/$defs/valueTypes/nonNegativeInt" },
+              "country": { "$ref": "#/$defs/valueTypes/country" }
+            }
+          }
+        }
+      },
+      "stock_threshold_triggered": {
+        "title": "stock_threshold_triggered", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "stock_threshold_triggered" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["warehouse","client_id","product_id","product_category","quantity","threshold_value"],
+            "properties": {
+              "warehouse": { "$ref": "#/$defs/base/warehouse" }, "client_id": { "$ref": "#/$defs/base/client_id" },
+              "product_id": { "$ref": "#/$defs/base/product_id" }, "product_category": { "$ref": "#/$defs/base/product_category" },
+              "quantity": { "type": "integer", "minimum": 0, "description": "stock level that triggered (>=0)" },
+              "threshold_value": { "type": "integer", "minimum": 0, "description": "configured minimum for that client" },
+              "country": { "$ref": "#/$defs/valueTypes/country" }
+            }
+          }
+        }
+      },
+      "direct_stock_edit_rejected": {
+        "title": "direct_stock_edit_rejected", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "direct_stock_edit_rejected" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["warehouse","client_id","product_id","product_category","quantity","reason"],
+            "properties": {
+              "warehouse": { "$ref": "#/$defs/base/warehouse" }, "client_id": { "$ref": "#/$defs/base/client_id" },
+              "product_id": { "$ref": "#/$defs/base/product_id" }, "product_category": { "$ref": "#/$defs/base/product_category" },
+              "quantity": { "$ref": "#/$defs/valueTypes/nonNegativeInt", "description": "attempted units (0 if unknown)" },
+              "target_field": { "type": "string", "description": "field they attempted to set, e.g. current_stock" },
+              "reason": { "enum": ["not_supported", "forbidden_route", "direct_write_denied"] }
+            }
+          }
+        }
+      },
+      "inventory_discrepancy_detected": {
+        "title": "inventory_discrepancy_detected", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "inventory_discrepancy_detected" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["warehouse","client_id","product_id","product_category","quantity","physical_stock","variance"],
+            "properties": {
+              "warehouse": { "$ref": "#/$defs/base/warehouse" }, "client_id": { "$ref": "#/$defs/base/client_id" },
+              "product_id": { "$ref": "#/$defs/base/product_id" }, "product_category": { "$ref": "#/$defs/base/product_category" },
+              "quantity": { "type": "integer", "minimum": 0, "description": "system stock at audit (>=0)" },
+              "physical_stock": { "type": "integer", "minimum": 0 },
+              "variance": { "type": "integer", "description": "physical - system" },
+              "audit_reference": { "type": "string" },
+              "variance_ratio": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      },
+      "outbound_order_rejected": {
+        "title": "outbound_order_rejected", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "outbound_order_rejected" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["warehouse","client_id","product_id","product_category","quantity","available_stock","reason"],
+            "properties": {
+              "warehouse": { "$ref": "#/$defs/base/warehouse" }, "client_id": { "$ref": "#/$defs/base/client_id" },
+              "product_id": { "$ref": "#/$defs/base/product_id" }, "product_category": { "$ref": "#/$defs/base/product_category" },
+              "quantity": { "$ref": "#/$defs/base/quantity", "description": "requested units" },
+              "available_stock": { "type": "integer", "minimum": 0 },
+              "reason": { "enum": ["insufficient_stock", "warehouse_mismatch", "sku_not_found", "duplicate_reference", "validation_failed"] },
+              "exit_type": { "$ref": "#/$defs/enums/exit_type" }
+            }
+          }
+        }
+      },
+      "inventory_order_validation_error": {
+        "title": "inventory_order_validation_error", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "inventory_order_validation_error" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["flow", "field", "error_code"],
+            "properties": {
+              "flow": { "enum": ["inbound", "outbound"] },
+              "field": { "type": "string", "description": "failing field, e.g. tracking_number, reference, warehouse" },
+              "error_code": { "type": "string", "description": "stable code: missing_tracking, duplicate_reference, warehouse_mismatch, ..." },
+              "product_id": { "$ref": "#/$defs/base/product_id" },
+              "client_id": { "$ref": "#/$defs/base/client_id" }
+            }
+          }
+        }
+      },
+      "inventory_product_created": {
+        "title": "inventory_product_created", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "inventory_product_created" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["warehouse","client_id","product_id","product_category","initial_stock"],
+            "properties": {
+              "warehouse": { "$ref": "#/$defs/base/warehouse" }, "client_id": { "$ref": "#/$defs/base/client_id" },
+              "product_id": { "$ref": "#/$defs/base/product_id" }, "product_category": { "$ref": "#/$defs/base/product_category" },
+              "initial_stock": { "const": 0 }
+            }
+          }
+        }
+      },
+      "inventory_products_viewed": {
+        "title": "inventory_products_viewed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "inventory_products_viewed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["section"],
+            "properties": {
+              "section": { "enum": ["products", "orders", "detail"] },
+              "warehouse": { "$ref": "#/$defs/base/warehouse" },
+              "result_count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      },
+      "auth_login_succeeded": {
+        "title": "auth_login_succeeded", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "auth_login_succeeded" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["method"],
+            "properties": {
+              "method": { "enum": ["password", "token"] },
+              "role": { "enum": ["user", "manager", "admin"] },
+              "region": { "$ref": "#/$defs/valueTypes/country" }
+            }
+          }
+        }
+      },
+      "auth_login_failed": {
+        "title": "auth_login_failed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId", "description": "always 'anonymous' for this event" },
+          "event_type": { "const": "auth_login_failed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["reason", "method"],
+            "properties": {
+              "reason": { "enum": ["invalid_credentials", "account_disabled", "invalid_format"] },
+              "method": { "enum": ["password"] },
+              "region": { "$ref": "#/$defs/valueTypes/country" },
+              "note": { "const": "Attempted email and password are NEVER captured." }
+            }
+          }
+        }
+      },
+      "session_expired": {
+        "title": "session_expired", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "session_expired" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["reason"],
+            "properties": {
+              "reason": { "enum": ["token_expired", "invalid_token", "user_inactive", "missing_token"] },
+              "route": { "$ref": "#/$defs/valueTypes/route" },
+              "token_age_ms": { "$ref": "#/$defs/valueTypes/durationMs" }
+            }
+          }
+        }
+      },
+      "auth_registration_created": {
+        "title": "auth_registration_created", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "auth_registration_created" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["role", "region"],
+            "properties": {
+              "role": { "enum": ["user", "manager", "admin"] },
+              "region": { "$ref": "#/$defs/valueTypes/country" },
+              "method": { "enum": ["public_form", "admin"] }
+            }
+          }
+        }
+      },
+      "auth_registration_failed": {
+        "title": "auth_registration_failed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId", "description": "usually 'anonymous'" },
+          "event_type": { "const": "auth_registration_failed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["reason"],
+            "properties": { "reason": { "enum": ["validation", "email_conflict", "invalid_invite"] } }
+          }
+        }
+      },
+      "auth_password_reset_requested": {
+        "title": "auth_password_reset_requested", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId", "description": "usually 'anonymous'" },
+          "event_type": { "const": "auth_password_reset_requested" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["token_issued"],
+            "properties": {
+              "token_issued": { "type": "boolean" },
+              "note": { "const": "Email address and reset token are NEVER captured." }
+            }
+          }
+        }
+      },
+      "auth_password_reset_completed": {
+        "title": "auth_password_reset_completed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "auth_password_reset_completed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["success"],
+            "properties": { "success": { "type": "boolean" }, "method": { "enum": ["reset", "change"] } }
+          }
+        }
+      },
+      "auth_password_changed": {
+        "title": "auth_password_changed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "auth_password_changed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["source"],
+            "properties": { "source": { "enum": ["profile", "forced", "reset"] } }
+          }
+        }
+      },
+      "session_ended": {
+        "title": "session_ended", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "session_ended" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["reason"],
+            "properties": {
+              "reason": { "enum": ["user_logout", "tab_closed", "session_switch"] },
+              "session_duration_ms": { "$ref": "#/$defs/valueTypes/durationMs" }
+            }
+          }
+        }
+      },
+      "api_latency_recorded": {
+        "title": "api_latency_recorded", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "api_latency_recorded" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["route", "method", "status_code", "duration_ms"],
+            "properties": {
+              "route": { "$ref": "#/$defs/valueTypes/route" },
+              "method": { "type": "string", "pattern": "^(GET|POST|PUT|PATCH|DELETE)$" },
+              "status_code": { "$ref": "#/$defs/valueTypes/statusCode" },
+              "duration_ms": { "$ref": "#/$defs/valueTypes/durationMs" },
+              "component": { "enum": ["backend", "frontend_hop"] },
+              "sampled": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "frontend_page_load": {
+        "title": "frontend_page_load", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "frontend_page_load" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["route", "metric", "value_ms"],
+            "properties": {
+              "route": { "$ref": "#/$defs/valueTypes/route" },
+              "metric": { "enum": ["LCP", "INP", "FID", "TTFB", "CLS"] },
+              "value_ms": { "type": "number", "minimum": 0, "description": "CLS uses score" },
+              "device": { "enum": ["desktop", "tablet", "mobile"] },
+              "connection": { "type": "string" }
+            }
+          }
+        }
+      },
+      "frontend_error_uncaught": {
+        "title": "frontend_error_uncaught", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "frontend_error_uncaught" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["route", "error_type", "message_hash"],
+            "properties": {
+              "route": { "$ref": "#/$defs/valueTypes/route" },
+              "error_type": { "type": "string" },
+              "message_hash": { "type": "string", "description": "stable hash of message+stack, never raw text" },
+              "component": { "type": "string" },
+              "count": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      },
+      "api_error": {
+        "title": "api_error", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "api_error" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["route", "method", "status_code", "error_type"],
+            "properties": {
+              "route": { "$ref": "#/$defs/valueTypes/route" },
+              "method": { "type": "string", "pattern": "^(GET|POST|PUT|PATCH|DELETE)$" },
+              "status_code": { "type": "integer", "minimum": 500, "maximum": 599 },
+              "error_type": { "type": "string", "description": "e.g. SQLAlchemyError, JWTError, unhandled" },
+              "duration_ms": { "$ref": "#/$defs/valueTypes/durationMs" }
+            }
+          }
+        }
+      },
+      "page_view": {
+        "title": "page_view", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "page_view" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["route", "section"],
+            "properties": {
+              "route": { "$ref": "#/$defs/valueTypes/route" },
+              "section": { "enum": ["inventory", "candidates", "suppliers", "incidents", "profile", "dashboard", "website"] },
+              "referrer_section": { "type": "string" },
+              "locale": { "enum": ["en", "es"] },
+              "time_on_page_ms": { "$ref": "#/$defs/valueTypes/durationMs" }
+            }
+          }
+        }
+      },
+      "flow_abandoned": {
+        "title": "flow_abandoned", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "flow_abandoned" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["flow", "route", "last_step", "time_in_flow_ms"],
+            "properties": {
+              "flow": { "enum": ["inventory_inbound", "inventory_outbound", "login", "registration", "password_reset", "incident_create", "supplier_create", "candidate_create", "lead_form"] },
+              "route": { "$ref": "#/$defs/valueTypes/route" },
+              "last_step": { "type": "string" },
+              "time_in_flow_ms": { "$ref": "#/$defs/valueTypes/durationMs" },
+              "reason": { "enum": ["navigate_away", "session_lost", "timeout", "exit_click"] }
+            }
+          }
+        }
+      },
+      "candidate_created": {
+        "title": "candidate_created", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "candidate_created" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["candidate_id", "operating_country", "product_type", "monthly_volume"],
+            "properties": {
+              "candidate_id": { "type": "string", "description": "internal candidate UUID; PII resolved via CRM with access control" },
+              "operating_country": { "type": "string" },
+              "product_type": { "type": "string" },
+              "monthly_volume": { "type": "string" },
+              "services_of_interest": { "type": "array", "items": { "type": "string" } },
+              "source": { "enum": ["public_form", "manual"] },
+              "note": { "const": "Company name, contact person, corporate email and phone are NEVER captured in properties." }
+            }
+          }
+        }
+      },
+      "candidate_status_updated": {
+        "title": "candidate_status_updated", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "candidate_status_updated" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["candidate_id", "from_status", "to_status", "from_stage", "to_stage"],
+            "properties": {
+              "candidate_id": { "type": "string" },
+              "from_status": { "enum": ["new", "qualified", "contacted", "not-fit"] },
+              "to_status": { "enum": ["new", "qualified", "contacted", "not-fit"] },
+              "from_stage": { "enum": ["intake", "discovery", "proposal", "implementation"] },
+              "to_stage": { "enum": ["intake", "discovery", "proposal", "implementation"] },
+              "changed_by_role": { "type": "string" }
+            }
+          }
+        }
+      },
+      "lead_form_validation_failed": {
+        "title": "lead_form_validation_failed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId", "description": "always 'anonymous' (public form)" },
+          "event_type": { "const": "lead_form_validation_failed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["field", "error_message_key", "attempt"],
+            "properties": {
+              "field": { "type": "string" },
+              "error_message_key": { "type": "string", "description": "stable message id, never the typed value" },
+              "attempt": { "type": "integer", "minimum": 1 },
+              "monthly_volume": { "type": "string" }
+            }
+          }
+        }
+      },
+      "incident_created": {
+        "title": "incident_created", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "incident_created" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["incident_id", "category", "origin", "branch", "status", "severity"],
+            "properties": {
+              "incident_id": { "type": "string" },
+              "category": { "enum": ["lost_parcel", "delivery_failure", "inventory_discrepancy", "carrier_issue", "returns_issue", "warehouse_incident", "system_failure", "client_complaint", "other"] },
+              "origin": { "enum": ["customer", "branch", "internal"] },
+              "branch": { "enum": ["central", "la_warehouse", "la_office", "zaragoza_warehouse", "zaragoza_office"] },
+              "status": { "const": "open" },
+              "severity": { "type": "string" },
+              "note": { "const": "Incident description (free text) is NEVER captured." }
+            }
+          }
+        }
+      },
+      "incident_created_validation_error": {
+        "title": "incident_created_validation_error", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "incident_created_validation_error" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["field", "error_code"],
+            "properties": {
+              "field": { "type": "string" },
+              "error_code": { "type": "string" },
+              "language": { "enum": ["en", "es"] }
+            }
+          }
+        }
+      },
+      "incident_status_changed": {
+        "title": "incident_status_changed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "incident_status_changed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["incident_id", "from_status", "to_status", "branch", "category"],
+            "properties": {
+              "incident_id": { "type": "string" },
+              "from_status": { "enum": ["open", "in_progress", "resolved", "discarded"] },
+              "to_status": { "enum": ["open", "in_progress", "resolved", "discarded"] },
+              "branch": { "enum": ["central", "la_warehouse", "la_office", "zaragoza_warehouse", "zaragoza_office"] },
+              "category": { "type": "string" },
+              "resolution_time_ms": { "$ref": "#/$defs/valueTypes/durationMs" }
+            }
+          }
+        }
+      },
+      "incident_status_transition_rejected": {
+        "title": "incident_status_transition_rejected", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "incident_status_transition_rejected" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["incident_id", "from_status", "attempted_to"],
+            "properties": {
+              "incident_id": { "type": "string" },
+              "from_status": { "enum": ["open", "in_progress", "resolved", "discarded"] },
+              "attempted_to": { "enum": ["open", "in_progress", "resolved", "discarded"] },
+              "reason": { "const": "invalid_transition" }
+            }
+          }
+        }
+      },
+      "incident_analysis_completed": {
+        "title": "incident_analysis_completed", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "incident_analysis_completed" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["total_records", "valid_records", "invalid_records"],
+            "properties": {
+              "total_records": { "type": "integer", "minimum": 0 },
+              "valid_records": { "type": "integer", "minimum": 0 },
+              "invalid_records": { "type": "integer", "minimum": 0 },
+              "error_type_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+              "duration_ms": { "$ref": "#/$defs/valueTypes/durationMs" }
+            }
+          }
+        }
+      },
+      "supplier_created": {
+        "title": "supplier_created", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "supplier_created" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["supplier_id", "country", "currency", "categories", "rate_per_shipment", "status"],
+            "properties": {
+              "supplier_id": { "type": "integer", "minimum": 1 },
+              "country": { "enum": ["USA", "Spain"] },
+              "currency": { "enum": ["USD", "EUR"] },
+              "categories": { "type": "array", "items": { "type": "string" } },
+              "rate_per_shipment": { "type": "number", "exclusiveMinimum": 0 },
+              "status": { "enum": ["active", "suspended"] },
+              "service_zone": { "type": "string" },
+              "note": { "const": "Supplier contact_email and notes are NEVER captured." }
+            }
+          }
+        }
+      },
+      "supplier_created_validation_error": {
+        "title": "supplier_created_validation_error", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "supplier_created_validation_error" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["field", "error_code"],
+            "properties": {
+              "field": { "type": "string" },
+              "error_code": { "type": "string", "description": "e.g. currency_country_mismatch, invalid_category" },
+              "country_attempted": { "enum": ["USA", "Spain"] }
+            }
+          }
+        }
+      },
+      "supplier_updated": {
+        "title": "supplier_updated", "type": "object", "additionalProperties": false,
+        "required": ["eventId","timestamp","sessionId","userId","event_type","schemaVersion","requestId","properties"],
+        "properties": {
+          "eventId": { "$ref": "#/$defs/base/eventId" }, "timestamp": { "$ref": "#/$defs/base/timestamp" },
+          "sessionId": { "$ref": "#/$defs/base/sessionId" }, "userId": { "$ref": "#/$defs/base/userId" },
+          "event_type": { "const": "supplier_updated" }, "schemaVersion": { "$ref": "#/$defs/base/schemaVersion" },
+          "requestId": { "$ref": "#/$defs/base/requestId" },
+          "properties": {
+            "type": "object", "additionalProperties": false,
+            "required": ["supplier_id", "field", "from_value", "to_value"],
+            "properties": {
+              "supplier_id": { "type": "integer", "minimum": 1 },
+              "field": { "enum": ["rate", "status", "details", "deleted"] },
+              "from_value": { "type": ["number", "string", "null"] },
+              "to_value": { "type": ["number", "string", "null"] },
+              "currency": { "enum": ["USD", "EUR"] }
+            }
+          }
+        }
+      }
+    }
+  },
+  "anyOf": [
+    { "$ref": "#/$defs/events/inbound_order_created" },
+    { "$ref": "#/$defs/events/outbound_order_created" },
+    { "$ref": "#/$defs/events/stock_threshold_triggered" },
+    { "$ref": "#/$defs/events/direct_stock_edit_rejected" },
+    { "$ref": "#/$defs/events/inventory_discrepancy_detected" },
+    { "$ref": "#/$defs/events/outbound_order_rejected" },
+    { "$ref": "#/$defs/events/inventory_order_validation_error" },
+    { "$ref": "#/$defs/events/inventory_product_created" },
+    { "$ref": "#/$defs/events/inventory_products_viewed" },
+    { "$ref": "#/$defs/events/auth_login_succeeded" },
+    { "$ref": "#/$defs/events/auth_login_failed" },
+    { "$ref": "#/$defs/events/session_expired" },
+    { "$ref": "#/$defs/events/auth_registration_created" },
+    { "$ref": "#/$defs/events/auth_registration_failed" },
+    { "$ref": "#/$defs/events/auth_password_reset_requested" },
+    { "$ref": "#/$defs/events/auth_password_reset_completed" },
+    { "$ref": "#/$defs/events/auth_password_changed" },
+    { "$ref": "#/$defs/events/session_ended" },
+    { "$ref": "#/$defs/events/api_latency_recorded" },
+    { "$ref": "#/$defs/events/frontend_page_load" },
+    { "$ref": "#/$defs/events/frontend_error_uncaught" },
+    { "$ref": "#/$defs/events/api_error" },
+    { "$ref": "#/$defs/events/page_view" },
+    { "$ref": "#/$defs/events/flow_abandoned" },
+    { "$ref": "#/$defs/events/candidate_created" },
+    { "$ref": "#/$defs/events/candidate_status_updated" },
+    { "$ref": "#/$defs/events/lead_form_validation_failed" },
+    { "$ref": "#/$defs/events/incident_created" },
+    { "$ref": "#/$defs/events/incident_created_validation_error" },
+    { "$ref": "#/$defs/events/incident_status_changed" },
+    { "$ref": "#/$defs/events/incident_status_transition_rejected" },
+    { "$ref": "#/$defs/events/incident_analysis_completed" },
+    { "$ref": "#/$defs/events/supplier_created" },
+    { "$ref": "#/$defs/events/supplier_created_validation_error" },
+    { "$ref": "#/$defs/events/supplier_updated" }
+  ]
+}
