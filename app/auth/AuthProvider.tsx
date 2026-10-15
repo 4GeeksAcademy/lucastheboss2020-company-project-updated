@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ApiRequestError, fetchJson } from "../../src/utils/api-errors";
+import { track } from "../../src/telemetry/TelemetryService";
 
 interface AuthState {
   token: string | null;
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { kind: "valid", user } satisfies SessionCheck;
     } catch (error) {
       if (error instanceof ApiRequestError && error.status === 401) {
+        track("session_expired", { reason: "invalid_token" });
         return { kind: "invalid" } satisfies SessionCheck;
       }
       return { kind: "unavailable" } satisfies SessionCheck;
@@ -123,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    track("session_ended", { reason: "user_logout" });
     localStorage.removeItem(STORAGE_KEY);
     setState({ token: null, user: null });
     setSessionUnavailable(false);

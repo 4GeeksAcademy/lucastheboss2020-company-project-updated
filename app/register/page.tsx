@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
+import { track } from "../../src/telemetry/TelemetryService";
 
 interface RegisterErrors {
   email?: string;
@@ -67,7 +68,14 @@ export default function RegisterPage() {
         body: JSON.stringify({ email: email.trim(), password }),
       });
       await login(access_token);
+      track("auth_registration_created", { role: "user", region: "US", method: "public_form" });
     } catch (error) {
+      let reason = "validation";
+      if (error instanceof ApiRequestError) {
+        if (error.status === 409) reason = "email_conflict";
+        else if (error.status === 422) reason = "validation";
+      }
+      track("auth_registration_failed", { reason });
       if (error instanceof ApiRequestError && error.status === 422 && error.field && error.field in errors) {
         setErrors({ [error.field]: error.message });
         return;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
+import { track } from "../../src/telemetry/TelemetryService";
 
 const API_BASE = "/api/backend";
 
@@ -43,8 +44,10 @@ export default function ResetPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: newPassword }),
       });
+      track("auth_password_reset_completed", { success: true, method: "reset" });
       router.replace("/login?passwordReset=success");
     } catch (submitError) {
+      track("auth_password_reset_completed", { success: false, method: "reset" });
       setError(userSafeErrorMessage(submitError, "Password reset failed. Request a new link and try again."));
     } finally {
       setSubmitting(false);

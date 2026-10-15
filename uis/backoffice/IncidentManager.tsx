@@ -24,6 +24,7 @@ import {
   type IncidentStatus,
   type IncidentSummary,
 } from "../../src/incidents/manager-types";
+import { track } from "../../src/telemetry/TelemetryService";
 
 type Language = "en" | "es";
 
@@ -365,6 +366,16 @@ export default function IncidentManager() {
       setSelectedId(created.id);
       setSuccess(copy.createSuccess);
       setReloadVersion((version) => version + 1);
+
+      // MANDATORY (CONTEXT_6 §5): inventory_discrepancy_detected
+      if (category === "inventory_discrepancy") {
+        track("inventory_discrepancy_detected", {
+          incident_id: created.id,
+          category: "inventory_discrepancy",
+          origin: origin,
+          branch: branch,
+        });
+      }
     } catch (requestError) {
       setError(localizedError(requestError, language));
       if (requestError instanceof IncidentApiError && requestError.field) {

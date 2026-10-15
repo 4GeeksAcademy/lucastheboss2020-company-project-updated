@@ -29,4 +29,5 @@ def get_settings() -> dict[str, str | int]:
             "PASSWORD_RESET_FROM_EMAIL", "TrackFlow <onboarding@resend.dev>"
         ),
         "frontend_base_url": os.getenv("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/"),
+        "telemetry_endpoint": os.getenv("TELEMETRY_ENDPOINT", ""),
     }

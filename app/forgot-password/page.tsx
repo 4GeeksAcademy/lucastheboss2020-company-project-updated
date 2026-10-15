@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
+import { track } from "../../src/telemetry/TelemetryService";
 
 const API_BASE = "/api/backend";
 const CONFIRMATION = "If that address is registered, you'll receive a reset link shortly.";
@@ -26,6 +27,7 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email: email.trim() }),
       });
       setSubmitted(true);
+      track("auth_password_reset_requested", { token_issued: true });
     } catch (requestError) {
       setError(userSafeErrorMessage(requestError, "We could not send the request. Check your connection and retry."));
     } finally {

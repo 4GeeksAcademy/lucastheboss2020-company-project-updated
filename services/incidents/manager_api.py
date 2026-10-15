@@ -2,6 +2,10 @@ import logging
 from typing import Any
 
 from backend.auth import get_current_user
+from backend.telemetry.inventory_events import (
+    emit_inventory_discrepancy_detected,
+    inventory_context,
+)
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
@@ -95,14 +99,25 @@ def list_manager_incidents(
 @router.post("/api/incidents", response_model=IncidentResponse, status_code=201)
 async def create_manager_incident(
     request: Request,
-    _user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
 ):
     body = await _json_body(request)
     if isinstance(body, JSONResponse):
         return body
     try:
         payload = IncidentCreate.model_validate(body)
-        return manager_data.create_incident(payload)
+        record = manager_data.create_incident(payload)
+        # MANDATORY (CONTEXT_6 §5): inventory_discrepancy_detected when a stock
+        # discrepancy incident is reported.
+        if payload.category == IncidentCategory.INVENTORY_DISCREPANCY:
+            emit_inventory_discrepancy_detected(
+                context=inventory_context(warehouse=payload.branch.value, client_name=payload.title),
+                system_stock=0,
+                physical_stock=0,
+                audit_reference=record["id"],
+                user_id=user.get("id"),
+            )
+        return record
     except ValidationError as error:
         return _validation_response(error)
     except Exception:

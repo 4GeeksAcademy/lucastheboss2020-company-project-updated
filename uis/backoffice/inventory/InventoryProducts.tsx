@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useAsyncResource } from "../../../src/hooks/useAsyncResource";
 import { fetchInventoryProducts } from "../../../src/inventory/api";
 import type { InventoryProduct } from "../../../src/inventory/types";
+import { track } from "../../../src/telemetry/TelemetryService";
 
 // Keep this threshold visible so operations can tune it to TrackFlow's stock policy.
 const LOW_STOCK_THRESHOLD = 20;
@@ -25,6 +27,31 @@ export default function InventoryProducts() {
     "Products could not be loaded. Please retry.",
   );
   const products: InventoryProduct[] = data ?? [];
+
+  useEffect(() => {
+    if (!loading && !error && products.length > 0) {
+      track("inventory_products_viewed", {
+        section: "products",
+        result_count: products.length,
+      });
+
+      // MANDATORY (CONTEXT_6 §5): fire stock_threshold_triggered for each
+      // product whose stock is below the configured minimum.
+      const threshold = LOW_STOCK_THRESHOLD;
+      for (const product of products) {
+        if (product.current_stock < threshold) {
+          track("stock_threshold_triggered", {
+            warehouse: product.warehouse === "LA" ? "los_angeles" : "zaragoza",
+            client_id: product.client_name.toLowerCase().replace(/\s+/g, "-"),
+            product_id: product.id,
+            product_category: product.category,
+            quantity: product.current_stock,
+            threshold_value: threshold,
+          });
+        }
+      }
+    }
+  }, [loading, error, products]);
 
   const totalUnits = products.reduce((sum, product) => sum + product.current_stock, 0);
   const lowCount = products.filter((product) => product.current_stock < LOW_STOCK_THRESHOLD).length;
