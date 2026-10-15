@@ -51,3 +51,37 @@ Milestone 4 evaluation readiness: confirm documentation structure, public lead c
 
 ### Evaluation
 - ✅ 14/14 criteria PASSED (documented in BACKEND_EVALUATION_REPORT.md)
+
+## Recent Completions (Telemetry Foundation — Phase 2)
+
+### Single source of truth (`event-schemas.json`)
+- ✅ 35 known telemetry events defined with double-nested property allowlists and `additionalProperties: false` (schema-validated envelope constraints)
+- ✅ Role enums (`user`/`manager`/`admin`) and reason enums for login-failed / session-expired / registration-failed events
+
+### Backend telemetry package (`backend/telemetry/`)
+- ✅ `core.py` — envelope builder (eventId UUID, ISO-8601 ms UTC timestamp, sessionId/userId default "anonymous", requestId via ContextVar), `emit` with schema validation + auto-flush at 1000, `emit_threshold` with once-per-UTC-day dedupe, `flush` to TELEMETRY_SINK_PATH (JSONL), `reset_state_for_tests` clears buffer/threshold cache **in place** (no stale references across resets)
+- ✅ `registry.py` — loads event-schemas.json once (lru_cache), exposes KNOWN_EVENTS + allowlist + `validate_event`
+- ✅ `context.py` — warehouse/client/country normalization + client_id slugging (lru_cache), configurable TELEMETRY_LOW_STOCK_THRESHOLD (default 20)
+- ✅ `inventory_events.py` — inbound/outbound/threshold/rejection emit helpers + `inventory_context` (returns {} when required context unavailable — PII-safe)
+- ✅ `auth_events.py` — login succeeded/failed (sanitised, never carries credentials), registration created/failed, password reset requested/completed (no email/token in events), password changed, session expired/ended + region=ES
+- ✅ `middleware.py` — single `TelemetryMiddleware` (replaces old timing decorator, preserves exact log line), honors inbound `X-Request-Id` or generates one (echoed on response), emits `api_latency_recorded` (sampled) / `api_error`, ignores health/docs traffic, 4xx → latency only
+
+### Instrumented endpoints
+- ✅ `backend/main.py` — login (succeeded/failed incl. account_disabled), registration (created/email_conflict), forgot_password (issued flag, PII-safe), reset_password (success/failure), change_password (source=profile); `install_telemetry(app)` wired after error handlers
+- ✅ `backend/auth.py` — `get_current_user` emits `session_expired` with reason (token_expired / invalid_token / user_inactive / missing_token) via OAuth2 dependency
+- ✅ `services/routers/inventory.py` — `inventory_order_created` (inbound), `inventory_order_created` outbound + low-stock `stock_threshold_triggered`, `outbound_order_rejected` with reason (warehouse_mismatch / insufficient_stock / validation_failed); `emit_direct_stock_edit_rejected` + `emit_inventory_discrepancy_detected` imported for the batch-audit/direct-write milestone (no call site yet)
+
+### Verification
+- ✅ 139/139 tests pass (includes 21 telemetry tests: registry floor, normalization, envelope validation, HTTP-level auth sanitisation + X-Request-Id correlation)
+- ✅ All modified files compile (`py_compile`); `npm run typecheck` clean
+- ✅ End-to-end probe (deleted after use) confirmed 401/500 correlation + JSONL sink flush
+
+### Telemetry Plan doc persisted (evaluation closure)
+- ✅ `docs/TELEMETRY_PLAN.md` created and grounded 1:1 against `event-schemas.json` (35 events: hypothesis → decision for every event, stream/batch justification by business urgency, PII & sanitisation table, risks & exclusions, implementation notes, consistency statement)
+- ✅ Closes the eval-criteria gaps #3 / #6 / #7 / #9: the plan the evaluation cross-references now exists in the repo
+
+## Next Checks (Telemetry)
+- Frontend instrumentation (Phase 3) — browser telemetry events per the plan
+- Batch jobs: nightly inventory audit → `inventory_discrepancy_detected`; direct-write guard → `direct_stock_edit_rejected`
+- Stream vs batch delivery, redaction pipeline, archival at the storage layer
+- Wire `direct_stock_edit_rejected` / `inventory_discrepancy_detected` call sites at their milestone (helpers already imported)

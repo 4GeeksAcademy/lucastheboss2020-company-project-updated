@@ -1,7 +1,5 @@
 import logging
-import time
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from .auth import create_access_token, get_current_user
 from .candidates import router as candidates_router
@@ -37,6 +35,17 @@ from .services import (
     update_profile,
     update_user,
 )
+from .telemetry.auth_events import (
+    emit_login_failed,
+    emit_login_succeeded,
+    emit_password_changed,
+    emit_password_reset_completed,
+    emit_password_reset_requested,
+    emit_registration_created,
+    emit_registration_failed,
+    emit_session_expired,
+)
+from .telemetry import install_telemetry
 from passlib.hash import bcrypt
 from urllib.parse import urlencode
 
@@ -45,25 +54,10 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="TrackFlow API")
 install_api_error_handlers(app)
 
-
-@app.middleware("http")
-async def timing_middleware(request: Request, call_next):
-    """Log request duration without query strings or user-specific values."""
-    start = time.perf_counter()
-    status_code = "exception"
-    try:
-        response = await call_next(request)
-        status_code = response.status_code
-        return response
-    finally:
-        duration_ms = (time.perf_counter() - start) * 1000
-        logger.info(
-            "%s %s -> %s | %.1fms",
-            request.method,
-            request.url.path,
-            status_code,
-            duration_ms,
-        )
+# Telemetry: request correlation + api_latency_recorded / api_error events.
+# Replaces the original timing_middleware, preserving its exact log line, and is a
+# no-op when TELEMETRY_ENABLED=0 (only correlation + logging remain).
+install_telemetry(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,13 +79,17 @@ def health():
 def login(payload: LoginRequest):
     user = get_user_by_email(str(payload.email))
     if not user or not bcrypt.verify(payload.password, user["hashed_password"]):
+        # Sanitised failure event: never captures email/password (PII).
+        emit_login_failed(reason="invalid_credentials")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if not user.get("is_active", False):
+        emit_login_failed(reason="account_disabled")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is disabled")
+    emit_login_succeeded(user_id=user["id"], role=user.get("role"))
     return TokenResponse(access_token=create_access_token(user["id"]))
 
 
@@ -106,7 +104,10 @@ def register_user(payload: UserCreate):
     try:
         user = create_user(payload)
     except ValueError as error:
+        # Duplicate email conflict (sanitised; no email in the event).
+        emit_registration_failed(reason="email_conflict")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error))
+    emit_registration_created(user_id=user["id"], role=user.get("role"))
     return public_user(user)
 
 
@@ -118,6 +119,9 @@ def update_my_profile(payload: ProfileUpdate, user: dict = Depends(get_current_u
 @app.post("/auth/forgot-password", response_model=MessageResponse)
 def forgot_password(payload: ForgotPasswordRequest):
     user = get_user_by_email(str(payload.email))
+    # PII-safe: we never put the email in the event, and we always respond the
+    # same way whether or not the address exists (no account enumeration).
+    token_issued = False
     if user and user.get("is_active", False):
         try:
             token, _ = create_reset_token(user["id"])
@@ -127,8 +131,10 @@ def forgot_password(payload: ForgotPasswordRequest):
                 f"{urlencode({'token': token})}"
             )
             send_password_reset_email(str(payload.email), reset_url)
+            token_issued = True
         except Exception:
             logger.error("Password reset request could not be completed.")
+    emit_password_reset_requested(token_issued=token_issued)
 
     return {
         "message": "If that address is registered, you'll receive a reset link shortly."
@@ -138,12 +144,17 @@ def forgot_password(payload: ForgotPasswordRequest):
 @app.post("/auth/reset-password", response_model=MessageResponse)
 def reset_password(payload: ResetPasswordRequest):
     try:
+        # NB: redeem_reset_token returns None; the reset event carries no
+        # user_id by design (the token holder is anonymous to telemetry, and we
+        # never log/emit the reset token itself).
         redeem_reset_token(payload.token, payload.new_password)
     except InvalidPasswordResetToken:
+        emit_password_reset_completed(success=False, method="reset")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset token is invalid, expired, or has already been used",
         )
+    emit_password_reset_completed(success=True, method="reset")
     return {"message": "Password reset successfully"}
 
 
@@ -165,4 +176,5 @@ def change_password(
     if not updated:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session is invalid")
     invalidate_user_reset_tokens(user["id"])
+    emit_password_changed(user_id=user["id"], source="profile")
     return {"message": "Password changed successfully"}

@@ -1,6 +1,16 @@
 import logging
 
 from backend.auth import get_current_user
+from backend.telemetry import DEFAULT_LOW_STOCK_THRESHOLD
+from backend.telemetry.inventory_events import (
+    emit_direct_stock_edit_rejected,
+    emit_inbound_order_created,
+    emit_inventory_discrepancy_detected,
+    emit_outbound_order_created,
+    emit_outbound_order_rejected,
+    emit_stock_threshold_triggered,
+    inventory_context,
+)
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -154,6 +164,16 @@ def create_inbound_order(
         session.rollback()
         _log_database_error("inbound order", error)
         raise HTTPException(status_code=500, detail="Inbound order could not be saved. Please retry.") from None
+
+    # MANDATORY (CONTEXT_6 §5): successfully recorded inbound order.
+    emit_inbound_order_created(
+        context=inventory_context(warehouse=payload.warehouse, product=product),
+        quantity=payload.quantity,
+        user_id=user["id"],
+        order_id=str(entry.id),
+        reference=entry.reference,
+        stock_after=_current_stock(session, product.id, product.warehouse),
+    )
     return StockEntryRead(**entry.model_dump(), sku=SKUSummary.model_validate(product))
 
 
@@ -184,8 +204,32 @@ def create_outbound_order(
         session.add(exit_record)
         session.commit()
         session.refresh(exit_record)
-    except HTTPException:
+    except HTTPException as http_error:
         session.rollback()
+        # OPPORTUNITY (stream): outbound order rejected with reason + baseline stock.
+        # Distinguish warehouse_mismatch (SKU exists but wrong warehouse) from
+        # insufficient_stock / sku_not_found via the message shape.
+        if product is not None:
+            warehouse_mismatch = "warehouse" in str(http_error.detail) and "does not match" in str(http_error.detail)
+            reason = (
+                "warehouse_mismatch"
+                if warehouse_mismatch
+                else "insufficient_stock"
+                if http_error.status_code == 400
+                else "validation_failed"
+            )
+            emit_outbound_order_rejected(
+                context=inventory_context(warehouse=payload.warehouse, product=product),
+                quantity=payload.quantity,
+                available_stock=(
+                    _current_stock(session, payload.sku_id, payload.warehouse)
+                    if not warehouse_mismatch and http_error.status_code in (400, 404)
+                    else 0
+                ),
+                reason=reason,
+                user_id=user["id"],
+                exit_type=getattr(payload, "exit_type", None),
+            )
         raise
     except IntegrityError:
         session.rollback()
@@ -194,6 +238,29 @@ def create_outbound_order(
         session.rollback()
         _log_database_error("outbound order", error)
         raise HTTPException(status_code=500, detail="Outbound order could not be saved. Please retry.") from None
+
+    # MANDATORY (CONTEXT_6 §5): successfully recorded outbound order.
+    # NB: tracking_number/recipient data are never emitted (CONTEXT_6 §6) — the
+    # event allowlist has no tracking property, so it cannot leak.
+    context = inventory_context(warehouse=payload.warehouse, product=product)
+    emit_outbound_order_created(
+        context=context,
+        quantity=payload.quantity,
+        user_id=user["id"],
+        order_id=str(exit_record.id),
+        exit_type=payload.exit_type,
+        stock_after=available - payload.quantity,
+    )
+    # MANDATORY: stock below configured threshold (deduped once per product +
+    # warehouse per UTC day; CONTEXT_6 §2).
+    stock_after = available - payload.quantity
+    if context and stock_after < DEFAULT_LOW_STOCK_THRESHOLD:
+        emit_stock_threshold_triggered(
+            context=context,
+            stock_level=stock_after,
+            threshold_value=DEFAULT_LOW_STOCK_THRESHOLD,
+            user_id=user["id"],
+        )
     return StockExitRead(**exit_record.model_dump(), sku=SKUSummary.model_validate(product))
 
 
