@@ -19,6 +19,7 @@ dependencies = [
     "passlib[bcrypt]>=1.7",
     "bcrypt<4.1",
     "email-validator>=2.0",
+    "pandas>=2.0",
 ]
 scripts = { seed = "services.suppliers.seed:main", seed-incidents = "scripts.seed_incidents:main", seed-inventory = "services.seed_inventory:main" }
 
