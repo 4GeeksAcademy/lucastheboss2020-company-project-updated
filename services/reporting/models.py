@@ -31,12 +31,21 @@ class PerformanceResponse(BaseModel):
 
 
 class WatermarkResponse(BaseModel):
-    """Response body for GET /reporting/pipeline-runs/latest."""
+    """Response body for GET /reporting/pipeline-runs/latest.
+
+    Now includes fields from the pipeline_run_log table: started_at,
+    completed_at, rows_extracted, rows_upserted, and error_message.
+    """
 
     pipeline_name: str
     last_completed_week: str | None = None
     last_run_at: str | None = None
     status: str
+    rows_extracted: int | None = None
+    rows_upserted: int | None = None
+    started_at: str | None = None
+    completed_at: str | None = None
+    error_message: str | None = None
 
 
 class TriggerRequest(BaseModel):

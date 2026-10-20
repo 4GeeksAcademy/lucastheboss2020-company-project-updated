@@ -109,13 +109,22 @@ def get_weekly_performance(
 def get_latest_pipeline_run(
     _user: dict = Depends(get_current_user),
 ) -> WatermarkResponse:
-    """Return the most recent pipeline watermark entry."""
+    """Return the most recent pipeline run record from pipeline_run_log.
+
+    Includes started_at, completed_at, rows_extracted, rows_upserted,
+    and error_message alongside the traditional watermark fields.
+    """
     watermark = get_latest_watermark()
     return WatermarkResponse(
         pipeline_name=watermark.get("pipeline_name", "weekly_client_performance"),
         last_completed_week=watermark.get("last_completed_week"),
         last_run_at=watermark.get("last_run_at"),
         status=watermark.get("status", "never_run"),
+        rows_extracted=watermark.get("rows_extracted"),
+        rows_upserted=watermark.get("rows_upserted"),
+        started_at=watermark.get("started_at"),
+        completed_at=watermark.get("completed_at"),
+        error_message=watermark.get("error_message"),
     )
 
 

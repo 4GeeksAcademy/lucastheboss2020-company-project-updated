@@ -163,7 +163,8 @@ def extract_events(week_start: str) -> pd.DataFrame:
 
 @task(
     tags=["service:reporting", "task:transform"],
-    # No cache — pure computation is fast enough to re-run on every invocation.
+    cache_key_fn=lambda ctx, inputs: str(inputs.get("raw_df", id(inputs.get("raw_df", "")))),
+    cache_expiration=timedelta(seconds=3600),
 )
 def transform_to_kpis(raw_df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate raw events into warehouse × client × week KPI rows.
@@ -393,10 +394,12 @@ def compute_weekly_kpis(week_start: str) -> list[dict[str, Any]]:
 
 
 def get_latest_watermark() -> dict[str, Any]:
-    """Return the latest pipeline watermark entry.
+    """Return the latest pipeline run entry from the run log.
 
     This is the function imported by ``services/reporting/router.py`` for the
     ``GET /reporting/pipeline-runs/latest`` endpoint.
+    Now returns the full pipeline_run_log record (started_at, completed_at,
+    rows_extracted, rows_upserted) instead of just the watermark table.
     """
     dsn = _get_dsn()
     if not dsn or not _dsn_is_postgres(dsn):
@@ -405,10 +408,11 @@ def get_latest_watermark() -> dict[str, Any]:
     conn = psycopg2.connect(dsn, connect_timeout=5)
     try:
         query = """
-            SELECT pipeline_name, last_completed_week, last_run_at, status
-            FROM reporting.pipeline_watermark
+            SELECT pipeline_name, week_start, status, rows_extracted,
+                   rows_upserted, error_message, started_at, completed_at
+            FROM reporting.pipeline_run_log
             WHERE pipeline_name = 'weekly_client_performance'
-            ORDER BY last_run_at DESC
+            ORDER BY started_at DESC
             LIMIT 1
         """
         df = pd.read_sql(query, conn)
@@ -420,9 +424,14 @@ def get_latest_watermark() -> dict[str, Any]:
         row = df.iloc[0]
         return {
             "pipeline_name": row["pipeline_name"],
-            "last_completed_week": str(row["last_completed_week"]),
-            "last_run_at": row["last_run_at"].isoformat() if hasattr(row["last_run_at"], "isoformat") else str(row["last_run_at"]),
+            "last_completed_week": str(row["week_start"]),
+            "last_run_at": row["started_at"].isoformat() if hasattr(row["started_at"], "isoformat") else str(row["started_at"]),
             "status": row["status"],
+            "rows_extracted": int(row["rows_extracted"]),
+            "rows_upserted": int(row["rows_upserted"]),
+            "started_at": row["started_at"].isoformat() if hasattr(row["started_at"], "isoformat") else str(row["started_at"]),
+            "completed_at": row["completed_at"].isoformat() if (hasattr(row.get("completed_at"), "isoformat")) else (str(row["completed_at"]) if row["completed_at"] else None),
+            "error_message": row["error_message"],
         }
     finally:
         conn.close()
@@ -549,12 +558,11 @@ def weekly_client_performance_pipeline(week_start: str | None = None) -> dict[st
         }
 
     # ── record watermark (optional — failure does not fail the flow) ────
-    try:
-        record_watermark(week_start, "success")
-        watermark_ok = True
-    except Exception:
-        logger.warning("Watermark update failed (non-fatal)")
-        watermark_ok = False
+    watermark_future = record_watermark.submit(week_start, "success", return_state=True)
+    watermark_state = watermark_future.result(raise_on_failure=False)
+    watermark_ok = watermark_state.is_successful()
+    if not watermark_ok:
+        logger.warning("Watermark update failed (non-fatal): %s", watermark_state.message)
 
     total_time = time.perf_counter() - start_time
     logger.info(
