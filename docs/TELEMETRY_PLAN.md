@@ -178,7 +178,7 @@ Sampling and deduplication are part of the delivery design, not afterthoughts:
 
 ### 5.2 Sanitisation strategy — enforced by construction
 
-1. **Strict allowlists** — every event schema sets `additionalProperties: false` at both the envelope and the properties level. A field not explicitly allowed cannot be emitted; `validate_event` rejects unknown keys before buffering (drops with a WARNING), and the sink never sees them.
+1. **Strict allowlists** — every event schema sets `additionalProperties: false` at both the envelope and the properties level. A field not explicitly allowed cannot be emitted; `validate_event` rejects unknown keys before buffering (drops with a WARNING), and the sink never sees them. **Defence in depth:** the Phase 3 storage layer re-filters at insert time too — `services.telemetry_storage.trim_properties_to_allowlist()` drops any `properties` key not in the event's schema allowlist before writing the `tags` JSONB column, so even events that arrive through the loose `POST /telemetry/events` validator (Pydantic envelope-only) cannot leak out-of-plan keys into the database.
 2. **`pii: "sanitised"` flag** per event in the catalog (§3) marks exactly which events are PII-adjacent and how they are rendered safe.
 3. **Always-anonymous where pre-auth** — `auth_login_failed`, `auth_registration_failed`, `auth_password_reset_requested`, `lead_form_validation_failed` fix `userId` to `"anonymous"`.
 4. **Boolean/fact replacement** — `auth_password_reset_requested` carries only `token_issued: bool`; the email and token are never captured. `auth_login_failed` carries `reason` enum + a `note` const stating the fact. `auth_login_succeeded` carries role/region only.
@@ -227,6 +227,7 @@ See `backend/telemetry/` (foundation) — all of the following is already wired 
 
 - **`core.py`** — `emit()` builds the envelope (eventId uuid4, ISO-8601 millisecond UTC, `anonymous` defaults), validates against the registry, buffers, auto-flushes at 1000; `emit_threshold()` dedupes once/day; `flush()` writes JSONL to `TELEMETRY_SINK_PATH` or drains as a no-op; `set_request_id()`/`current_request_id()` for correlation. Never raises.
 - **`registry.py`** — loads `event-schemas.json` (override `TELEMETRY_SCHEMA_PATH`), exposes `KNOWN_EVENTS`, per-event allowlist, `validate_event()` (empty list = valid).
+- **Phase 3 storage** — `services/telemetry_storage.py` bulk-inserts validated events with `psycopg2.execute_values` (`ON CONFLICT (event_id) DO NOTHING`), derives `service` from the `event_type` prefix, and trims each event's `properties` to its schema allowlist before writing the `tags` JSONB (`trim_properties_to_allowlist`). `scripts/create_telemetry_table.sql` holds the DDL; `scripts/seed_telemetry_proof.py` seeds + verifies rows for the Supabase screenshot proof.
 - **`context.py`** — warehouse/client/country normalization; `client_id_from_name` stable slug (→ `client_id`); `DEFAULT_LOW_STOCK_THRESHOLD` (`TELEMETRY_LOW_STOCK_THRESHOLD`, default 20).
 - **`inventory_events.py`** — inbound/outbound/threshold/rejection emit helpers + `inventory_context()` which returns `{}` (event skipped) whenever required context is unavailable — PII-safe by construction.
 - **`auth_events.py`** — login/registration/password/session emit helpers, sanitised as per §5 (never pass email/password/token).

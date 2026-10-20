@@ -13,13 +13,16 @@ Key contract changes from Phase 2 stub:
 - The ``received``/``stored``/``rejected`` keys replace the old ``received``/
   ``errors`` contract so the frontend TelemetryService (which only checks HTTP
   status) is unaffected.
+- **Allowlist trimming is a storage-layer guarantee, not an endpoint rejection.**
+  The endpoint still accepts an event carrying an out-of-plan property (it is
+  counted as ``stored``), but ``services.telemetry_storage`` drops that key
+  before writing the ``tags`` JSONB — see the trimming tests below.
 """
 
-from unittest.mock import patch
-
-from services.main import app as combined_app
 
 from fastapi.testclient import TestClient
+
+from services.main import app as combined_app
 
 
 def _envelope(**overrides):
@@ -195,6 +198,7 @@ def test_telemetry_storage_requires_postgresql_dsn():
     produce a confusing psycopg2 error.
     """
     import pytest
+
     from services.telemetry_storage import insert_telemetry_events
     with pytest.raises(RuntimeError, match="requires a PostgreSQL DSN"):
         insert_telemetry_events([{"eventId": "x"}])
@@ -232,3 +236,94 @@ def test_telemetry_events_partial_persistence():
     assert body["received"] == 3
     assert body["stored"] == 2  # two pass model_validate
     assert body["rejected"] == 1
+
+
+# ── allowlist trimming at the storage boundary (resubmit) ────────────────────
+
+
+def test_trim_properties_to_allowlist_keeps_only_allowlisted_keys():
+    """Storage drops out-of-plan keys from ``properties`` before insert.
+
+    ``auth_login_succeeded`` allowlist is {method, role, region}; any extra key
+    (e.g. a raw password) is removed so it never reaches the ``tags`` JSONB.
+    """
+    from services.telemetry_storage import trim_properties_to_allowlist
+
+    result = trim_properties_to_allowlist(
+        "auth_login_succeeded",
+        {"method": "password", "region": "ES", "password_raw": "supersecret"},
+    )
+    assert result == {"method": "password", "region": "ES"}
+    assert "password_raw" not in result
+
+
+def test_trim_properties_keeps_inbound_mandatory_properties():
+    """Required inventory properties survive trimming untouched."""
+    from services.telemetry_storage import trim_properties_to_allowlist
+
+    result = trim_properties_to_allowlist(
+        "inbound_order_created",
+        {
+            "warehouse": "los_angeles",
+            "client_id": "purestep_footwear",
+            "product_id": 1,
+            "product_category": "fashion",
+            "quantity": 50,
+            "tracking_number": "1Z999AA10123456784",  # never allowlisted (TELEMETRY_PLAN §6.1)
+        },
+    )
+    assert result == {
+        "warehouse": "los_angeles",
+        "client_id": "purestep_footwear",
+        "product_id": 1,
+        "product_category": "fashion",
+        "quantity": 50,
+    }
+    assert "tracking_number" not in result
+
+
+def test_trim_properties_empty_for_unknown_event_type():
+    """Unknown event types have an empty allowlist → tags stored as {}.
+
+    The event is still persisted (the endpoint contract counts it as stored);
+    only the properties are cut so no undeclared key can leak into the DB.
+    """
+    from services.telemetry_storage import trim_properties_to_allowlist
+
+    assert trim_properties_to_allowlist("not_a_real_event", {"anything": 1}) == {}
+
+
+def test_trim_properties_handles_non_dict():
+    """Non-dict properties are normalised to {} (never None)."""
+    from services.telemetry_storage import trim_properties_to_allowlist
+
+    assert trim_properties_to_allowlist("page_view", None) == {}
+    assert trim_properties_to_allowlist("page_view", "nope") == {}
+
+
+def test_prepare_rows_trims_properties_end_to_end():
+    """_prepare_rows emits already-trimmed tags for the row tuple.
+
+    This is the exact shape ``insert_telemetry_events`` sends to psycopg2
+    ``execute_values`` — proving the out-of-plan key is gone before the INSERT.
+    """
+    from services.telemetry_storage import _prepare_rows
+
+    rows = _prepare_rows([
+        {
+            "eventId": "11111111-1111-4111-8111-111111111111",
+            "timestamp": "2024-01-01T00:00:00.000Z",
+            "sessionId": "s",
+            "userId": "u",
+            "event_type": "auth_login_succeeded",
+            "schemaVersion": 1,
+            "requestId": "r",
+            "properties": {"method": "password", "password_raw": "supersecret"},
+        }
+    ])
+    assert len(rows) == 1
+    row = rows[0]
+    assert row[4] == "auth_login_succeeded"   # event_type
+    # tags is a JSON string (json.dumps for psycopg2 JSONB adaptation)
+    assert row[8] == '{"method": "password"}'    # tags already trimmed
+    assert '"password_raw"' not in row[8]

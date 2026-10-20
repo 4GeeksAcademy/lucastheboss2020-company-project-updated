@@ -13,6 +13,12 @@ Per-event parsing (TELEMETRY_PLAN Phase 3 — Partial Validation):
 - ``TelemetryEvent.model_validate(event)`` is called per item inside
   ``try/except ValidationError`` so one invalid event never cancels the batch.
 - Valid events are persisted in a single bulk INSERT.
+- **Allowlist trimming happens at the storage boundary**: the storage layer
+  drops any ``properties`` key that is not in the event's schema allowlist
+  (``services.telemetry_storage.trim_properties_to_allowlist``) before writing
+  the ``tags`` JSONB.  The endpoint stays a loose validator — it never rejects
+  an otherwise-valid event for an out-of-plan key, but that key never reaches
+  the DB (TELEMETRY_PLAN §5 — PII-safe by construction).
 - HTTP 200 is returned whenever the envelope itself is parseable.
 
 Compatibility: the frontend ``TelemetryService`` only inspects the HTTP status
@@ -48,8 +54,8 @@ try:
     from services.telemetry.analysis import (
         auth_failure_rate,
         error_rate_by_type,
-        events_per_day,
         event_type_distribution,
+        events_per_day,
     )
 except ImportError:
     events_per_day = None
@@ -103,7 +109,6 @@ async def get_telemetry_report(
     period = {"from": actual_start, "to": actual_end}
 
     # Cache check: same period → serve cached result (if not expired)
-    cache_key = (actual_start, actual_end)
     if _CACHE is not None and time.monotonic() < _CACHE_EXPIRY:
         cached_period = _CACHE.get("period", {})
         if cached_period.get("from") == actual_start and cached_period.get("to") == actual_end:

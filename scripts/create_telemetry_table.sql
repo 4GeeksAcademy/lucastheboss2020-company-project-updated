@@ -5,8 +5,10 @@
 --   - Immutable — no UPDATE or DELETE on recorded telemetry (facts are facts).
 --   - The fixed column set (event_type, timestamp, service) supports analytical
 --     queries without JSONB traversal.
---   - tags (JSONB) stores the envelope's `properties` object as-is, so events
---     with different property schemas coexist without schema changes.
+--   - tags (JSONB) stores the envelope's `properties` object, filtered to the
+--     per-event schema allowlist before insert (services/telemetry_storage.py
+--     trims unknown keys, so events with different property schemas coexist
+--     without schema changes and nothing out-of-plan is ever persisted).
 --   - service is derived from event_type prefix at insert time (e.g.
 --     "inbound_order_created" → "inventory"), mirroring the event-schemas.json
 --     taxonomy.entity grouping.
