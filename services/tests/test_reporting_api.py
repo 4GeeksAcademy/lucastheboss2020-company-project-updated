@@ -87,7 +87,7 @@ class TestGetLatestPipelineRun:
     """Tests for the GET /reporting/pipeline-runs/latest endpoint."""
 
     def test_returns_200_with_expected_shape(self, client: TestClient) -> None:
-        """Returns 200 with pipeline_name, last_completed_week, last_run_at, status."""
+        """Returns 200 with all expected fields including pipeline_run_log metadata."""
         response = client.get("/reporting/pipeline-runs/latest")
         assert response.status_code == 200
         body = response.json()
@@ -95,6 +95,12 @@ class TestGetLatestPipelineRun:
         assert "last_completed_week" in body
         assert "last_run_at" in body
         assert "status" in body
+        # New fields from pipeline_run_log
+        assert "rows_extracted" in body
+        assert "rows_upserted" in body
+        assert "started_at" in body
+        assert "completed_at" in body
+        assert "error_message" in body
 
     def test_status_is_never_run_when_no_db(self, client: TestClient) -> None:
         """Without a database, status is 'never_run'."""
