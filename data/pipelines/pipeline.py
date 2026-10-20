@@ -356,6 +356,34 @@ def record_watermark(week_start: str, status: str) -> None:
         conn.close()
 
 
+
+
+# ── subflows ─────────────────────────────────────────────────────────────────
+
+@flow(
+    name="extract_weekly_events",
+    description="Extract raw inventory events for a given ISO week from telemetry_events",
+)
+def extract_weekly_events(week_start: str) -> pd.DataFrame:
+    return extract_events(week_start)
+
+
+@flow(
+    name="compute_warehouse_client_kpis",
+    description="Aggregate raw events into warehouse x client x week KPI rows",
+)
+def compute_warehouse_client_kpis(raw_df: pd.DataFrame) -> pd.DataFrame:
+    return transform_to_kpis(raw_df)
+
+
+@flow(
+    name="upsert_performance_report",
+    description="Upsert KPI rows into the reporting.weekly_warehouse_client_performance table",
+)
+def upsert_performance_report(kpi_df: pd.DataFrame) -> int:
+    return load_to_reporting(kpi_df)
+
+
 # ── stand-alone functions (imported by services/reporting/router.py) ─────────
 
 def compute_weekly_kpis(week_start: str) -> list[dict[str, Any]]:
@@ -517,7 +545,7 @@ def weekly_client_performance_pipeline(week_start: str | None = None) -> dict[st
         except Exception:
             logger.warning("Could not write audit log start entry (non-fatal)")
 
-    # ── pipeline stages ─────────────────────────────────────────────────
+    # ── pipeline stages (via subflows) ─────────────────────────────────
     start_time = time.perf_counter()
     status = "success"
     rows_upserted = 0
@@ -525,18 +553,18 @@ def weekly_client_performance_pipeline(week_start: str | None = None) -> dict[st
     error_message: str | None = None
 
     try:
-        # Extract
-        raw_df = extract_events(week_start)
+        # Stage 1 -- Extract (via subflow)
+        raw_df = extract_weekly_events(week_start)
         rows_extracted = len(raw_df)
-        logger.info("Stage 1 (extract): %d events in %.2f s", rows_extracted, time.perf_counter() - start_time)
+        logger.info("Stage 1 (extract subflow): %d events in %.2f s", rows_extracted, time.perf_counter() - start_time)
 
-        # Transform
-        kpi_df = transform_to_kpis(raw_df)
-        logger.info("Stage 2 (transform): %d rows in %.2f s", len(kpi_df), time.perf_counter() - start_time)
+        # Stage 2 -- Transform (via subflow)
+        kpi_df = compute_warehouse_client_kpis(raw_df)
+        logger.info("Stage 2 (transform subflow): %d rows in %.2f s", len(kpi_df), time.perf_counter() - start_time)
 
-        # Load (critical — failure propagates)
-        rows_upserted = load_to_reporting(kpi_df)
-        logger.info("Stage 3 (load): %d rows upserted in %.2f s", rows_upserted, time.perf_counter() - start_time)
+        # Stage 3 -- Load (via subflow, critical -- failure propagates)
+        rows_upserted = upsert_performance_report(kpi_df)
+        logger.info("Stage 3 (load subflow): %d rows upserted in %.2f s", rows_upserted, time.perf_counter() - start_time)
 
     except Exception as exc:
         status = "failed"
@@ -560,15 +588,15 @@ def weekly_client_performance_pipeline(week_start: str | None = None) -> dict[st
     # ── record watermark (optional — failure does not fail the flow) ────
     watermark_future = record_watermark.submit(week_start, "success", return_state=True)
     watermark_state = watermark_future.result(raise_on_failure=False)
-    watermark_ok = watermark_state.is_successful()
-    if not watermark_ok:
+    watermark_ok = watermark_state is not None and watermark_state.is_successful()
+    if not watermark_ok and watermark_state is not None:
         logger.warning("Watermark update failed (non-fatal): %s", watermark_state.message)
 
     total_time = time.perf_counter() - start_time
     logger.info(
         "Pipeline completed in %.2f s: %d events → %d rows upserted (watermark=%s)",
         total_time, rows_extracted, rows_upserted,
-        "ok" if watermark_ok else "failed (ignored)",
+        "ok" if watermark_ok else "skipped (no DSN or failed)",
     )
 
     # ── update audit log ────────────────────────────────────────────────

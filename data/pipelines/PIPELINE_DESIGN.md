@@ -622,3 +622,108 @@ This single-query approach is suitable for a **materialised view** or **PostgreS
                │  'failed'                    │
                └─────────────────────────────┘
 ```
+## Phase 6 — Pipeline Enhancement: Subflows, Pure Functions & Dashboard
+
+### 6.1 Motivation
+
+After Phase 5, the pipeline worked end-to-end but had two weaknesses:
+
+1. **Monolithic flow** — `weekly_client_performance_pipeline` called all four tasks in one flat sequence, making it impossible to observe or retry sub-stages independently in the Prefect UI.
+2. **Logic intertwined with orchestration** — KPI computation lived inside `transform_to_kpis` as a `@task`, making it difficult to unit-test without spinning up a Prefect runner.
+
+Phase 6 refactors the pipeline into **subflows**, extracts pure **testable functions**, and adds a **business dashboard** to visualise results.
+
+### 6.2 Subflow Architecture
+
+```
+weekly_client_performance_pipeline          (@flow / main entry)
+│
+├─ extract_weekly_events(week_start)        (@flow / subflow)
+│   └─ extract_events(week_start)          (@task)
+│
+├─ compute_warehouse_client_kpis(raw_df)    (@flow / subflow)
+│   └─ transform_to_kpis(raw_df)           (@task)
+│       └─ (calls pure functions from kpi_functions.py)
+│
+└─ upsert_performance_report(kpi_df)        (@flow / subflow)
+    ├─ load_to_reporting(kpi_df)           (@task)
+    └─ record_watermark(week_start, status) (@task, optional, return_state=True)
+```
+
+Each subflow:
+- Has its own `@flow` decorator with a descriptive `name` and `description`.
+- Can be invoked independently for monitoring or ad-hoc debugging.
+- Appears as a separate node in the Prefect UI run graph.
+- The main flow still exports the three public symbols expected by `services/reporting/router.py`: `compute_weekly_kpis`, `get_latest_watermark`, `run_pipeline`.
+
+### 6.3 Pure KPI Functions
+
+Extracted into `data/process/kpi_functions.py` for testability without Prefect:
+
+| Function | Input | Output |
+|---|---|---|
+| `compute_inbound_volume(events)` | Raw events DataFrame | `(warehouse, client_id, week_start, inbound_units_count)` |
+| `compute_outbound_throughput(events)` | Raw events DataFrame | `(warehouse, client_id, week_start, outbound_orders_count)` |
+| `compute_stockout_frequency(events)` | Raw events DataFrame | `(warehouse, client_id, week_start, stockout_events_count)` |
+| `compute_discrepancy_frequency(events)` | Raw events DataFrame | `(warehouse, client_id, week_start, discrepancy_events_count)` |
+| `compute_discrepancy_rate(discrepancies, outbounds)` | Two aggregated DataFrames | Merged with `discrepancy_rate` column |
+| `aggregate_weekly_kpis(events)` | Raw events DataFrame | Full KPI table (all metrics joined) |
+| `_validate_columns(df, required)` | DataFrame + set of columns | Raises `ValueError` if missing |
+| `_validate_not_null(series)` | Pandas Series | Raises `ValueError` if any null |
+
+Design decisions:
+- All functions are **pure** — no I/O, no side effects, no database calls.
+- `pd.to_numeric(errors="coerce")` is used to handle non-numeric quantities defensively.
+- `compute_discrepancy_rate` handles the edge case of zero outbound orders gracefully.
+- Functions operate on `GROUP_COLS = ["warehouse", "client_id", "week_start"]`.
+
+### 6.4 Test Suite
+
+Location: `tests/pipelines/test_pipeline.py`  
+Test framework: `pytest`  
+Total tests: **21** (all passing)
+
+| Test class | Tests | What it validates |
+|---|---|---|
+| `TestComputeInboundVolume` | 3 | Sums quantities correctly; empty events; missing column |
+| `TestComputeOutboundThroughput` | 3 | Counts outbound events; Zaragoza=3; empty events |
+| `TestComputeStockoutFrequency` | 3 | Counts stockout triggers; GlowLab=2; Zaragoza=0 |
+| `TestComputeDiscrepancyFrequency` | 1 | Counts discrepancy events |
+| `TestComputeDiscrepancyRate` | 2 | Known rate matches CONTEXT_BRIEFING; zero outbound |
+| `TestAggregateWeeklyKpis` | 6 | Shape & counts; Fashion Co KPIs (350/2/1/1/0.5); Soundwave; GlowLab; empty events; null handling |
+| `TestDefensiveBehaviour` | 3 | Null warehouse; string quantity; unknown event_type |
+
+Key test data assertions (from `CONTEXT_BRIEFING.md`):
+- **Fashion Co**: 350 inbound units, 2 outbound orders, 1 stockout, 1 discrepancy, 0.5 rate
+- **Zaragoza outbound**: 3 orders
+- **GlowLab stockouts**: 2 events
+
+### 6.5 Business Dashboard
+
+New files:
+- `uis/backoffice/WeeklyReportingDashboard.tsx` — React component
+- `uis/backoffice/app/uis/backoffice/reporting/page.tsx` — Next.js route
+
+The dashboard provides:
+- **Date picker** to select an ISO week (Monday)
+- **Query button** to fetch KPI data from `GET /api/reporting/weekly-warehouse-client-performance`
+- **Run Pipeline Now** button to trigger `POST /api/reporting/pipeline-runs`
+- **Last pipeline run info** from `GET /api/reporting/pipeline-runs/latest`
+- **Summary KPI cards**: Total Inbound, Outbound, Stockouts, Discrepancies, Avg Discrepancy Rate, Warehouse×Client combos
+- **Detail table** with per-warehouse-per-client breakdown, including colour-coded discrepancy rate (green < 2%, amber 2-5%, red > 5%)
+- **Empty state** when no data exists
+- **Error display** for API failures
+- Navigation link added to `BackofficeHome.tsx` action bar
+
+### 6.6 Design Decisions
+
+| Decision | Rationale |
+|---|---|
+| Subflows instead of flat tasks | Independent observability; each subflow appears in Prefect UI |
+| Pure functions in separate module | Unit-testable without Prefect or database |
+| Watermark uses `return_state=True` | Watermark failure never fails the main pipeline |
+| `watermark_state` null-guarded | When no PostgreSQL DSN, task returns None gracefully |
+| Dashboard calls API via `fetchJson` | Consistent with existing SupplierDirectory pattern |
+| KPI cards use `borderLeft` colour | Quick visual scan of metric types |
+| `pd.to_numeric(errors="coerce")` | Defensive against non-numeric data in production |
+
