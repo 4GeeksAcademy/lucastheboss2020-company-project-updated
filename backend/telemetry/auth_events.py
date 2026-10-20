@@ -56,13 +56,15 @@ def emit_login_failed(
 def emit_registration_created(
     *,
     user_id: str | None,
-    role: str | None = None,
+    role: str = "user",
     session_id: str | None = None,
     request_id: str | None = None,
 ) -> dict[str, Any] | None:
-    properties: dict[str, Any] = {"region": CONTEXT_COUNTRY, "method": "public_form"}
-    if role:
-        properties["role"] = role
+    """Registration succeeded.
+
+    ``role`` defaults to ``"user"`` when not provided (the schema requires it).
+    """
+    properties: dict[str, Any] = {"region": CONTEXT_COUNTRY, "method": "public_form", "role": role}
     return emit(
         "auth_registration_created",
         user_id=user_id,

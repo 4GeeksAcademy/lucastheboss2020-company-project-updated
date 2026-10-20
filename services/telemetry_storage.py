@@ -6,6 +6,9 @@ Design (TELEMETRY_PLAN Phase 3):
   psycopg2 connection from ``DATABASE_URL``) — no new connection pool needed.
 - The ``tags`` column stores the envelope ``properties`` object as JSONB.
 - ``service`` is derived from ``event_type`` at insert time.
+- ``tags``/``properties`` are **trimmed to the event-schema allowlist** before
+  insert (TELEMETRY_PLAN §5 — strict allowlists + PII-safe by construction).
+  Unknown keys that slip past the loose endpoint validator never reach the DB.
 
 Usage::
 
@@ -17,12 +20,19 @@ Reference: README Phase 3 — Bulk Insert, Complementary Knowledge.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Any
 
 import psycopg2
 from psycopg2.extras import execute_values
+
+# The registry is the single source of truth for per-event property allowlists
+# (event-schemas.json).  The endpoint deliberately validates only the envelope
+# structure (Pydantic TelemetryEvent), so the storage layer is the final gate
+# that keeps out-of-plan keys out of the DB.
+from backend.telemetry.registry import get_properties_allowlist
 
 logger = logging.getLogger(__name__)
 
@@ -118,22 +128,63 @@ ON CONFLICT (event_id) DO NOTHING
 """
 
 
+def trim_properties_to_allowlist(event_type: str, properties: dict[str, Any]) -> dict[str, Any]:
+    """Return only the keys of *properties* that are in the event's allowlist.
+
+    This is the **persist-time allowlist filter** (TELEMETRY_PLAN §5.2.1).  It
+    mirrors the emit-time ``registry.validate_event`` check, but applied at the
+    storage boundary so that any unknown key that reaches the bulk insert (e.g.
+    from the loose per-event Pydantic validation on ``POST /telemetry/events``)
+    is dropped **before** it is written to the ``tags`` JSONB column.
+
+    An unknown ``event_type`` has an empty allowlist → an empty dict is
+    returned (the event itself is still stored; only undeclared keys are cut).
+
+    Args:
+        event_type: The event's ``event_type`` (used to look up the allowlist).
+        properties: The envelope ``properties``/``tags`` object to trim.
+
+    Returns:
+        A new dict containing only allowlisted keys (order preserved by dict
+        construction).  Never returns ``None``.
+    """
+    if not isinstance(properties, dict):
+        return {}
+    allowed = get_properties_allowlist(event_type)
+    trimmed = {key: value for key, value in properties.items() if key in allowed}
+    dropped = set(properties) - set(trimmed)
+    if dropped:
+        logger.warning(
+            "Telemetry storage: trimming properties for %s — dropped non-allowlisted key(s): %s",
+            event_type,
+            sorted(dropped),
+        )
+    return trimmed
+
+
 def _prepare_rows(valid_events: list[dict[str, Any]]) -> list[tuple]:
-    """Transform validated TelemetryEvent dicts into DB row tuples."""
+    """Transform validated TelemetryEvent dicts into DB row tuples.
+
+    Each event's ``properties`` object is trimmed to the event-schema allowlist
+    for its ``event_type`` (see :func:`trim_properties_to_allowlist`), so the
+    ``tags`` JSONB column never contains out-of-plan keys.
+    """
     rows: list[tuple] = []
     for ev in valid_events:
+        event_type = ev.get("event_type", "")
         rows.append((
             ev.get("eventId"),
             ev.get("timestamp"),
             ev.get("sessionId"),
             ev.get("userId"),
-            ev.get("event_type"),
+            event_type,
             ev.get("schemaVersion", 1),
             ev.get("requestId"),
-            derive_service(ev.get("event_type", "")),
+            derive_service(event_type),
             # The envelope ``properties`` field maps to the DB ``tags`` column.
-            # psycopg2 adapts dict → JSONB automatically when the column is JSONB.
-            ev.get("properties", {}),
+            # Trimmed to the per-event allowlist so unknown keys never persist.
+            # Serialised to JSON string for psycopg2 JSONB column adaptation.
+            json.dumps(trim_properties_to_allowlist(event_type, ev.get("properties", {}))),
         ))
     return rows
 

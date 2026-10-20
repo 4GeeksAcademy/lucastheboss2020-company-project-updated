@@ -85,3 +85,12 @@ Milestone 4 evaluation readiness: confirm documentation structure, public lead c
 - Batch jobs: nightly inventory audit → `inventory_discrepancy_detected`; direct-write guard → `direct_stock_edit_rejected`
 - Stream vs batch delivery, redaction pipeline, archival at the storage layer
 - Wire `direct_stock_edit_rejected` / `inventory_discrepancy_detected` call sites at their milestone (helpers already imported)
+
+## Recent Completions (Telemetry — Phase 3 Storage + Resubmit)
+- ✅ `scripts/create_telemetry_table.sql` — append-only `telemetry_events` DDL (identity PK, `event_id` UNIQUE, indexed timestamp/event_type/GIN tags, RLS anon/auth insert + auth select)
+- ✅ `services/telemetry_storage.py` — psycopg2 `execute_values` bulk insert with `ON CONFLICT (event_id) DO NOTHING`; DSN from `TELEMETRY_DATABASE_URL`/`DATABASE_URL` (PostgreSQL-only, RuntimeError otherwise); `derive_service` from event_type prefix
+- ✅ `services/routers/telemetry.py` — POST `/telemetry/events` loose per-event Pydantic validation → `{received, stored, rejected}`; GET `/telemetry/report` (Phase 4) cached metrics
+- ✅ `backend/main.py` — removed hardcoded-credential `/telemetry/events` handler
+- ✅ **Resubmit: allowlist trimming before insert** — `trim_properties_to_allowlist` in storage drops out-of-plan `properties` keys (per `get_properties_allowlist`) before writing `tags` JSONB; endpoint contract unchanged
+- ✅ `scripts/seed_telemetry_proof.py` + `docs/telemetry-phase3-proof.md` — seed+verify+trimming-evidence tooling for the Supabase screenshot proof
+- ✅ Verification: 179/179 tests pass (49 telemetry incl. 16 telemetry-events tests, 5 new trimming tests); ruff clean on changed files

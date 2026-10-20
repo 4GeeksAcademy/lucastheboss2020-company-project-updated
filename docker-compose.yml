@@ -7,6 +7,7 @@ services:
       - ./backend/.env
     environment:
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3001}
+      TELEMETRY_DATABASE_URL: ${TELEMETRY_DATABASE_URL:-}
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
@@ -39,6 +40,7 @@ services:
       NEXT_PUBLIC_BACKOFFICE_URL: ${NEXT_PUBLIC_BACKOFFICE_URL:-http://localhost:3001}
       TRACKFLOW_REPO_ROOT: /app
       NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_TELEMETRY_ENDPOINT: ${NEXT_PUBLIC_TELEMETRY_ENDPOINT:-/api/telemetry/events}
     ports:
       - "${UI_PORT:-3000}:3000"
       - "${BACKOFFICE_PORT:-3001}:3001"
