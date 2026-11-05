@@ -8,6 +8,7 @@ services:
     environment:
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3001}
       TELEMETRY_DATABASE_URL: ${TELEMETRY_DATABASE_URL:-}
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
@@ -16,6 +17,7 @@ services:
       - ./packages:/app/packages
       - ./pyproject.toml:/app/pyproject.toml:ro
       - ./scripts:/app/scripts
+      - ./data:/app/data
     networks:
       - trackflow
     healthcheck:
@@ -28,6 +30,59 @@ services:
       timeout: 3s
       retries: 8
       start_period: 30s
+
+  redis:
+    image: redis:7.4.6-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - trackflow
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    command: ["celery", "-A", "services.celery_app:app", "worker", "--loglevel=info", "--hostname=reporting@%h"]
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./services:/app/services
+      - ./backend:/app/backend
+      - ./packages:/app/packages
+      - ./scripts:/app/scripts
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - trackflow
+
+  flower:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    command: ["celery", "-A", "services.celery_app:app", "flower", "--port=5555"]
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "127.0.0.1:5555:5555"
+    volumes:
+      - ./services:/app/services
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - trackflow
 
   ui:
     build:
@@ -69,6 +124,7 @@ networks:
     name: trackflow-dev
 
 volumes:
+  redis_data:
   ui_website_node_modules:
   ui_backoffice_node_modules:
   ui_website_next:

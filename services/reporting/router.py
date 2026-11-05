@@ -3,7 +3,7 @@
 Three endpoints:
     - GET  /reporting/weekly-warehouse-client-performance
     - GET  /reporting/pipeline-runs/latest
-    - POST /reporting/pipeline-runs
+    - POST /reporting/pipeline-runs (async — dispatches Celery task)
 
 All endpoints import pipeline logic from ``data/pipelines/pipeline`` — the
 pipeline implementation lives there, not duplicated here.
@@ -20,14 +20,16 @@ from backend.auth import get_current_user
 from data.pipelines.pipeline import (
     compute_weekly_kpis,
     get_latest_watermark,
-    run_pipeline,
 )
 
+from services.celery_app import app as celery_app
+from services.tasks import TASK_NAME
+
 from .models import (
+    AsyncTriggerResponse,
     PerformanceEntry,
     PerformanceResponse,
     TriggerRequest,
-    TriggerResponse,
     WatermarkResponse,
 )
 
@@ -130,18 +132,18 @@ def get_latest_pipeline_run(
 
 @router.post(
     "/pipeline-runs",
-    response_model=TriggerResponse,
+    response_model=AsyncTriggerResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Trigger a manual pipeline run",
+    summary="Trigger a manual pipeline run (async via Celery)",
 )
 def trigger_pipeline_run(
     body: TriggerRequest,
     _user: dict = Depends(get_current_user),
-) -> TriggerResponse:
-    """Trigger a full extract → transform → load pipeline run synchronously.
+) -> AsyncTriggerResponse:
+    """Dispatch a pipeline run to the Celery worker and return immediately.
 
-    The pipeline reads from ``telemetry_events`` and upserts into
-    ``reporting.weekly_warehouse_client_performance``.
+    The worker executes ``run_pipeline(week_start)`` asynchronously.
+    Poll ``GET /tasks/{task_id}`` to learn when it completes.
     """
     # Resolve week_start: default to the most recent Monday
     week_start = body.week_start
@@ -153,21 +155,16 @@ def trigger_pipeline_run(
         last_monday = today - timedelta(days=days_since_monday + 7)
         week_start = last_monday.strftime("%Y-%m-%d")
 
-    logger.info("Manual pipeline run triggered for week %s", week_start)
+    logger.info("Dispatching async pipeline run for week %s", week_start)
 
-    try:
-        result = run_pipeline(week_start)
-        return TriggerResponse(
-            week_start=result.get("week_start", week_start),
-            status=result.get("status", "unknown"),
-            rows_upserted=result.get("rows_upserted", 0),
-            error=result.get("error"),
-        )
-    except Exception as exc:
-        logger.exception("Manual pipeline run failed")
-        return TriggerResponse(
-            week_start=week_start,
-            status="failed",
-            rows_upserted=0,
-            error=str(exc),
-        )
+    task = celery_app.send_task(
+        TASK_NAME,
+        args=[week_start],
+        queue="reporting",
+    )
+
+    return AsyncTriggerResponse(
+        task_id=task.id,
+        week_start=week_start,
+        status="accepted",
+    )

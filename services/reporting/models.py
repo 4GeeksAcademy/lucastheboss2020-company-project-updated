@@ -54,8 +54,34 @@ class TriggerRequest(BaseModel):
     week_start: str | None = None
 
 
+class AsyncTriggerResponse(BaseModel):
+    """Response body for async POST /reporting/pipeline-runs.
+
+    Returns immediately with a ``task_id`` that the caller can poll
+    via ``GET /tasks/{task_id}``.
+    """
+
+    task_id: str
+    week_start: str
+    status: str = "accepted"
+
+
+class TaskStatusResponse(BaseModel):
+    """Response body for GET /tasks/{task_id}.
+
+    Maps Celery states to a stable JSON contract.  ``result`` is populated
+    only when ``status == "SUCCESS"``; ``error`` only on ``"FAILURE"``.
+    """
+
+    task_id: str
+    week_start: str | None = None
+    status: str  # PENDING | STARTED | SUCCESS | FAILURE | RETRY
+    result: dict[str, Any] | None = None
+    error: str | None = None
+
+
 class TriggerResponse(BaseModel):
-    """Response body for POST /reporting/pipeline-runs."""
+    """Legacy synchronous response body — kept for backward compatibility."""
 
     week_start: str
     status: str
