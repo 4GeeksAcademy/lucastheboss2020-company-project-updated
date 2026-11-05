@@ -36,11 +36,29 @@ interface WatermarkResponse {
 }
 
 interface TriggerResponse {
+  task_id: string;
   week_start: string;
   status: string;
-  rows_upserted: number;
-  error?: string;
 }
+
+interface TaskStatusResponse {
+  task_id: string;
+  week_start: string | null;
+  status: "PENDING" | "STARTED" | "RETRY" | "SUCCESS" | "FAILURE";
+  result: { week_start?: string; rows_upserted?: number } | null;
+  error: string | null;
+}
+
+interface TriggerResult {
+  task_id: string;
+  week_start: string;
+  status: string;
+  rows_upserted?: number;
+  error?: string | null;
+}
+
+const TASK_POLL_INTERVAL_MS = 5_000;
+const TASK_POLL_MAX_ATTEMPTS = 370;
 
 /* ------------------------------------------------------------------ */
 /*  Helper: format ISO date                                            */
@@ -105,13 +123,12 @@ export default function WeeklyReportingDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [triggering, setTriggering] = useState(false);
-  const [triggerResult, setTriggerResult] = useState<TriggerResponse | null>(null);
+  const [triggerResult, setTriggerResult] = useState<TriggerResult | null>(null);
 
   /* Fetch performance data and watermark */
   const fetchData = useCallback(async (week?: string) => {
     setLoading(true);
     setError("");
-    setTriggerResult(null);
 
     try {
       const params = week ? `?week_start=${week}` : "";
@@ -137,14 +154,40 @@ export default function WeeklyReportingDashboard() {
 
     try {
       const body = weekStart ? { week_start: weekStart } : {};
-      const res = await fetchJson<TriggerResponse>("/api/reporting/pipeline-runs", {
+      const accepted = await fetchJson<TriggerResponse>("/api/reporting/pipeline-runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      setTriggerResult(res);
-      // Refresh data after trigger
-      await fetchData(res.week_start);
+      setTriggerResult({ ...accepted });
+
+      for (let attempt = 0; attempt < TASK_POLL_MAX_ATTEMPTS; attempt += 1) {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, TASK_POLL_INTERVAL_MS));
+        }
+
+        const task = await fetchJson<TaskStatusResponse>(`/api/tasks/${accepted.task_id}`);
+        const week = task.week_start ?? accepted.week_start;
+
+        setTriggerResult({
+          task_id: task.task_id,
+          week_start: week,
+          status: task.status,
+          rows_upserted: task.result?.rows_upserted,
+          error: task.error,
+        });
+
+        if (task.status === "SUCCESS") {
+          await fetchData(week);
+          return;
+        }
+
+        if (task.status === "FAILURE") {
+          return;
+        }
+      }
+
+      setError(`Task ${accepted.task_id} is still running. Check its status again later.`);
     } catch (err: unknown) {
       setError(userSafeErrorMessage(err, "Could not trigger pipeline run."));
     } finally {
@@ -198,7 +241,10 @@ export default function WeeklyReportingDashboard() {
           />
           <button
             className="button"
-            onClick={() => fetchData(weekStart)}
+            onClick={() => {
+              setTriggerResult(null);
+              fetchData(weekStart);
+            }}
             disabled={loading}
           >
             {loading ? "Loading…" : "Query"}
@@ -225,16 +271,19 @@ export default function WeeklyReportingDashboard() {
         <div
           className="panel"
           style={{
-            background: triggerResult.status === "success" ? "#f0fff0" : "#fff8f0",
-            border: `1px solid ${triggerResult.status === "success" ? "#cfc" : "#fdb"}`,
+            background: triggerResult.status === "SUCCESS" ? "#f0fff0" : triggerResult.status === "FAILURE" ? "#fff0f0" : "#fff8f0",
+            border: `1px solid ${triggerResult.status === "SUCCESS" ? "#cfc" : triggerResult.status === "FAILURE" ? "#fcc" : "#fdb"}`,
             padding: "12px",
             marginBottom: "1rem",
           }}
         >
           <p style={{ margin: 0 }}>
             <strong>Pipeline {triggerResult.status}:</strong> week {triggerResult.week_start}
-            {triggerResult.rows_upserted > 0 && ` — ${triggerResult.rows_upserted} rows upserted`}
+            {triggerResult.rows_upserted !== undefined && ` — ${triggerResult.rows_upserted} rows upserted`}
             {triggerResult.error && <span style={{ color: "#c00" }}> — {triggerResult.error}</span>}
+            <span style={{ display: "block", marginTop: "4px", fontSize: "0.8rem", color: "#666" }}>
+              Task ID: {triggerResult.task_id}
+            </span>
           </p>
         </div>
       )}

@@ -20,6 +20,14 @@ const nextConfig = {
         source: "/api/telemetry/:path*",
         destination: `${apiInternalUrl}/telemetry/:path*`,
       },
+      {
+        source: "/api/reporting/:path*",
+        destination: `${apiInternalUrl}/reporting/:path*`,
+      },
+      {
+        source: "/api/tasks/:path*",
+        destination: `${apiInternalUrl}/tasks/:path*`,
+      },
     ];
   },
 };
