@@ -20,3 +20,4 @@ __pycache__/
 backend/data/
 services/suppliers/data/
 uploads/
+reports/sales-forecasting/
