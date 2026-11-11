@@ -1,0 +1,93 @@
+[
+  {
+    "id": "sla-standard-domestic",
+    "question": "How long does standard shipping take within one country?",
+    "expected_source_document": "sla-delivery",
+    "expected_section": "Delivery SLA",
+    "expected_evidence": "3 to 5 business days"
+  },
+  {
+    "id": "sla-international-customs",
+    "question": "What is the delivery window between the United States and Spain, and who controls customs delays?",
+    "expected_source_document": "sla-delivery",
+    "expected_section": "Delivery SLA",
+    "expected_evidence": "7 to 12 business days"
+  },
+  {
+    "id": "sla-monthly-commitment",
+    "question": "What monthly on-time delivery target is contractually committed?",
+    "expected_source_document": "sla-delivery",
+    "expected_section": "Delivery SLA",
+    "expected_evidence": "90% on-time deliveries per month"
+  },
+  {
+    "id": "sla-black-friday",
+    "question": "Can we promise the normal delivery SLA during Black Friday, and by how much may times extend?",
+    "expected_source_document": "sla-delivery",
+    "expected_section": "Delivery SLA",
+    "expected_evidence": "Black Friday"
+  },
+  {
+    "id": "sla-january-sales",
+    "question": "What should we tell clients about delivery commitments during January Sales in Spain?",
+    "expected_source_document": "sla-delivery",
+    "expected_section": "Delivery SLA",
+    "expected_evidence": "January Sales in Spain"
+  },
+  {
+    "id": "returns-window",
+    "question": "What is the standard return window after delivery?",
+    "expected_source_document": "returns-policy",
+    "expected_section": "Returns Policy",
+    "expected_evidence": "30 days from delivery"
+  },
+  {
+    "id": "returns-international",
+    "question": "Are international returns automatic?",
+    "expected_source_document": "returns-policy",
+    "expected_section": "Returns Policy",
+    "expected_evidence": "require manual handling"
+  },
+  {
+    "id": "returns-cost",
+    "question": "Who pays the return shipping cost when the return is caused by a TrackFlow error?",
+    "expected_source_document": "returns-policy",
+    "expected_section": "Returns Policy",
+    "expected_evidence": "TrackFlow covers it"
+  },
+  {
+    "id": "carrier-rural-aragon",
+    "question": "Which carrier has the best coverage in rural areas of Aragón?",
+    "expected_source_document": "carrier-coverage",
+    "expected_section": "Carrier Coverage",
+    "expected_evidence": "SEUR: best coverage in rural areas of Aragón"
+  },
+  {
+    "id": "carrier-heavy-us",
+    "question": "Which carrier has the best rate for United States packages over 5 kg?",
+    "expected_source_document": "carrier-coverage",
+    "expected_section": "Carrier Coverage",
+    "expected_evidence": "best rate for heavy packages (over 5 kg)"
+  },
+  {
+    "id": "carrier-exception",
+    "question": "Can an account manager manually choose a carrier outside the normal rules?",
+    "expected_source_document": "carrier-coverage",
+    "expected_section": "Carrier Coverage",
+    "expected_evidence": "exception approved by Carlos Vega"
+  },
+  {
+    "id": "storage-standard-rate",
+    "question": "What is the standard monthly storage rate in Los Angeles and Zaragoza?",
+    "expected_source_document": "storage-pricing",
+    "expected_section": "Storage Pricing",
+    "expected_evidence": "18 USD per cubic meter per month"
+  },
+  {
+    "id": "storage-discount-approval",
+    "question": "Can an account manager offer a preferential storage discount to a high-volume client?",
+    "expected_source_document": "storage-pricing",
+    "expected_section": "Storage Pricing",
+    "expected_evidence": "must always go through Miguel Torres"
+  }
+]

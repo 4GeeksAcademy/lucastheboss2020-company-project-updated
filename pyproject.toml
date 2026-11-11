@@ -24,6 +24,9 @@ dependencies = [
     "celery[redis]>=5.5,<6",
     "redis>=5,<8",
     "flower>=2,<3",
+    "qdrant-client>=1.20.0",
+    "fastembed>=0.9.1",
+    "openai>=3.49.0",
 ]
 scripts = { seed = "services.suppliers.seed:main", seed-incidents = "scripts.seed_incidents:main", seed-inventory = "services.seed_inventory:main" }
 

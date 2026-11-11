@@ -9,6 +9,7 @@ services:
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3001}
       TELEMETRY_DATABASE_URL: ${TELEMETRY_DATABASE_URL:-}
       REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
@@ -30,6 +31,15 @@ services:
       timeout: 3s
       retries: 8
       start_period: 30s
+
+  qdrant:
+    image: qdrant/qdrant:v1.20.0
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - trackflow
 
   redis:
     image: redis:7.4.6-alpine
@@ -125,6 +135,7 @@ networks:
 
 volumes:
   redis_data:
+  qdrant_data:
   ui_website_node_modules:
   ui_backoffice_node_modules:
   ui_website_next:

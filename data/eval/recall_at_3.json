@@ -1,0 +1,365 @@
+{
+  "evaluation_type": "retrieval_only_local_embedding_model",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "generation_model_evaluated": false,
+  "metric": "Recall@3",
+  "hits": 13,
+  "total_questions": 13,
+  "recall_at_3": 1.0,
+  "target": 0.8,
+  "target_met": true,
+  "queries": [
+    {
+      "id": "sla-standard-domestic",
+      "hit_at_3": true,
+      "expected_source_document": "sla-delivery",
+      "expected_section": "Delivery SLA",
+      "expected_evidence": "3 to 5 business days",
+      "retrieved": [
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 1,
+          "score": 0.80838954
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 1,
+          "score": 0.68699473
+        },
+        {
+          "source_document": "storage-pricing",
+          "section": "Storage Pricing",
+          "chunk_index": 1,
+          "score": 0.6186545
+        }
+      ]
+    },
+    {
+      "id": "sla-international-customs",
+      "hit_at_3": true,
+      "expected_source_document": "sla-delivery",
+      "expected_section": "Delivery SLA",
+      "expected_evidence": "7 to 12 business days",
+      "retrieved": [
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 1,
+          "score": 0.7236854
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 0,
+          "score": 0.6715572
+        },
+        {
+          "source_document": "carrier-coverage",
+          "section": "Carrier Coverage",
+          "chunk_index": 0,
+          "score": 0.6472597
+        }
+      ]
+    },
+    {
+      "id": "sla-monthly-commitment",
+      "hit_at_3": true,
+      "expected_source_document": "sla-delivery",
+      "expected_section": "Delivery SLA",
+      "expected_evidence": "90% on-time deliveries per month",
+      "retrieved": [
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 2,
+          "score": 0.7519547
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 3,
+          "score": 0.71644205
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 0,
+          "score": 0.67593074
+        }
+      ]
+    },
+    {
+      "id": "sla-black-friday",
+      "hit_at_3": true,
+      "expected_source_document": "sla-delivery",
+      "expected_section": "Delivery SLA",
+      "expected_evidence": "Black Friday",
+      "retrieved": [
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 3,
+          "score": 0.84812933
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 2,
+          "score": 0.7079387
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 1,
+          "score": 0.63756335
+        }
+      ]
+    },
+    {
+      "id": "sla-january-sales",
+      "hit_at_3": true,
+      "expected_source_document": "sla-delivery",
+      "expected_section": "Delivery SLA",
+      "expected_evidence": "January Sales in Spain",
+      "retrieved": [
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 3,
+          "score": 0.75234187
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 0,
+          "score": 0.6546851
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 1,
+          "score": 0.6313766
+        }
+      ]
+    },
+    {
+      "id": "returns-window",
+      "hit_at_3": true,
+      "expected_source_document": "returns-policy",
+      "expected_section": "Returns Policy",
+      "expected_evidence": "30 days from delivery",
+      "retrieved": [
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 1,
+          "score": 0.8447947
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 2,
+          "score": 0.6635458
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 3,
+          "score": 0.6494332
+        }
+      ]
+    },
+    {
+      "id": "returns-international",
+      "hit_at_3": true,
+      "expected_source_document": "returns-policy",
+      "expected_section": "Returns Policy",
+      "expected_evidence": "require manual handling",
+      "retrieved": [
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 2,
+          "score": 0.7256385
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 1,
+          "score": 0.6283443
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 0,
+          "score": 0.6018947
+        }
+      ]
+    },
+    {
+      "id": "returns-cost",
+      "hit_at_3": true,
+      "expected_source_document": "returns-policy",
+      "expected_section": "Returns Policy",
+      "expected_evidence": "TrackFlow covers it",
+      "retrieved": [
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 1,
+          "score": 0.82421064
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 2,
+          "score": 0.7639879
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 0,
+          "score": 0.75437343
+        }
+      ]
+    },
+    {
+      "id": "carrier-rural-aragon",
+      "hit_at_3": true,
+      "expected_source_document": "carrier-coverage",
+      "expected_section": "Carrier Coverage",
+      "expected_evidence": "SEUR: best coverage in rural areas of Arag\u00f3n",
+      "retrieved": [
+        {
+          "source_document": "carrier-coverage",
+          "section": "Carrier Coverage",
+          "chunk_index": 1,
+          "score": 0.7362515
+        },
+        {
+          "source_document": "carrier-coverage",
+          "section": "Carrier Coverage",
+          "chunk_index": 0,
+          "score": 0.5343965
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 0,
+          "score": 0.525386
+        }
+      ]
+    },
+    {
+      "id": "carrier-heavy-us",
+      "hit_at_3": true,
+      "expected_source_document": "carrier-coverage",
+      "expected_section": "Carrier Coverage",
+      "expected_evidence": "best rate for heavy packages (over 5 kg)",
+      "retrieved": [
+        {
+          "source_document": "carrier-coverage",
+          "section": "Carrier Coverage",
+          "chunk_index": 0,
+          "score": 0.7148252
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 0,
+          "score": 0.6147038
+        },
+        {
+          "source_document": "carrier-coverage",
+          "section": "Carrier Coverage",
+          "chunk_index": 1,
+          "score": 0.61413187
+        }
+      ]
+    },
+    {
+      "id": "carrier-exception",
+      "hit_at_3": true,
+      "expected_source_document": "carrier-coverage",
+      "expected_section": "Carrier Coverage",
+      "expected_evidence": "exception approved by Carlos Vega",
+      "retrieved": [
+        {
+          "source_document": "carrier-coverage",
+          "section": "Carrier Coverage",
+          "chunk_index": 2,
+          "score": 0.692287
+        },
+        {
+          "source_document": "storage-pricing",
+          "section": "Storage Pricing",
+          "chunk_index": 2,
+          "score": 0.6789378
+        },
+        {
+          "source_document": "returns-policy",
+          "section": "Returns Policy",
+          "chunk_index": 2,
+          "score": 0.6330962
+        }
+      ]
+    },
+    {
+      "id": "storage-standard-rate",
+      "hit_at_3": true,
+      "expected_source_document": "storage-pricing",
+      "expected_section": "Storage Pricing",
+      "expected_evidence": "18 USD per cubic meter per month",
+      "retrieved": [
+        {
+          "source_document": "storage-pricing",
+          "section": "Storage Pricing",
+          "chunk_index": 0,
+          "score": 0.77333987
+        },
+        {
+          "source_document": "carrier-coverage",
+          "section": "Carrier Coverage",
+          "chunk_index": 1,
+          "score": 0.6720915
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 1,
+          "score": 0.6542366
+        }
+      ]
+    },
+    {
+      "id": "storage-discount-approval",
+      "hit_at_3": true,
+      "expected_source_document": "storage-pricing",
+      "expected_section": "Storage Pricing",
+      "expected_evidence": "must always go through Miguel Torres",
+      "retrieved": [
+        {
+          "source_document": "storage-pricing",
+          "section": "Storage Pricing",
+          "chunk_index": 2,
+          "score": 0.78639174
+        },
+        {
+          "source_document": "storage-pricing",
+          "section": "Storage Pricing",
+          "chunk_index": 0,
+          "score": 0.66990733
+        },
+        {
+          "source_document": "sla-delivery",
+          "section": "Delivery SLA",
+          "chunk_index": 3,
+          "score": 0.6139927
+        }
+      ]
+    }
+  ],
+  "limitation": "This measures local embedding retrieval only. It is not a course-provider evaluation, LLM answer faithfulness score, or evidence of live generation."
+}

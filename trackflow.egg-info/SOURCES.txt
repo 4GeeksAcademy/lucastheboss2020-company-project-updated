@@ -33,6 +33,7 @@ packages/shared/__init__.py
 packages/shared/incident_validation.py
 scripts/__init__.py
 scripts/analyze_incidents.py
+scripts/evaluate_sales_forecast.py
 scripts/generate_fixture.py
 scripts/nightly_export.py
 scripts/seed_incidents.py
