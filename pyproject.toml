@@ -42,7 +42,7 @@ dev = [
 include = ["services*", "backend*", "scripts*", "packages*"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests", "services/suppliers/tests", "services/incidents/tests", "services/tests"]
+testpaths = ["backend/tests", "services/suppliers/tests", "services/incidents/tests", "services/tests", "tests/pipelines"]
 
 [tool.coverage.run]
 branch = true

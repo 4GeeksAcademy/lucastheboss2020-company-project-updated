@@ -24,6 +24,7 @@ coverage/
 backend/data/
 services/suppliers/data/
 uploads/
+reports/sales-forecasting/
 
 # Generated exports (nightly_export.py)
 data/raw/telemetry_*.csv
