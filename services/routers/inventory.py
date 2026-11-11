@@ -1,0 +1,345 @@
+import logging
+
+from backend.auth import get_current_user
+from backend.telemetry import DEFAULT_LOW_STOCK_THRESHOLD
+from backend.telemetry.inventory_events import (
+    emit_direct_stock_edit_rejected,
+    emit_inbound_order_created,
+    emit_inventory_discrepancy_detected,
+    emit_outbound_order_created,
+    emit_outbound_order_rejected,
+    emit_stock_threshold_triggered,
+    inventory_context,
+)
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlmodel import Session, select
+
+from services.database import get_db
+from services.models import SKU, StockEntry, StockExit
+from services.schemas import (
+    SKUCreate,
+    SKURead,
+    SKUSummary,
+    StockEntryCreate,
+    StockEntryRead,
+    StockExitCreate,
+    InventoryOrderListItem,
+    InventoryOrderProductSummary,
+    StockExitRead,
+)
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/inventory", tags=["inventory"])
+
+
+def _current_stock(session: Session, sku_id: int, warehouse: str) -> int:
+    inbound = session.exec(
+        select(func.coalesce(func.sum(StockEntry.quantity), 0)).where(
+            StockEntry.sku_id == sku_id,
+            StockEntry.warehouse == warehouse,
+        )
+    ).one()
+    outbound = session.exec(
+        select(func.coalesce(func.sum(StockExit.quantity), 0)).where(
+            StockExit.sku_id == sku_id,
+            StockExit.warehouse == warehouse,
+        )
+    ).one()
+    return int(inbound - outbound)
+
+
+def _sku_response(session: Session, sku: SKU) -> SKURead:
+    return SKURead(**sku.model_dump(), current_stock=_current_stock(session, sku.id, sku.warehouse))
+
+
+def _ensure_sku_warehouse(sku: SKU, warehouse: str) -> None:
+    if sku.warehouse != warehouse:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Warehouse '{warehouse}' does not match SKU '{sku.sku}' warehouse '{sku.warehouse}'.",
+        )
+
+
+def _log_database_error(operation: str, error: SQLAlchemyError) -> None:
+    logger.error("Inventory %s failed (%s)", operation, type(error).__name__)
+
+
+@router.get("/products", response_model=list[SKURead])
+def list_products(
+    session: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    try:
+        products = session.exec(select(SKU).order_by(SKU.id)).all()
+        inbound_rows = session.exec(
+            select(StockEntry.sku_id, StockEntry.warehouse, func.sum(StockEntry.quantity)).group_by(
+                StockEntry.sku_id, StockEntry.warehouse
+            )
+        ).all()
+        outbound_rows = session.exec(
+            select(StockExit.sku_id, StockExit.warehouse, func.sum(StockExit.quantity)).group_by(
+                StockExit.sku_id, StockExit.warehouse
+            )
+        ).all()
+    except SQLAlchemyError as error:
+        _log_database_error("product listing", error)
+        raise HTTPException(status_code=500, detail="Products could not be loaded. Please retry.") from None
+
+    inbound = {(sku_id, warehouse): int(quantity or 0) for sku_id, warehouse, quantity in inbound_rows}
+    outbound = {(sku_id, warehouse): int(quantity or 0) for sku_id, warehouse, quantity in outbound_rows}
+    return [
+        SKURead(
+            **product.model_dump(),
+            current_stock=inbound.get((product.id, product.warehouse), 0)
+            - outbound.get((product.id, product.warehouse), 0),
+        )
+        for product in products
+    ]
+
+
+@router.post("/products", response_model=SKURead, status_code=status.HTTP_201_CREATED)
+def create_product(
+    payload: SKUCreate,
+    session: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    product = SKU(**payload.model_dump())
+    try:
+        session.add(product)
+        session.commit()
+        session.refresh(product)
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A SKU with this code already exists in that warehouse.",
+        ) from None
+    except SQLAlchemyError as error:
+        session.rollback()
+        _log_database_error("product creation", error)
+        raise HTTPException(status_code=500, detail="Product could not be created. Please retry.") from None
+    return SKURead(**product.model_dump(), current_stock=0)
+
+
+@router.get("/products/{product_id}", response_model=SKURead)
+def get_product(
+    product_id: int,
+    session: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    try:
+        product = session.get(SKU, product_id)
+        if product is None:
+            raise HTTPException(status_code=404, detail="SKU not found.")
+        return _sku_response(session, product)
+    except SQLAlchemyError as error:
+        _log_database_error("product lookup", error)
+        raise HTTPException(status_code=500, detail="Product could not be loaded. Please retry.") from None
+
+
+@router.post("/orders/inbound", response_model=StockEntryRead, status_code=status.HTTP_201_CREATED)
+def create_inbound_order(
+    payload: StockEntryCreate,
+    session: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    try:
+        product = session.get(SKU, payload.sku_id)
+        if product is None:
+            raise HTTPException(status_code=404, detail="SKU not found.")
+        _ensure_sku_warehouse(product, payload.warehouse)
+        entry = StockEntry(**payload.model_dump(), user_uuid=user["id"])
+        session.add(entry)
+        session.commit()
+        session.refresh(entry)
+    except HTTPException:
+        session.rollback()
+        raise
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="This inbound reference already exists for that warehouse.") from None
+    except SQLAlchemyError as error:
+        session.rollback()
+        _log_database_error("inbound order", error)
+        raise HTTPException(status_code=500, detail="Inbound order could not be saved. Please retry.") from None
+
+    # MANDATORY (CONTEXT_6 §5): successfully recorded inbound order.
+    emit_inbound_order_created(
+        context=inventory_context(warehouse=payload.warehouse, product=product),
+        quantity=payload.quantity,
+        user_id=user["id"],
+        order_id=str(entry.id),
+        reference=entry.reference,
+        stock_after=_current_stock(session, product.id, product.warehouse),
+    )
+    return StockEntryRead(**entry.model_dump(), sku=SKUSummary.model_validate(product))
+
+
+@router.post("/orders/outbound", response_model=StockExitRead, status_code=status.HTTP_201_CREATED)
+def create_outbound_order(
+    payload: StockExitCreate,
+    session: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    try:
+        product = session.exec(
+            select(SKU).where(SKU.id == payload.sku_id).with_for_update()
+        ).first()
+        if product is None:
+            raise HTTPException(status_code=404, detail="SKU not found.")
+        _ensure_sku_warehouse(product, payload.warehouse)
+        available = _current_stock(session, payload.sku_id, payload.warehouse)
+        if payload.quantity > available:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Insufficient stock for SKU '{product.sku}'. "
+                    f"Available: {available}, requested: {payload.quantity}."
+                ),
+            )
+
+        exit_record = StockExit(**payload.model_dump(), user_uuid=user["id"])
+        session.add(exit_record)
+        session.commit()
+        session.refresh(exit_record)
+    except HTTPException as http_error:
+        session.rollback()
+        # OPPORTUNITY (stream): outbound order rejected with reason + baseline stock.
+        # Distinguish warehouse_mismatch (SKU exists but wrong warehouse) from
+        # insufficient_stock / sku_not_found via the message shape.
+        if product is not None:
+            warehouse_mismatch = "warehouse" in str(http_error.detail) and "does not match" in str(http_error.detail)
+            reason = (
+                "warehouse_mismatch"
+                if warehouse_mismatch
+                else "insufficient_stock"
+                if http_error.status_code == 400
+                else "validation_failed"
+            )
+            emit_outbound_order_rejected(
+                context=inventory_context(warehouse=payload.warehouse, product=product),
+                quantity=payload.quantity,
+                available_stock=(
+                    _current_stock(session, payload.sku_id, payload.warehouse)
+                    if not warehouse_mismatch and http_error.status_code in (400, 404)
+                    else 0
+                ),
+                reason=reason,
+                user_id=user["id"],
+                exit_type=getattr(payload, "exit_type", None),
+            )
+        raise
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Outbound order could not be recorded for this SKU.") from None
+    except SQLAlchemyError as error:
+        session.rollback()
+        _log_database_error("outbound order", error)
+        raise HTTPException(status_code=500, detail="Outbound order could not be saved. Please retry.") from None
+
+    # MANDATORY (CONTEXT_6 §5): successfully recorded outbound order.
+    # NB: tracking_number/recipient data are never emitted (CONTEXT_6 §6) — the
+    # event allowlist has no tracking property, so it cannot leak.
+    context = inventory_context(warehouse=payload.warehouse, product=product)
+    emit_outbound_order_created(
+        context=context,
+        quantity=payload.quantity,
+        user_id=user["id"],
+        order_id=str(exit_record.id),
+        exit_type=payload.exit_type,
+        stock_after=available - payload.quantity,
+    )
+    # MANDATORY: stock below configured threshold (deduped once per product +
+    # warehouse per UTC day; CONTEXT_6 §2).
+    stock_after = available - payload.quantity
+    if context and stock_after < DEFAULT_LOW_STOCK_THRESHOLD:
+        emit_stock_threshold_triggered(
+            context=context,
+            stock_level=stock_after,
+            threshold_value=DEFAULT_LOW_STOCK_THRESHOLD,
+            user_id=user["id"],
+        )
+    return StockExitRead(**exit_record.model_dump(), sku=SKUSummary.model_validate(product))
+
+
+@router.get("/orders", response_model=list[InventoryOrderListItem])
+def list_orders(
+    session: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    try:
+        inbound = session.exec(
+            select(StockEntry, SKU)
+            .join(SKU, StockEntry.sku_id == SKU.id)
+            .order_by(StockEntry.created_at.desc(), StockEntry.id.desc())
+        ).all()
+        outbound = session.exec(
+            select(StockExit, SKU)
+            .join(SKU, StockExit.sku_id == SKU.id)
+            .order_by(StockExit.created_at.desc(), StockExit.id.desc())
+        ).all()
+    except SQLAlchemyError as error:
+        _log_database_error("order listing", error)
+        raise HTTPException(status_code=500, detail="Orders could not be loaded. Please retry.") from None
+
+    orders: list[InventoryOrderListItem] = []
+    for entry, product in inbound:
+        orders.append(
+            InventoryOrderListItem(
+                movement_type="inbound",
+                id=entry.id,
+                sku_id=entry.sku_id,
+                quantity=entry.quantity,
+                warehouse=entry.warehouse,
+                created_at=entry.created_at,
+                user_uuid=entry.user_uuid,
+                sku=InventoryOrderProductSummary.model_validate(product),
+                reference=entry.reference,
+            )
+        )
+    for exit_record, product in outbound:
+        orders.append(
+            InventoryOrderListItem(
+                movement_type="outbound",
+                id=exit_record.id,
+                sku_id=exit_record.sku_id,
+                quantity=exit_record.quantity,
+                warehouse=exit_record.warehouse,
+                created_at=exit_record.created_at,
+                user_uuid=exit_record.user_uuid,
+                sku=InventoryOrderProductSummary.model_validate(product),
+                exit_type=exit_record.exit_type,
+                tracking_number=exit_record.tracking_number,
+            )
+        )
+    orders.sort(key=lambda order: (order.created_at, order.id), reverse=True)
+    return orders
+
+
+@router.patch("/products/{product_id}")
+def reject_direct_stock_edit(
+    product_id: int,
+    request: Request,
+    session: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """MANDATORY (CONTEXT_6 §5): reject any direct stock modification attempt
+    outside an inbound/outbound order. Always returns 405."""
+    try:
+        product = session.get(SKU, product_id)
+        if product is not None:
+            emit_direct_stock_edit_rejected(
+                context=inventory_context(warehouse=product.warehouse, product=product),
+                attempted_quantity=0,
+                target_field="current_stock",
+                reason="not_supported",
+                user_id=user["id"],
+            )
+    except SQLAlchemyError:
+        pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Direct stock modification is not supported. Use inbound/outbound orders.",
+    )

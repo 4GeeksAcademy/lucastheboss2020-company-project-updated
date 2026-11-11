@@ -11,10 +11,15 @@ interface NavLink {
 }
 
 const BACKOFFICE_LINKS: NavLink[] = [
+  { href: "/uis/backoffice", label: "Dashboard" },
+  { href: "/uis/backoffice/inventory/products", label: "Inventory" },
   { href: "/candidates", label: "Candidates" },
   { href: "/uis/backoffice/suppliers", label: "Suppliers" },
   { href: "/uis/backoffice/incidents", label: "Incident Analysis" },
+  { href: "/uis/backoffice/incidents/manager", label: "Incident Manager" },
+  { href: "/uis/backoffice/telemetry", label: "Telemetry Report" },
   { href: "/candidates/new", label: "New candidate" },
+  { href: "/account/profile", label: "Profile" },
 ];
 
 export default function Navigation() {
@@ -22,13 +27,20 @@ export default function Navigation() {
   const { isAuthenticated, logout, user } = useAuth();
 
   // Hide nav on public website and login page
-  if (pathname === "/uis/website" || pathname === "/login") {
+  if (
+    pathname === "/uis/website" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password"
+  ) {
     return null;
   }
 
   const isBackoffice =
     pathname.startsWith("/candidates") ||
-    pathname.startsWith("/uis/backoffice");
+    pathname.startsWith("/uis/backoffice") ||
+    pathname.startsWith("/account");
 
   return (
     <header className="topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.75rem 1.5rem", background: "var(--track-blue)", color: "#fff" }}>
@@ -42,7 +54,7 @@ export default function Navigation() {
             key={link.href}
             className="button secondary"
             href={link.href}
-            style={{ background: pathname === link.href ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}
+            style={{ background: pathname === link.href || (link.href === "/uis/backoffice/inventory/products" && pathname.startsWith("/uis/backoffice/inventory")) ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}
           >
             {link.label}
           </Link>
@@ -53,9 +65,14 @@ export default function Navigation() {
             Logout ({user?.email ?? "?"})
           </button>
         ) : (
-          <Link className="button secondary" href="/login" style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
-            Login
-          </Link>
+          <>
+            <Link className="button secondary" href="/register" style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
+              Register
+            </Link>
+            <Link className="button secondary" href="/login" style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
+              Login
+            </Link>
+          </>
         )}
       </nav>
     </header>

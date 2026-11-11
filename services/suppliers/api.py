@@ -1,16 +1,31 @@
-from fastapi import FastAPI, HTTPException, status
-from .models import SupplierInput, RateUpdate, StatusUpdate
+from fastapi import APIRouter, FastAPI, HTTPException, status
+from .models import (
+    RateUpdate,
+    StatusUpdate,
+    SupplierCategoriesResponse,
+    SupplierInput,
+    SupplierListRead,
+    SupplierRead,
+    SupplierStatus,
+    VALID_CATEGORIES,
+)
 from .data import get_all, get_one, create, update_rate, update_status, delete_one
+from backend.error_handlers import install_api_error_handlers
 
-app = FastAPI(title="Suppliers API")
-
-
-@app.get("/suppliers")
-def list_suppliers():
-    return get_all()
+router = APIRouter()
 
 
-@app.get("/suppliers/{supplier_id}")
+@router.get("/suppliers", response_model=list[SupplierListRead])
+def list_suppliers(country: str = None, category: str = None):
+    results = get_all()
+    if country:
+        results = [r for r in results if r.get("country", "").lower() == country.lower()]
+    if category:
+        results = [r for r in results if category.lower() in [c.lower() for c in r.get("categories", [])]]
+    return results
+
+
+@router.get("/suppliers/{supplier_id}", response_model=SupplierRead)
 def get_supplier(supplier_id: int):
     record = get_one(supplier_id)
     if not record:
@@ -18,22 +33,23 @@ def get_supplier(supplier_id: int):
     return record
 
 
-@app.post("/suppliers", status_code=status.HTTP_201_CREATED)
+@router.post("/suppliers", response_model=SupplierRead, status_code=status.HTTP_201_CREATED)
 def create_supplier(payload: SupplierInput):
     data = payload.model_dump()
-    data["status"] = data["status"].value
+    if isinstance(data["status"], SupplierStatus):
+        data["status"] = data["status"].value
     return create(data)
 
 
-@app.patch("/suppliers/{supplier_id}/rate")
+@router.patch("/suppliers/{supplier_id}/rate", response_model=SupplierRead)
 def change_rate(supplier_id: int, payload: RateUpdate):
-    record = update_rate(supplier_id, payload.rate)
+    record = update_rate(supplier_id, payload.rate_per_shipment)
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found")
     return record
 
 
-@app.patch("/suppliers/{supplier_id}/status")
+@router.patch("/suppliers/{supplier_id}/status", response_model=SupplierRead)
 def change_status(supplier_id: int, payload: StatusUpdate):
     record = update_status(supplier_id, payload.status.value)
     if not record:
@@ -41,7 +57,18 @@ def change_status(supplier_id: int, payload: StatusUpdate):
     return record
 
 
-@app.delete("/suppliers/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/suppliers/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_supplier(supplier_id: int):
     if not delete_one(supplier_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found")
+
+
+@router.get("/suppliers/categories/list", response_model=SupplierCategoriesResponse)
+def list_categories():
+    """Return the list of valid TrackFlow supplier categories."""
+    return {"categories": VALID_CATEGORIES}
+
+
+app = FastAPI(title="Suppliers API")
+install_api_error_handlers(app)
+app.include_router(router)

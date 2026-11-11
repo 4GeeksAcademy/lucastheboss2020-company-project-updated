@@ -1,15 +1,24 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { fetchCandidates } from "../../src/candidates/api";
 import type { CandidateListResponse } from "../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES } from "../../src/candidates/types";
+import { userSafeErrorMessage } from "../../src/utils/api-errors";
+
+const BackofficeReports = dynamic(() => import("./BackofficeReports"), {
+  ssr: false,
+  loading: () => <p className="message loading">Loading reports and analytics...</p>,
+});
 
 function formatServices(services: string[]): string {
   return services.map((service) => service.replace(/-/g, " ")).join(", ");
 }
+
+const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL ?? "http://localhost:3000";
 
 export default function BackofficeHome() {
   const router = useRouter();
@@ -20,6 +29,7 @@ export default function BackofficeHome() {
   const [result, setResult] = useState<CandidateListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retryVersion, setRetryVersion] = useState(0);
 
   function updateParam(key: string, value: string) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -39,10 +49,12 @@ export default function BackofficeHome() {
     setError("");
     fetchCandidates(`?${searchParams.toString()}`)
       .then((data) => { if (!ignore) setResult(data); })
-      .catch((fetchError: Error) => { if (!ignore) setError(fetchError.message); })
+      .catch((fetchError: unknown) => {
+        if (!ignore) setError(userSafeErrorMessage(fetchError, "Could not load the lead dashboard. Please retry."));
+      })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
-  }, [searchParams]);
+  }, [searchParams, retryVersion]);
 
   return (
     <section>
@@ -51,9 +63,13 @@ export default function BackofficeHome() {
         <h1>Lead candidate backoffice</h1>
         <p>Review e-commerce companies requesting warehouse management, last-mile delivery, or reverse logistics support.</p>
         <div className="actions">
-          <Link className="button secondary" href="/uis/website#contact-form">View public lead form</Link>
+          <Link className="button" href="/uis/backoffice/inventory/products">Inventory</Link>
+          <Link className="button secondary" href={`${websiteUrl}/uis/website#contact-form`}>View public lead form</Link>
           <Link className="button" href="/candidates/new">Add lead manually</Link>
           <Link className="button secondary" href="/uis/backoffice/incidents">Incident Analysis</Link>
+          <Link className="button secondary" href="/uis/backoffice/incidents/manager">Incident Manager</Link>
+          <Link className="button secondary" href="/uis/backoffice/suppliers">Supplier Directory</Link>
+          <Link className="button secondary" href="/uis/backoffice/reporting">Weekly Reporting</Link>
         </div>
       </header>
 
@@ -66,7 +82,12 @@ export default function BackofficeHome() {
       </section>
 
       {loading && <p className="message loading">Loading TrackFlow lead candidates...</p>}
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && (
+        <div className="message error" role="alert">
+          <p>{error}</p>
+          <button className="secondary" type="button" onClick={() => setRetryVersion((version) => version + 1)}>Retry</button>
+        </div>
+      )}
       {!loading && result?.total === 0 && <p className="message">No lead candidates match the current filters.</p>}
       {result && <p className="message" aria-live="polite"><strong>{result.total}</strong> lead candidates found. Page {result.page} of {result.totalPages}.</p>}
 
@@ -82,6 +103,8 @@ export default function BackofficeHome() {
       </section>
 
       {result && result.totalPages > 1 && <nav className="actions" aria-label="Lead candidate pages" style={{ marginTop: "1rem" }}><button className="secondary" disabled={result.page === 1} onClick={() => updateParam("page", String(result.page - 1))}>Previous</button><span className="badge">Page {result.page} of {result.totalPages}</span><button className="secondary" disabled={result.page === result.totalPages} onClick={() => updateParam("page", String(result.page + 1))}>Next</button></nav>}
+
+      <BackofficeReports />
     </section>
   );
 }

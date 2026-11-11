@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import type { Candidate, CandidateWriteInput } from "../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES, MONTHLY_VOLUMES, OPERATING_COUNTRIES, PRODUCT_TYPES, SERVICES, THREE_PL_STATUSES } from "../../src/candidates/types";
+import { userSafeErrorMessage } from "../../src/utils/api-errors";
 
 const emptyInput: CandidateWriteInput = {
   companyName: "",
@@ -79,7 +80,7 @@ export default function CandidateForm({ candidate, submitLabel, onSubmit }: Cand
     try {
       await onSubmit(input);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Candidate could not be saved.");
+      setError(userSafeErrorMessage(submitError, "Candidate could not be saved. Please retry."));
     } finally {
       setSaving(false);
     }

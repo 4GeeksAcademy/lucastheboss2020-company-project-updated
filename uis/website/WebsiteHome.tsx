@@ -16,6 +16,8 @@ const services = [
   },
 ];
 
+const backofficeUrl = process.env.NEXT_PUBLIC_BACKOFFICE_URL ?? "http://localhost:3001";
+
 export default function WebsiteHome() {
   return (
     <>
@@ -46,7 +48,7 @@ export default function WebsiteHome() {
           <a href="#services">Services</a>
           <a href="#coverage">Coverage</a>
           <a href="#contact">Contact</a>
-          <Link className="button secondary" href="/uis/backoffice">Backoffice</Link>
+          <Link className="button secondary" href={`${backofficeUrl}/uis/backoffice`}>Backoffice</Link>
         </nav>
       </header>
 

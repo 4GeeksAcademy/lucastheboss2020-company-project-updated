@@ -1,302 +1,351 @@
 #!/usr/bin/env python3
 """
-Incident File Analyzer
-Validates customer support incident CSV files and generates analysis metrics.
+TrackFlow Incident Report Analyzer (CONTEXT-trackflow format)
+
+Validates incident CSV files per TrackFlow logistics specification:
+  - incident_id (TRF-XXXXXX), date (YYYY-MM-DD), country (US/ES)
+  - customer_type (B2B/B2C), tracking_number (>=8 chars)
+  - carrier (per country: US->UPS/FEDEX/DHL_US, ES->MRW/SEUR/DHL_ES/LOCAL_ES)
+  - category (LOST_PARCEL/DELAYED_DELIVERY/WRONG_ADDRESS/RETURN_REQUEST/DAMAGE)
+  - description (>=5 chars), status (OPEN/CLOSED/DISCARDED)
+  - customer_email (valid with @) -- SENSITIVE, never printed/exported
+  - satisfaction_score (1-5, required if status=CLOSED)
 
 Usage:
-    python analyze_incidents.py <csv_file_path>
+    python analyze_incidents.py <csv_file_path> [--export y|n]
 
-The script:
-1. Reads the CSV file
-2. Validates each record against required fields and allowed values
-3. Calculates metrics: total processed, invalid count, category breakdown, status breakdown, satisfaction index
-4. Prints a JSON summary to stdout
+Outputs:
+  - Human-readable table to stdout
+  - JSON blob (last line) for API consumption
+  - Optional CSV export with --export y
 """
 
 import sys
 import csv
 import json
+import os
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Tuple, Optional
+from collections import Counter
+from typing import Dict, List
 
-# Configuration
-REQUIRED_FIELDS = ['incident_id', 'category', 'status', 'description', 'customer_name', 'email', 'date']
-OPTIONAL_FIELDS = ['phone', 'satisfaction_score', 'notes']
-ALLOWED_CATEGORIES = {'complaints', 'requests', 'operational_failures'}
-ALLOWED_STATUSES = {'open', 'closed', 'discarded'}
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
+from packages.shared.incident_validation import (
+    ALL_CARRIERS,
+    CARRIERS_BY_COUNTRY,
+    SATISFACTION_MAX,
+    SATISFACTION_MIN,
+    VALID_CATEGORIES,
+    VALID_COUNTRIES,
+    VALID_STATUSES,
+    has_at,
+    validate_record,
+    validate_ymd,
+)
 
-def validate_email(email: str) -> bool:
-    """Basic email validation."""
-    return '@' in email and '.' in email.split('@')[-1]
+# ---------------------------------------------------------------------------
+# ANALYSIS
+# ---------------------------------------------------------------------------
 
-
-def validate_phone(phone: str) -> bool:
-    """Basic phone validation - must contain at least digits and standard phone chars."""
-    if not phone:
-        return True  # Optional field
-    allowed_chars = set('0123456789+() -.')
-    return all(c in allowed_chars for c in phone) and any(c.isdigit() for c in phone)
-
-
-def validate_satisfaction_score(score: Optional[str]) -> Tuple[bool, Optional[float]]:
-    """Validate satisfaction score - must be numeric if provided."""
-    if not score or score.strip() == '':
-        return True, None
-    try:
-        val = float(score)
-        if 0 <= val <= 10:
-            return True, val
-        return False, None
-    except ValueError:
-        return False, None
-
-
-def validate_date(date_str: str) -> bool:
-    """Validate date format - accepts YYYY-MM-DD."""
-    try:
-        datetime.strptime(date_str, '%Y-%m-%d')
-        return True
-    except ValueError:
-        return False
-
-
-def validate_record(row: Dict[str, str], row_number: int) -> Tuple[bool, List[str]]:
+def analyze_csv(file_path: str) -> dict:
     """
-    Validate a single record against all rules.
-    Returns (is_valid, list_of_errors)
+    Read and validate the CSV.  Returns a dict with every metric the
+    report needs, including raw satisfaction scores for printing.
     """
-    errors = []
+    total = 0
+    valid = 0
+    invalid = 0
 
-    # Check required fields
-    for field in REQUIRED_FIELDS:
-        if field not in row or row[field].strip() == '':
-            errors.append(f"Missing required field '{field}'")
-
-    # If essential fields missing, return early
-    if not row.get('category') or not row.get('status'):
-        return False, errors
-
-    # Validate category
-    category = row.get('category', '').strip().lower()
-    if category and category not in ALLOWED_CATEGORIES:
-        errors.append(f"Invalid category '{row.get('category')}'; must be one of: {', '.join(ALLOWED_CATEGORIES)}")
-
-    # Validate status
-    status = row.get('status', '').strip().lower()
-    if status and status not in ALLOWED_STATUSES:
-        errors.append(f"Invalid status '{row.get('status')}'; must be one of: {', '.join(ALLOWED_STATUSES)}")
-
-    # Validate email
-    email = row.get('email', '').strip()
-    if email and not validate_email(email):
-        errors.append(f"Invalid email format: '{email}'")
-
-    # Validate phone if present
-    phone = row.get('phone', '').strip()
-    if phone and not validate_phone(phone):
-        errors.append(f"Invalid phone format: '{phone}'")
-
-    # Validate date
-    date_str = row.get('date', '').strip()
-    if date_str and not validate_date(date_str):
-        errors.append(f"Invalid date format '{date_str}'; must be YYYY-MM-DD")
-
-    # Validate satisfaction score if present
-    satisfaction_score = row.get('satisfaction_score', '').strip()
-    if satisfaction_score:
-        is_valid, _ = validate_satisfaction_score(satisfaction_score)
-        if not is_valid:
-            errors.append(f"Invalid satisfaction score '{satisfaction_score}'; must be a number between 0-10")
-
-    return len(errors) == 0, errors
-
-
-def analyze_csv(file_path: str) -> Dict:
-    """
-    Analyze a CSV file containing incident records.
-    Returns a dictionary with metrics and validation errors.
-    """
-    metrics = {
-        'total_processed': 0,
-        'valid_records': 0,
-        'invalid_records': 0,
-        'category_breakdown': {
-            'complaints': 0,
-            'requests': 0,
-            'operational_failures': 0,
-        },
-        'status_breakdown': {
-            'open': 0,
-            'closed': 0,
-            'discarded': 0,
-        },
-        'satisfaction_scores': [],
-    }
-
-    invalid_records = []
+    carrier_breakdown: Dict[str, int] = {}
+    category_breakdown: Dict[str, int] = {}
+    status_breakdown: Dict[str, int] = {}
+    country_breakdown: Dict[str, int] = {}
+    invalid_breakdown: Counter = Counter()
+    satisfaction_scores: List[int] = []
+    closed_count = 0
+    invalid_details: List[dict] = []
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
-
             if not reader.fieldnames:
-                return {
-                    'error': 'CSV file is empty or has no headers',
-                    'metrics': None,
-                    'invalid_records': []
-                }
+                return {"error": "CSV file is empty or has no headers"}
 
-            for row_num, row in enumerate(reader, start=2):
-                metrics['total_processed'] += 1
+            for row in reader:
+                total += 1
+                errs = validate_record(row)
 
-                is_valid, errors = validate_record(row, row_num)
+                if not errs:
+                    valid += 1
 
-                if is_valid:
-                    metrics['valid_records'] += 1
-                    category = row.get('category', '').strip().lower()
-                    if category in metrics['category_breakdown']:
-                        metrics['category_breakdown'][category] += 1
-                    status = row.get('status', '').strip().lower()
-                    if status in metrics['status_breakdown']:
-                        metrics['status_breakdown'][status] += 1
-                    if status == 'closed':
-                        score_str = row.get('satisfaction_score', '').strip()
-                        if score_str:
+                    c = row.get("carrier", "").strip()
+                    if c:
+                        carrier_breakdown[c] = carrier_breakdown.get(c, 0) + 1
+
+                    cat = row.get("category", "").strip()
+                    if cat:
+                        category_breakdown[cat] = category_breakdown.get(cat, 0) + 1
+
+                    st = row.get("status", "").strip().upper()
+                    if st:
+                        status_breakdown[st] = status_breakdown.get(st, 0) + 1
+
+                    co = row.get("country", "").strip().upper()
+                    if co:
+                        country_breakdown[co] = country_breakdown.get(co, 0) + 1
+
+                    if st == "CLOSED":
+                        closed_count += 1
+                        sc = row.get("satisfaction_score", "").strip()
+                        if sc:
                             try:
-                                metrics['satisfaction_scores'].append(float(score_str))
+                                satisfaction_scores.append(int(sc))
                             except ValueError:
                                 pass
                 else:
-                    metrics['invalid_records'] += 1
-                    invalid_records.append({
-                        'row_number': row_num,
-                        'incident_id': row.get('incident_id', 'N/A'),
-                        'errors': errors,
+                    invalid += 1
+
+                    # Classify first error for the breakdown
+                    fe = errs[0].lower()
+                    if "tracking" in fe and ("missing" in fe or "invalid" in fe or "short" in fe or "8 " in fe or "8 character" in fe):
+                        invalid_breakdown["Invalid tracking number"] += 1
+                    elif "carrier" in fe and ("not valid" in fe or "country" in fe):
+                        invalid_breakdown["Carrier/country mismatch"] += 1
+                    elif "category" in fe:
+                        invalid_breakdown["Invalid or missing category"] += 1
+                    elif "email" in fe:
+                        invalid_breakdown["Invalid or missing email"] += 1
+                    elif "closed" in fe and "satisfaction" in fe:
+                        invalid_breakdown["Closed incident, no score"] += 1
+                    elif "satisfaction_score" in fe:
+                        invalid_breakdown["Invalid satisfaction score"] += 1
+                    elif "description" in fe:
+                        invalid_breakdown["Invalid or missing description"] += 1
+                    elif "country" in fe:
+                        invalid_breakdown["Invalid or missing country"] += 1
+                    elif "customer_type" in fe:
+                        invalid_breakdown["Invalid customer type"] += 1
+                    elif "date" in fe:
+                        invalid_breakdown["Invalid date"] += 1
+                    else:
+                        invalid_breakdown["Other"] += 1
+
+                    invalid_details.append({
+                        "row_number": total + 1,
+                        "incident_id": row.get("incident_id", "N/A"),
+                        "errors": errs,
                     })
 
-        avg_satisfaction = None
-        if metrics['satisfaction_scores']:
-            avg_satisfaction = sum(metrics['satisfaction_scores']) / len(metrics['satisfaction_scores'])
-
-        return {
-            'total_processed': metrics['total_processed'],
-            'valid_records': metrics['valid_records'],
-            'invalid_records': metrics['invalid_records'],
-            'category_breakdown': metrics['category_breakdown'],
-            'status_breakdown': metrics['status_breakdown'],
-            'average_satisfaction_index': avg_satisfaction,
-            'invalid_record_details': invalid_records,
-        }
     except FileNotFoundError:
-        return {'error': f'File not found: {file_path}', 'metrics': None, 'invalid_records': []}
-    except csv.Error as e:
-        return {'error': f'CSV parsing error: {e}', 'metrics': None, 'invalid_records': []}
+        return {"error": "CSV file was not found."}
+    except PermissionError:
+        return {"error": "CSV file could not be read due to file permissions."}
+    except UnicodeDecodeError:
+        return {"error": "CSV file must use UTF-8 text encoding."}
+    except csv.Error:
+        return {"error": "CSV format could not be parsed."}
+    except OSError:
+        return {"error": "CSV file could not be read."}
+
+    # Fix row numbers to be correct (data rows start at 2 with header=1)
+    for i, det in enumerate(invalid_details):
+        det["row_number"] = i + 2
+
+    avg_sat = round(sum(satisfaction_scores) / len(satisfaction_scores), 2) if satisfaction_scores else None
+
+    return {
+        "format": "trackflow",
+        "total_processed": total,
+        "valid_records": valid,
+        "invalid_records": invalid,
+        "carrier_breakdown": carrier_breakdown,
+        "category_breakdown": category_breakdown,
+        "status_breakdown": status_breakdown,
+        "country_breakdown": country_breakdown,
+        "average_satisfaction_index": avg_sat,
+        "invalid_breakdown": dict(invalid_breakdown),
+        "invalid_record_details": invalid_details,
+        "_satisfaction_scores": satisfaction_scores,
+        "_closed_count": closed_count,
+    }
 
 
-def print_summary(result: Dict) -> None:
-    """Print a human-readable summary of analysis results to the console."""
-    if 'error' in result:
-        print(f"\n❌ ERROR: {result['error']}\n")
+# ---------------------------------------------------------------------------
+# OUTPUT
+# ---------------------------------------------------------------------------
+
+def print_summary(result: dict, file_path: str) -> None:
+    """Print the CONTEXT-trackflow formatted report to stdout."""
+    if "error" in result:
+        print(f"\nERROR: {result['error']}\n")
         return
 
-    print("\n" + "=" * 55)
-    print("   INCIDENT ANALYSIS REPORT")
-    print("=" * 55)
+    total = result["total_processed"]
+    valid = result["valid_records"]
+    invalid = result["invalid_records"]
 
-    print(f"\n{'📊 SUMMARY':^55}")
-    print("-" * 55)
-    print(f"  {'Total records processed':<35} {result['total_processed']:>8}")
-    print(f"  {'Valid records':<35} {result['valid_records']:>8}")
-    print(f"  {'Invalid records':<35} {result['invalid_records']:>8}")
+    print("=" * 60)
+    print("  TRACKFLOW -- INCIDENT REPORT ANALYSIS")
+    print(f"  Source file: {Path(file_path).name}")
+    print("=" * 60)
 
-    print(f"\n{'📂 CATEGORY BREAKDOWN':^55}")
-    print("-" * 55)
-    for cat, count in result['category_breakdown'].items():
-        label = cat.replace('_', ' ').title()
-        print(f"  {label:<35} {count:>8}")
+    # Totals
+    print(f"\nTOTAL RECORDS IN FILE .......... {total}")
+    print(f"  |- Valid records ................ {valid}")
+    print(f"  `- Invalid / incomplete .......... {invalid}")
 
-    print(f"\n{'📋 STATUS BREAKDOWN':^55}")
-    print("-" * 55)
-    for status, count in result['status_breakdown'].items():
-        label = status.title()
-        print(f"  {label:<35} {count:>8}")
+    # Invalid breakdown
+    ib = result.get("invalid_breakdown", {})
+    if ib:
+        print("\nINVALID RECORDS BREAKDOWN")
+        items = list(ib.items())
+        for i, (rule, cnt) in enumerate(items):
+            pipe = "`-" if i == len(items) - 1 else "|-"
+            print(f"  {pipe} {rule} ............... {cnt}")
+    elif invalid:
+        print("\nINVALID RECORDS BREAKDOWN")
+        print(f"  `- Other ....................... {invalid}")
 
-    sat = result['average_satisfaction_index']
-    print(f"\n{'⭐ SATISFACTION INDEX':^55}")
-    print("-" * 55)
-    if sat is not None:
-        print(f"  {'Average satisfaction (0-10)':<35} {sat:>8.2f}")
+    # Category breakdown
+    cat_bd = result.get("category_breakdown", {})
+    if cat_bd:
+        print("\nBREAKDOWN BY CATEGORY (valid records)")
+        items = sorted(cat_bd.items(), key=lambda x: -x[1])
+        for i, (cat, cnt) in enumerate(items):
+            pct = cnt / valid * 100 if valid else 0
+            pipe = "`-" if i == len(items) - 1 else "|-"
+            print(f"  {pipe} {cat:.<28} {cnt:>4}  ({pct:.1f}%)")
+
+    # Status breakdown
+    st_bd = result.get("status_breakdown", {})
+    if st_bd:
+        print("\nBREAKDOWN BY STATUS (valid records)")
+        items = sorted(st_bd.items(), key=lambda x: -x[1])
+        for i, (st, cnt) in enumerate(items):
+            pct = cnt / valid * 100 if valid else 0
+            pipe = "`-" if i == len(items) - 1 else "|-"
+            print(f"  {pipe} {st:.<28} {cnt:>4}  ({pct:.1f}%)")
+
+    # Country breakdown (recommended)
+    co_bd = result.get("country_breakdown", {})
+    if co_bd:
+        print("\nBREAKDOWN BY COUNTRY (valid records) -- recommended, not required")
+        items = sorted(co_bd.items(), key=lambda x: -x[1])
+        for i, (co, cnt) in enumerate(items):
+            pct = cnt / valid * 100 if valid else 0
+            pipe = "`-" if i == len(items) - 1 else "|-"
+            print(f"  {pipe} {co:.<28} {cnt:>4}  ({pct:.1f}%)")
+
+    # Satisfaction
+    scores = result.get("_satisfaction_scores", [])
+    closed_cnt = result.get("_closed_count", 0)
+    avg_sat = result.get("average_satisfaction_index")
+
+    print("\nSATISFACTION INDEX (closed incidents)")
+    print(f"  Scored incidents: {len(scores)} of {closed_cnt}")
+    if avg_sat is not None:
+        print(f"  Average score: {avg_sat:.2f} / 5.00")
     else:
-        print(f"  {'Average satisfaction (0-10)':<35} {'N/A':>8}")
+        print("  Average score: N/A")
+    if scores:
+        dist = Counter(scores)
+        labels = {1: "Very dissatisfied", 2: "Dissatisfied", 3: "Neutral", 4: "Satisfied", 5: "Very satisfied"}
+        for sc in range(1, 6):
+            cnt = dist.get(sc, 0)
+            pipe = "`-" if sc == 5 else "|-"
+            print(f"  {pipe} Score {sc} ({labels[sc]}) ... {cnt}")
 
-    invalids = result.get('invalid_record_details', [])
+    print("\n" + "=" * 60)
+
+
+def export_to_csv(result: dict, filename: str) -> bool:
+    """Export metrics as a one-row-per-metric CSV."""
+    rows = [["Metric", "Value"]]
+    rows.append(["Format", "trackflow"])
+    rows.append(["Total Records Processed", str(result.get("total_processed", ""))])
+    rows.append(["Valid Records", str(result.get("valid_records", ""))])
+    rows.append(["Invalid Records", str(result.get("invalid_records", ""))])
+
+    for carrier, cnt in sorted(result.get("carrier_breakdown", {}).items()):
+        rows.append([f"Carrier -- {carrier}", str(cnt)])
+
+    for cat, cnt in sorted(result.get("category_breakdown", {}).items()):
+        rows.append([f"Category -- {cat}", str(cnt)])
+
+    for st, cnt in sorted(result.get("status_breakdown", {}).items()):
+        rows.append([f"Status -- {st}", str(cnt)])
+
+    for co, cnt in sorted(result.get("country_breakdown", {}).items()):
+        rows.append([f"Country -- {co}", str(cnt)])
+
+    avg = result.get("average_satisfaction_index")
+    rows.append(["Average Satisfaction Index", f"{avg:.2f}" if avg is not None else "N/A"])
+
+    for rule, cnt in sorted(result.get("invalid_breakdown", {}).items()):
+        rows.append([f"Invalid -- {rule}", str(cnt)])
+
+    invalids = result.get("invalid_record_details", [])
+    rows.append(["Invalid Record Count", str(len(invalids))])
+
     if invalids:
-        print(f"\n{'⚠️  INVALID RECORDS':^55}")
-        print("-" * 55)
-        for rec in invalids[:5]:  # Show first 5 only
-            errors = '; '.join(rec['errors'])
-            print(f"  Row {rec['row_number']} ({rec.get('incident_id', 'N/A')}):")
-            for err in rec['errors']:
-                print(f"    - {err}")
-        if len(invalids) > 5:
-            print(f"  ... and {len(invalids) - 5} more invalid record(s)")
-
-    print("=" * 55 + "\n")
-
-
-def export_to_csv(result: Dict, filename: str = 'results.csv') -> None:
-    """Export analysis metrics to a CSV file (one row per metric)."""
-    import os
-
-    rows = [
-        ['Metric', 'Value'],
-        ['Total Records Processed', str(result.get('total_processed', ''))],
-        ['Valid Records', str(result.get('valid_records', ''))],
-        ['Invalid Records', str(result.get('invalid_records', ''))],
-    ]
-
-    for cat, count in result.get('category_breakdown', {}).items():
-        rows.append([f'Category - {cat.replace("_", " ").title()}', str(count)])
-
-    for status, count in result.get('status_breakdown', {}).items():
-        rows.append([f'Status - {status.title()}', str(count)])
-
-    sat = result.get('average_satisfaction_index')
-    rows.append(['Average Satisfaction Index', f'{sat:.2f}' if sat is not None else 'N/A'])
-
-    invalids = result.get('invalid_record_details', [])
-    rows.append(['Invalid Record Count', str(len(invalids))])
+        rows.append([])
+        rows.append(["INVALID RECORD DETAILS", ""])
+        rows.append(["Row Number", "Incident ID", "Errors"])
+        for rec in invalids:
+            errs = " | ".join(rec.get("errors", []))
+            rows.append([str(rec.get("row_number", "")), rec.get("incident_id", "N/A"), errs])
 
     try:
-        with open(filename, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerows(rows)
-        print(f"✅ Results exported to {os.path.abspath(filename)}")
-    except Exception as e:
-        print(f"❌ Failed to export results: {e}")
+        with open(filename, "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(rows)
+        print(f"Results exported to {Path(filename).name}")
+        return True
+    except (OSError, csv.Error):
+        print("Could not export analysis results to CSV.", file=sys.stderr)
+        return False
 
 
-if __name__ == '__main__':
+# ---------------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(json.dumps({'error': 'No CSV file path provided'}))
+        error = {"error": "No CSV file path provided."}
+        print(error["error"], file=sys.stderr)
+        print(json.dumps(error))
+        sys.exit(2)
+
+    csv_path = sys.argv[1]
+
+    # Parse --export y/n
+    export_path = None
+    args = sys.argv[2:]
+    if args and args[0] == "--export":
+        if len(args) > 1 and args[1].lower() in ("y", "yes", "1", "true"):
+            export_path = f"analysis-results-{Path(csv_path).stem}.csv"
+
+    result = analyze_csv(csv_path)
+
+    if "error" in result:
+        print(result["error"], file=sys.stderr)
+        print(json.dumps(result))
         sys.exit(1)
 
-    file_path = sys.argv[1]
-    result = analyze_csv(file_path)
+    # Print human-readable report
+    print_summary(result, csv_path)
 
-    # Print human-readable summary
-    print_summary(result)
+    # Export if requested
+    if export_path:
+        export_succeeded = export_to_csv(result, export_path)
+    else:
+        export_succeeded = True
 
-    # Print JSON for programmatic consumption
-    print(json.dumps(result))
-
-    # Ask user if they want to export to CSV
-    if 'error' not in result:
-        try:
-            answer = input('\nExport results to CSV? [y/n]: ').strip().lower()
-            if answer == 'y' or answer == 'yes':
-                export_to_csv(result)
-        except (EOFError, KeyboardInterrupt):
-            print()  # Graceful handling if no interactive terminal
+    # Output JSON for API (last line, strip internal _ fields)
+    public = {k: v for k, v in result.items() if not k.startswith("_")}
+    print(json.dumps(public))
+    if not export_succeeded:
+        sys.exit(1)

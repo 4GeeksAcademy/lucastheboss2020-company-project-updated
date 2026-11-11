@@ -1,0 +1,101 @@
+tracking_id,carrier,category,status,origin,destination,shipment_date,delivery_date,weight_kg,declared_value,customer_name,customer_email,notes
+TF-00001,UPS,LOST_PARCEL,exception,Los Angeles,New York,2026-08-01,,2.50,150.00,Maria Lopez,maria@example.com,Package marked delivered but not received
+TF-00002,FedEx,DELAYED,open,Los Angeles,Chicago,2026-08-03,,5.00,320.00,James Chen,james@example.com,Weather delay expected
+TF-00003,DHL,DAMAGED,closed,Zaragoza,Madrid,2026-08-02,2026-08-05,1.20,85.50,Sofia Ruiz,sofia@example.com,Box crushed in transit
+TF-00004,MRW,RETURNED,closed,Zaragoza,Barcelona,2026-08-04,2026-08-07,3.00,200.00,Carlos Mendez,carlos@example.com,Customer refused delivery
+TF-00005,SEUR,WRONG_ITEM,open,Zaragoza,Valencia,2026-08-05,,0.80,45.00,Ana Torres,ana@example.com,Wrong product delivered
+TF-00006,UPS,ADDRESS_ISSUE,open,Los Angeles,Miami,2026-08-06,,4.50,275.00,Robert Kim,robert@example.com,Incomplete address provided
+TF-00007,FedEx,LOST_PARCEL,exception,Los Angeles,Seattle,2026-08-01,,1.00,95.00,Laura Garcia,laura@example.com,Scal scanned but not delivered
+TF-00008,DHL,DELAYED,closed,Zaragoza,Seville,2026-08-03,2026-08-10,6.00,410.00,David Johnson,david@example.com,Sorting facility backlog
+TF-00009,MRW,DAMAGED,closed,Zaragoza,Bilbao,2026-08-02,2026-08-06,2.00,130.00,Elena Martinez,elena@example.com,Glass item shattered
+TF-00010,SEUR,LOST_PARCEL,exception,Zaragoza,Malaga,2026-08-05,,0.50,60.00,Pablo Sanchez,pablo@example.com,Missing from hub
+TF-00011,UPS,DELAYED,closed,Los Angeles,San Francisco,2026-08-04,2026-08-08,3.50,210.00,Emma Wilson,emma@example.com,Rerouted due to address correction
+TF-00012,FedEx,RETURNED,closed,Los Angeles,Houston,2026-08-01,2026-08-04,7.00,500.00,Lucas Brown,lucas@example.com,Return to sender requested
+TF-00013,DHL,WRONG_ITEM,open,Zaragoza,Madrid,2026-08-06,,1.80,95.00,Isabel Diaz,isabel@example.com,Size M sent instead of L
+TF-00014,MRW,ADDRESS_ISSUE,open,Zaragoza,Valencia,2026-08-07,,2.20,140.00,Javier Ruiz,javier@example.com,Street number missing
+TF-00015,UPS,CUSTOMER_CANCELLATION,closed,Los Angeles,Portland,2026-08-02,2026-08-03,1.50,120.00,Sarah Lee,sarah@example.com,Customer cancelled before delivery
+TF-00016,FedEx,LOST_PARCEL,exception,Los Angeles,Denver,2026-08-04,,3.00,200.00,Mike Chen,mike@example.com,Driver reported delivered but no package found
+TF-00017,DHL,DELAYED,open,Zaragoza,Barcelona,2026-08-08,,4.00,280.00,Clara Gomez,clara@example.com,Stuck in customs inspection
+TF-00018,SEUR,DAMAGED,closed,Zaragoza,Seville,2026-08-05,2026-08-09,5.50,350.00,Antonio Lopez,antonio@example.com,Liquid contents leaking
+TF-00019,UPS,RETURNED,closed,Los Angeles,Atlanta,2026-08-03,2026-08-06,2.00,175.00,Nina Patel,nina@example.com,Unclaimed at pickup location
+TF-00020,FedEx,WRONG_ITEM,open,Los Angeles,Boston,2026-08-09,,0.75,65.00,Oscar Torres,oscar@example.com,Shipped wrong color variant
+TF-00021,DHL,MISSING_LABEL,open,Zaragoza,Madrid,2026-08-10,,1.00,40.00,Lucia Ramirez,lucia@example.com,Label damaged in transit
+TF-00022,MRW,DELAYED,closed,Zaragoza,Malaga,2026-08-06,2026-08-12,8.00,600.00,Diego Fernandez,diego@example.com,Fleet shortage in region
+TF-00023,UPS,LOST_PARCEL,exception,Los Angeles,Dallas,2026-08-05,,1.20,88.00,Helen Park,helen@example.com,Last scan was 5 days ago
+TF-00024,FedEx,DAMAGED,closed,Los Angeles,Phoenix,2026-08-04,2026-08-08,3.00,220.00,Ramon Santos,ramon@example.com,Water damage during transit
+TF-00025,SEUR,RETURNED,closed,Zaragoza,Valencia,2026-08-07,2026-08-10,4.00,300.00,Patricia Gomez,patricia@example.com,Incorrect address
+TF-00026,UPS,ADDRESS_ISSUE,open,Los Angeles,Chicago,2026-08-11,,0.60,35.00,Tom Williams,tom@example.com,Apartment number missing
+TF-00027,FedEx,DELAYED,closed,Los Angeles,Miami,2026-08-08,2026-08-13,6.00,450.00,Grace Chen,grace@example.com,Holiday volume surge
+TF-00028,DHL,LOST_PARCEL,exception,Zaragoza,Bilbao,2026-08-06,,2.50,180.00,Mario Ruiz,mario@example.com,Package never arrived at sort facility
+TF-00029,MRW,WRONG_ITEM,open,Zaragoza,Madrid,2026-08-12,,1.00,55.00,Rosa Martinez,rosa@example.com,Delivered to wrong address
+TF-00030,UPS,DAMAGED,closed,Los Angeles,New York,2026-08-07,2026-08-11,9.00,700.00,Frank Miller,frank@example.com,Forklift puncture in warehouse
+TF-00031,SEUR,DELAYED,open,Zaragoza,Barcelona,2026-08-13,,3.50,250.00,Monica Torres,monica@example.com,Driver shortage
+TF-00032,FedEx,MISSING_LABEL,open,Los Angeles,Seattle,2026-08-12,,0.40,30.00,Peter Kim,peter@example.com,Label became illegible
+TF-00033,DHL,RETURNED,closed,Zaragoza,Seville,2026-08-09,2026-08-13,5.00,380.00,Silvia Diaz,silvia@example.com,Recipient moved
+TF-00034,MRW,LOST_PARCEL,exception,Zaragoza,Valencia,2026-08-08,,1.80,120.00,Jorge Lopez,jorge@example.com,Theft reported at delivery stop
+TF-00035,UPS,CUSTOMER_CANCELLATION,closed,Los Angeles,Denver,2026-08-09,2026-08-10,0.90,70.00,Anna White,anna@example.com,Order cancelled by customer
+TF-00036,FedEx,ADDRESS_ISSUE,open,Los Angeles,Portland,2026-08-14,,2.00,160.00,Chris Taylor,chris@example.com,Zip code invalid
+TF-00037,DHL,DELAYED,closed,Zaragoza,Madrid,2026-08-10,2026-08-16,7.00,520.00,Laura Martin,laura@example.com,Customs documentation required
+TF-00038,SEUR,DAMAGED,closed,Zaragoza,Malaga,2026-08-11,2026-08-15,4.50,290.00,Ricardo Garcia,ricardo@example.com,Electronics damaged in handling
+TF-00039,UPS,WRONG_ITEM,open,Los Angeles,Boston,2026-08-15,,3.00,190.00,Susan Park,susan@example.com,Alternative product substituted
+TF-00040,FedEx,LOST_PARCEL,exception,Los Angeles,Atlanta,2026-08-10,,0.70,55.00,Daniel Kim,daniel@example.com,Missing from delivery truck
+TF-00041,DHL,RETURNED,closed,Zaragoza,Barcelona,2026-08-11,2026-08-15,2.20,140.00,Andrea Ruiz,andrea@example.com,Refused by recipient damaged
+TF-00042,MRW,DELAYED,open,Zaragoza,Bilbao,2026-08-16,,5.00,330.00,Luis Fernandez,luis@example.com,Road closure detour
+TF-00043,UPS,MISSING_LABEL,open,Los Angeles,Houston,2026-08-16,,1.50,100.00,Catherine Lee,catherine@example.com,Barcode unreadable
+TF-00044,SEUR,ADDRESS_ISSUE,open,Zaragoza,Madrid,2026-08-17,,0.30,25.00,Manuel Diaz,manuel@example.com,Recipient not found at address
+TF-00045,FedEx,DAMAGED,closed,Los Angeles,San Francisco,2026-08-12,2026-08-16,8.00,580.00,Julia Brown,julia@example.com,Crush damage from stacking
+TF-00046,DHL,LOST_PARCEL,exception,Zaragoza,Valencia,2026-08-13,,1.60,110.00,Alberto Gomez,alberto@example.com,No scan for 7 days
+TF-00047,MRW,CUSTOMER_CANCELLATION,closed,Zaragoza,Seville,2026-08-12,2026-08-14,0.50,45.00,Raquel Torres,raquel@example.com,Customer changed mind
+TF-00048,UPS,DELAYED,closed,Los Angeles,Chicago,2026-08-13,2026-08-18,6.00,400.00,David Park,david@example.com,Equipment breakdown
+TF-00049,FedEx,WRONG_ITEM,open,Los Angeles,Dallas,2026-08-18,,2.00,135.00,Maria Santos,maria@example.com,Wrong quantity delivered
+TF-00050,SEUR,LOST_PARCEL,exception,Zaragoza,Barcelona,2026-08-14,,0.90,75.00,Pedro Martinez,pedro@example.com,Package stolen from doorstep
+TF-00051,UPS,DAMAGED,closed,Los Angeles,New York,2026-08-14,2026-08-18,7.50,520.00,Lisa Wang,lisa@example.com,Glass bottle leaked
+TF-00052,DHL,ADDRESS_ISSUE,open,Zaragoza,Madrid,2026-08-19,,3.00,210.00,Carlos Ruiz,carlos@example.com,Incorrect recipient name
+TF-00053,MRW,DELAYED,closed,Zaragoza,Malaga,2026-08-15,2026-08-21,4.00,260.00,Isabel Torres,isabel@example.com,Volume surge from holidays
+TF-00054,FedEx,RETURNED,closed,Los Angeles,Miami,2026-08-15,2026-08-19,5.50,420.00,Steven Chen,steven@example.com,Automated return due to failed delivery
+TF-00055,UPS,MISSING_LABEL,open,Los Angeles,Seattle,2026-08-20,,0.25,20.00,Nancy Kim,nancy@example.com,Label detached from package
+TF-00056,SEUR,WRONG_ITEM,open,Zaragoza,Valencia,2026-08-20,,1.00,80.00,Miguel Angel,miguel@example.com,Delivered to wrong unit
+TF-00057,DHL,LOST_PARCEL,exception,Zaragoza,Bilbao,2026-08-16,,3.50,240.00,Helena Diaz,helena@example.com,Split shipment incomplete
+TF-00058,MRW,DAMAGED,closed,Zaragoza,Madrid,2026-08-17,2026-08-21,6.00,450.00,Alvaro Ruiz,alvaro@example.com,Pallet fell during unloading
+TF-00059,UPS,DELAYED,open,Los Angeles,Phoenix,2026-08-21,,4.00,300.00,Rebecca Lee,rebecca@example.com,Sort machine malfunction
+TF-00060,FedEx,ADDRESS_ISSUE,open,Los Angeles,Boston,2026-08-21,,1.20,85.00,Mark Wilson,mark@example.com,Apt/Suite number needed
+TF-00061,DHL,CUSTOMER_CANCELLATION,closed,Zaragoza,Seville,2026-08-18,2026-08-19,0.60,50.00,Marta Fernandez,marta@example.com,Recipient cancelled delivery
+TF-00062,SEUR,DELAYED,closed,Zaragoza,Barcelona,2026-08-19,2026-08-25,9.00,680.00,Sergio Lopez,sergio@example.com,Cross-border customs delay
+TF-00063,UPS,RETURNED,closed,Los Angeles,Atlanta,2026-08-18,2026-08-22,3.00,200.00,Angela Torres,angela@example.com,Address not found
+TF-00064,FedEx,DAMAGED,closed,Los Angeles,Denver,2026-08-19,2026-08-23,2.50,165.00,John Park,john@example.com,Compressed during transport
+TF-00065,MRW,LOST_PARCEL,exception,Zaragoza,Malaga,2026-08-20,,4.00,300.00,Rosa Garcia,rosa@example.com,Last scan at wrong facility
+TF-00066,UPS,WRONG_ITEM,open,Los Angeles,Chicago,2026-08-22,,0.80,65.00,Thomas Brown,thomas@example.com,Delivered to neighboring address
+TF-00067,DHL,DELAYED,open,Zaragoza,Madrid,2026-08-23,,5.00,370.00,Carmen Ruiz,carmen@example.com,Peak season backlog
+TF-00068,SEUR,MISSING_LABEL,open,Zaragoza,Valencia,2026-08-23,,0.45,30.00,Fernando Diaz,fernando@example.com,Label smudged in rain
+TF-00069,UPS,ADDRESS_ISSUE,closed,Los Angeles,Houston,2026-08-20,2026-08-24,6.00,440.00,Kimberly Chen,kimberly@example.com,Address corrected by customer service
+TF-00070,FedEx,LOST_PARCEL,exception,Los Angeles,New York,2026-08-21,,1.00,90.00,Anthony Kim,anthony@example.com,Misrouted and unaccounted
+TF-00071,DHL,RETURNED,closed,Zaragoza,Bilbao,2026-08-21,2026-08-25,1.80,125.00,Natalia Lopez,natalia@example.com,Not picked up from locker
+TF-00072,MRW,DAMAGED,closed,Zaragoza,Seville,2026-08-22,2026-08-27,7.00,500.00,Ramon Torres,ramon@example.com,Frozen goods thawed
+TF-00073,UPS,CUSTOMER_CANCELLATION,closed,Los Angeles,Portland,2026-08-22,2026-08-23,0.30,25.00,Elizabeth Lee,elizabeth@example.com,Duplicate order cancelled
+TF-00074,SEUR,DELAYED,open,Zaragoza,Madrid,2026-08-24,,3.00,220.00,Jose Antonio,jose@example.com,Rail strike affecting shipments
+TF-00075,FedEx,WRONG_ITEM,closed,Los Angeles,San Francisco,2026-08-23,2026-08-27,2.00,150.00,Patricia Miller,patricia@example.com,Correct items resent
+TF-00076,DHL,LOST_PARCEL,exception,Zaragoza,Valencia,2026-08-24,,0.95,70.00,Alba Sanchez,alba@example.com,Scan history inconsistent
+TF-00077,MRW,ADDRESS_ISSUE,open,Zaragoza,Barcelona,2026-08-25,,1.50,110.00,Ivan Ruiz,ivan@example.com,Unit number in wrong format
+TF-00078,UPS,DELAYED,closed,Los Angeles,Dallas,2026-08-24,2026-08-29,8.00,600.00,Sandra Kim,sandra@example.com,Weather rerouting
+TF-00079,FedEx,MISSING_LABEL,closed,Los Angeles,Miami,2026-08-25,2026-08-27,0.50,35.00,Michael Torres,michael@example.com,Label recreated by facility
+TF-00080,SEUR,DAMAGED,closed,Zaragoza,Malaga,2026-08-25,2026-08-29,3.50,240.00,Maria Jose,mariajose@example.com,Bent and dented packaging
+TF-00081,UPS,RETURNED,closed,Los Angeles,Seattle,2026-08-26,2026-08-29,5.00,350.00,Daniel Lee,daniel@example.com,Undeliverable as addressed
+TF-00082,FedEx,LOST_PARCEL,exception,Los Angeles,Chicago,2026-08-26,,0.65,48.00,Christina Park,christina@example.com,Delivery photo doesn't match address
+TF-00083,DHL,WRONG_ITEM,open,Zaragoza,Madrid,2026-08-26,,2.00,160.00,Andres Gomez,andres@example.com,Shipping label mismatch
+TF-00084,MRW,DELAYED,closed,Zaragoza,Bilbao,2026-08-27,2026-09-02,6.00,420.00,Beatriz Diaz,beatriz@example.com,Courier reassignment
+TF-00085,UPS,ADDRESS_ISSUE,closed,Los Angeles,Atlanta,2026-08-27,2026-08-31,2.50,190.00,William Chen,william@example.com,Address validated and redelivered
+TF-00086,SEUR,LOST_PARCEL,exception,Zaragoza,Valencia,2026-08-27,,1.00,85.00,Manuel Rodriguez,manuel@example.com,Conflicting delivery status
+TF-00087,FedEx,DAMAGED,closed,Los Angeles,Boston,2026-08-28,2026-09-01,4.00,310.00,Julia Kim,julia@example.com,Moisture damage in packaging
+TF-00088,DHL,CUSTOMER_CANCELLATION,closed,Zaragoza,Seville,2026-08-28,2026-08-29,0.40,35.00,Pablo Ruiz,pablo@example.com,Order cancelled after dispatch
+TF-00089,MRW,WRONG_ITEM,open,Zaragoza,Barcelona,2026-08-29,,1.50,105.00,Elena Torres,elena@example.com,Delivery quantity mismatch
+TF-00090,UPS,DELAYED,open,Los Angeles,Denver,2026-08-29,,7.00,480.00,Richard Park,richard@example.com,Insufficient driver capacity
+TF-00091,FedEx,RETURNED,closed,Los Angeles,Phoenix,2026-08-29,2026-09-02,3.00,230.00,Nancy Diaz,nancy@example.com,3 delivery attempts failed
+TF-00092,DHL,MISSING_LABEL,open,Zaragoza,Madrid,2026-08-30,,0.35,28.00,Laura Ruiz,laura@example.com,Barcode scan failure
+TF-00093,UPS,LOST_PARCEL,exception,Los Angeles,New York,2026-08-30,,1.80,130.00,Steven Park,steven@example.com,Incorrectly routed to wrong depot
+TF-00094,SEUR,DELAYED,closed,Zaragoza,Valencia,2026-08-30,2026-09-04,4.50,320.00,Marta Lopez,marta@example.com,High volume due to promotion
+TF-00095,FedEx,DAMAGED,closed,Los Angeles,Houston,2026-08-31,2026-09-04,5.00,360.00,Robert Kim,robert@example.com,Improper handling damage
+TF-00096,INVALID_CARRIER,DELAYED,open,Los Angeles,Miami,2026-09-01,,2.00,140.00,Fake Person,fake@example.com,Invalid carrier test
+TF-00097,UPS,INVALID_CATEGORY,open,Los Angeles,Chicago,2026-09-01,,1.00,50.00,Bad Record,bad@example.com,Invalid category test
+TF-00098,FedEx,LOST_PARCEL,,Los Angeles,Dallas,2026-09-02,,3.00,200.00,No Status,no@status.com,Missing status field
+TF-00099,DHL,DELAYED,open,,Valencia,2026-09-02,,2.50,175.00,,empty@origin.com,Missing origin field
+TF-00100,MRW,LOST_PARCEL,closed,Zaragoza,Seville,2026-09-03,2026-09-05,0.00,300.00,Zero Weight,zero@example.com,Invalid weight zero

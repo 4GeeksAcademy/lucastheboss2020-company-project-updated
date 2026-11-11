@@ -1,9 +1,16 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import type { AnalysisResult } from '../../src/incidents/types';
+import { ApiRequestError, fetchResponse, parseJsonResponse, userSafeErrorMessage } from '../../src/utils/api-errors';
+import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from '../../src/utils/auth-headers';
 
 type AnalysisState = AnalysisResult | null;
+
+const IncidentInvalidRecordDetails = dynamic(() => import("./IncidentInvalidRecordDetails"), {
+  loading: () => <p className="message loading" role="status">Loading invalid-record details…</p>,
+});
 
 interface UploadError {
   message: string;
@@ -18,6 +25,18 @@ export function IncidentAnalyzer() {
   const [expandedInvalidRecords, setExpandedInvalidRecords] = useState(false);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [selectedHistoryLoading, setSelectedHistoryLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  function getRequestError(error: unknown, fallback: string): string {
+    if (error instanceof ApiRequestError && error.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem(TRACKFLOW_TOKEN_KEY);
+      window.location.assign('/login');
+    }
+    return userSafeErrorMessage(error, fallback);
+  }
 
   // Fetch analysis history on mount
   React.useEffect(() => {
@@ -25,14 +44,16 @@ export function IncidentAnalyzer() {
   }, []);
 
   const loadHistory = async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
     try {
-      const response = await fetch('/api/incidents/results');
-      if (response.ok) {
-        const data = await response.json();
-        setHistory(data.analyses || []);
-      }
-    } catch (err) {
-      console.error('Failed to load analysis history:', err);
+      const response = await fetchResponse('/api/incidents/results', { headers: { ...trackFlowAuthHeaders() } });
+      const data = await parseJsonResponse<{ analyses?: AnalysisResult[] }>(response);
+      setHistory(Array.isArray(data.analyses) ? data.analyses : []);
+    } catch (requestError) {
+      setHistoryError(getRequestError(requestError, 'Could not load analysis history. Please retry.'));
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -50,31 +71,26 @@ export function IncidentAnalyzer() {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/incidents/analyze', {
+        const response = await fetchResponse('/api/incidents/analyze', {
           method: 'POST',
+          headers: { ...trackFlowAuthHeaders() },
           body: formData,
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError({
-            message: 'Upload failed',
-            details: data.errors?.[0] || 'Unknown error',
-          });
-          return;
-        }
+        const data = await parseJsonResponse<{ analysis?: AnalysisResult; errors?: string[] }>(response);
 
         if (data.analysis) {
           setAnalysis(data.analysis);
           setSelectedHistoryId(null);
           // Reload history
           await loadHistory();
+        } else {
+          setError({ message: 'Upload failed', details: 'The analyzer returned no results. Please retry.' });
         }
       } catch (err) {
         setError({
-          message: 'Error uploading file',
-          details: err instanceof Error ? err.message : 'Unknown error',
+          message: 'Upload failed',
+          details: getRequestError(err, 'The file could not be analyzed. Check it and retry.'),
         });
       } finally {
         setLoading(false);
@@ -87,18 +103,19 @@ export function IncidentAnalyzer() {
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setDragOver(false);
+      if (loading) return;
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {
         handleFileUpload(files[0]);
       }
     },
-    [handleFileUpload]
+    [handleFileUpload, loading]
   );
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setDragOver(true);
+    if (!loading) setDragOver(true);
   };
 
   const handleDragLeave = () => {
@@ -110,50 +127,61 @@ export function IncidentAnalyzer() {
     if (files && files.length > 0) {
       handleFileUpload(files[0]);
     }
+    e.currentTarget.value = '';
   };
 
   const handleExport = async () => {
     if (!analysis) return;
-
+    let objectUrl: string | null = null;
+    let anchor: HTMLAnchorElement | null = null;
+    setExporting(true);
     try {
-      const response = await fetch(`/api/incidents/results/${analysis.id}/export`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download =
-          response.headers
-            .get('content-disposition')
-            ?.split('filename="')[1]
-            ?.replace('"', '') || `incident-analysis-${analysis.id}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+      const response = await fetchResponse(`/api/incidents/results/${analysis.id}/export`, { headers: { ...trackFlowAuthHeaders() } });
+      if (!response.ok) await parseJsonResponse<never>(response);
+      if (!response.headers.get('content-type')?.toLowerCase().includes('text/csv')) {
+        throw new ApiRequestError('The analysis export could not be prepared.', response.status);
       }
+      const blob = await response.blob();
+      objectUrl = window.URL.createObjectURL(blob);
+      anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download =
+        response.headers
+          .get('content-disposition')
+          ?.split('filename="')[1]
+          ?.replace('"', '') || `incident-analysis-${analysis.id}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
     } catch (err) {
-      console.error('Export failed:', err);
       setError({
         message: 'Export failed',
-        details: err instanceof Error ? err.message : 'Unknown error',
+        details: getRequestError(err, 'The analysis export could not be downloaded. Please retry.'),
       });
+    } finally {
+      if (anchor?.parentNode) anchor.parentNode.removeChild(anchor);
+      if (objectUrl) window.URL.revokeObjectURL(objectUrl);
+      setExporting(false);
     }
   };
 
   const handleLoadFromHistory = async (id: string) => {
+    setSelectedHistoryLoading(true);
+    setError(null);
     try {
-      const response = await fetch(`/api/incidents/results?id=${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.analyses && data.analyses.length > 0) {
-          setAnalysis(data.analyses[0]);
-          setSelectedHistoryId(id);
-          setError(null);
-        }
+      const response = await fetchResponse(`/api/incidents/results?id=${id}`, { headers: { ...trackFlowAuthHeaders() } });
+      const data = await parseJsonResponse<{ analyses?: AnalysisResult[] }>(response);
+      if (data.analyses && data.analyses.length > 0) {
+        setAnalysis(data.analyses[0]);
+        setSelectedHistoryId(id);
       }
-    } catch (err) {
-      console.error('Failed to load analysis:', err);
+    } catch (requestError) {
+      setError({
+        message: 'Could not open this analysis',
+        details: getRequestError(requestError, 'The saved analysis could not be loaded. Please retry.'),
+      });
+    } finally {
+      setSelectedHistoryLoading(false);
     }
   };
 
@@ -174,21 +202,31 @@ export function IncidentAnalyzer() {
       for (const err of record.errors) {
         // Categorize the error message into a type
         let type = 'Other';
-        if (err.toLowerCase().includes('missing required field') || err.toLowerCase().includes('missing field')) {
+        const errLower = err.toLowerCase();
+
+        if (errLower.includes('missing required field') || errLower.includes('missing field')) {
           const match = err.match(/'([^']+)'/);
           type = match ? `Missing field: ${match[1]}` : 'Missing required field';
-        } else if (err.toLowerCase().includes('email')) {
-          type = 'Invalid email';
-        } else if (err.toLowerCase().includes('phone')) {
-          type = 'Invalid phone';
-        } else if (err.toLowerCase().includes('date')) {
-          type = 'Invalid date';
-        } else if (err.toLowerCase().includes('category')) {
-          type = 'Invalid category';
-        } else if (err.toLowerCase().includes('status')) {
-          type = 'Invalid status';
-        } else if (err.toLowerCase().includes('satisfaction') || err.toLowerCase().includes('score')) {
+        } else if (errLower.includes('tracking') && (errLower.includes('short') || errLower.includes('8 character'))) {
+          type = 'Invalid tracking number';
+        } else if (errLower.includes('carrier') && (errLower.includes('country') || errLower.includes('valid'))) {
+          type = 'Carrier/country mismatch';
+        } else if (errLower.includes('category')) {
+          type = 'Invalid or missing category';
+        } else if (errLower.includes('email')) {
+          type = 'Invalid or missing email';
+        } else if (errLower.includes('closed') && errLower.includes('satisfaction')) {
+          type = 'Closed incident, no score';
+        } else if (errLower.includes('satisfaction') || errLower.includes('score')) {
           type = 'Invalid satisfaction score';
+        } else if (errLower.includes('description')) {
+          type = 'Invalid or missing description';
+        } else if (errLower.includes('date')) {
+          type = 'Invalid date';
+        } else if (errLower.includes('country')) {
+          type = 'Invalid or missing country';
+        } else if (errLower.includes('customer_type')) {
+          type = 'Invalid customer type';
         }
 
         errorCounts[type] = (errorCounts[type] || 0) + 1;
@@ -204,15 +242,19 @@ export function IncidentAnalyzer() {
 
   if (displayAnalysis) {
     const { metrics } = displayAnalysis;
+    const m = metrics as any;
 
+    // TrackFlow logistics format has carrier_breakdown
     return (
       <section>
         <header className="page-header">
           <span className="badge green">Incident Analysis</span>
-          <h1>Analysis Results</h1>
+          <h1>TrackFlow Analysis Results</h1>
           <p>File: <strong>{displayAnalysis.filename}</strong></p>
           <div className="actions">
-            <button className="button" onClick={handleExport} type="button">Export CSV</button>
+            <button className="button" onClick={handleExport} type="button" disabled={exporting}>
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </button>
             <button className="button secondary" onClick={handleNewAnalysis} type="button">New Analysis</button>
           </div>
         </header>
@@ -221,35 +263,69 @@ export function IncidentAnalyzer() {
           <article className="panel">
             <h3>Summary</h3>
             <div className="stat-group">
-              <div className="stat"><span className="stat-value">{metrics.total_processed}</span><span className="stat-label">Total Records</span></div>
-              <div className="stat"><span className="stat-value green">{metrics.valid_records}</span><span className="stat-label">Valid</span></div>
-              <div className="stat"><span className="stat-value red">{metrics.invalid_records}</span><span className="stat-label">Invalid</span></div>
+              <div className="stat"><span className="stat-value">{m.total_processed}</span><span className="stat-label">Total Records</span></div>
+              <div className="stat"><span className="stat-value green">{m.valid_records}</span><span className="stat-label">Valid</span></div>
+              <div className="stat"><span className="stat-value red">{m.invalid_records}</span><span className="stat-label">Invalid</span></div>
             </div>
           </article>
+
+          {m.carrier_breakdown && Object.keys(m.carrier_breakdown).length > 0 && (
+            <article className="panel">
+              <h3>Carrier Breakdown</h3>
+              <div className="stat-group">
+                {Object.entries(m.carrier_breakdown as Record<string, number>).map(([carrier, count]) => (
+                  <div className="stat" key={carrier}>
+                    <span className="stat-value">{count}</span>
+                    <span className="stat-label">{carrier}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
 
           <article className="panel">
             <h3>Category Breakdown</h3>
             <div className="stat-group">
-              <div className="stat"><span className="stat-value">{metrics.category_breakdown.complaints}</span><span className="stat-label">Complaints</span></div>
-              <div className="stat"><span className="stat-value">{metrics.category_breakdown.requests}</span><span className="stat-label">Requests</span></div>
-              <div className="stat"><span className="stat-value">{metrics.category_breakdown.operational_failures}</span><span className="stat-label">Operational Failures</span></div>
+              {m.category_breakdown && Object.entries(m.category_breakdown as Record<string, number>).map(([cat, count]) => (
+                <div className="stat" key={cat}>
+                  <span className="stat-value">{count}</span>
+                  <span className="stat-label">{cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                </div>
+              ))}
             </div>
           </article>
 
           <article className="panel">
             <h3>Status Breakdown</h3>
             <div className="stat-group">
-              <div className="stat"><span className="stat-value">{metrics.status_breakdown.open}</span><span className="stat-label">Open</span></div>
-              <div className="stat"><span className="stat-value">{metrics.status_breakdown.closed}</span><span className="stat-label">Closed</span></div>
-              <div className="stat"><span className="stat-value">{metrics.status_breakdown.discarded}</span><span className="stat-label">Discarded</span></div>
+              {m.status_breakdown && Object.entries(m.status_breakdown as Record<string, number>).map(([status, count]) => (
+                <div className="stat" key={status}>
+                  <span className="stat-value">{count}</span>
+                  <span className="stat-label">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                </div>
+              ))}
             </div>
           </article>
 
-          {metrics.average_satisfaction_index !== undefined && (
+          {m.country_breakdown && Object.keys(m.country_breakdown).length > 0 && (
+            <article className="panel">
+              <h3>Country Breakdown</h3>
+              <div className="stat-group">
+                {Object.entries(m.country_breakdown as Record<string, number>).map(([country, count]) => (
+                  <div className="stat" key={country}>
+                    <span className="stat-value">{count}</span>
+                    <span className="stat-label">{country}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
+          {m.average_satisfaction_index !== undefined && (
             <article className="panel">
               <h3>Customer Satisfaction</h3>
               <div className="stat-group">
-                <div className="stat"><span className="stat-value">{metrics.average_satisfaction_index.toFixed(2)}</span><span className="stat-label">Avg Satisfaction (0–10)</span></div>
+                <div className="stat"><span className="stat-value">{m.average_satisfaction_index.toFixed(2)}</span><span className="stat-label">Avg Satisfaction (1–5)</span></div>
               </div>
             </article>
           )}
@@ -279,16 +355,7 @@ export function IncidentAnalyzer() {
                 </button>
               </header>
               {expandedInvalidRecords && (
-                <div className="detail-grid">
-                  {displayAnalysis.invalid_records.map((record) => (
-                    <article className="candidate-card" key={record.row_number}>
-                      <p><strong>Row {record.row_number}</strong> · ID: {record.incident_id}</p>
-                      <ul>
-                        {record.errors.map((error) => <li key={error}>{error}</li>)}
-                      </ul>
-                    </article>
-                  ))}
-                </div>
+                <IncidentInvalidRecordDetails records={displayAnalysis.invalid_records} />
               )}
             </section>
           </>
@@ -333,15 +400,27 @@ export function IncidentAnalyzer() {
         </div>
       </section>
 
+      {historyLoading && <p className="message loading" role="status">Loading analysis history...</p>}
+      {historyError && (
+        <div className="message error" role="alert">
+          <p>{historyError}</p>
+          <button className="secondary" type="button" onClick={loadHistory}>Retry</button>
+        </div>
+      )}
+      {!historyLoading && !historyError && history.length === 0 && (
+        <p className="message">No saved analyses are available yet.</p>
+      )}
       {history.length > 0 && (
         <section className="panel" style={{ marginTop: '1rem' }}>
           <h2>Previous Analyses</h2>
           <div className="detail-grid">
+            {selectedHistoryLoading && <p className="message loading" role="status">Loading selected analysis…</p>}
             {history.map((item) => (
               <button
                 key={item.id}
                 className={`candidate-card ${selectedHistoryId === item.id ? 'selected' : ''}`}
                 onClick={() => handleLoadFromHistory(item.id)}
+                disabled={selectedHistoryLoading}
                 type="button"
                 style={{ cursor: 'pointer', textAlign: 'left', width: '100%' }}
               >

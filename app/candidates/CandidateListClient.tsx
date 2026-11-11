@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { fetchCandidates } from "../../src/candidates/api";
+import { userSafeErrorMessage } from "../../src/utils/api-errors";
 import type { CandidateListResponse } from "../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES } from "../../src/candidates/types";
 
@@ -20,6 +21,7 @@ export default function CandidateListClient() {
   const [result, setResult] = useState<CandidateListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retryVersion, setRetryVersion] = useState(0);
 
   function updateParam(key: string, value: string) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -56,7 +58,7 @@ export default function CandidateListClient() {
       })
       .catch((fetchError: Error) => {
         if (!ignore) {
-          setError(fetchError.message);
+          setError(userSafeErrorMessage(fetchError, "Could not load candidates. Please retry."));
         }
       })
       .finally(() => {
@@ -68,7 +70,7 @@ export default function CandidateListClient() {
     return () => {
       ignore = true;
     };
-  }, [searchParams]);
+  }, [searchParams, retryVersion]);
 
   return (
     <section>
@@ -107,7 +109,12 @@ export default function CandidateListClient() {
       </section>
 
       {loading && <p className="message loading">Loading TrackFlow candidates...</p>}
-      {error && <p className="message error" role="alert">{error}</p>}
+      {error && (
+        <div className="message error" role="alert">
+          <p>{error}</p>
+          <button className="secondary" type="button" onClick={() => setRetryVersion((version) => version + 1)}>Retry</button>
+        </div>
+      )}
       {!loading && result?.total === 0 && <p className="message">No candidates match the current filters.</p>}
 
       <section className="candidate-grid" aria-live="polite">

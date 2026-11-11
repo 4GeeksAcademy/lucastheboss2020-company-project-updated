@@ -6,6 +6,7 @@ import CandidateForm from "../CandidateForm";
 import { addCandidateNote, deleteCandidateNote, fetchCandidate, patchCandidateProgress, updateCandidate } from "../../../src/candidates/api";
 import type { Candidate, CandidateWriteInput } from "../../../src/candidates/types";
 import { CANDIDATE_STAGES, CANDIDATE_STATUSES } from "../../../src/candidates/types";
+import { userSafeErrorMessage } from "../../../src/utils/api-errors";
 
 export default function CandidateDetailClient({ id }: { id: string }) {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
@@ -14,15 +15,20 @@ export default function CandidateDetailClient({ id }: { id: string }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [noteBody, setNoteBody] = useState("");
+  const [retryVersion, setRetryVersion] = useState(0);
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
     setError("");
     fetchCandidate(id)
-      .then(setCandidate)
-      .catch((fetchError: Error) => setError(fetchError.message))
-      .finally(() => setLoading(false));
-  }, [id]);
+      .then((result) => { if (active) setCandidate(result); })
+      .catch((fetchError: unknown) => {
+        if (active) setError(userSafeErrorMessage(fetchError, "Could not load this candidate. Please retry."));
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id, retryVersion]);
 
   async function handleProgressChange(nextStatus: Candidate["status"], nextStage: Candidate["stage"]) {
     setSaving(true);
@@ -34,7 +40,7 @@ export default function CandidateDetailClient({ id }: { id: string }) {
       setCandidate(updated);
       setSuccess("Candidate status and stage were updated.");
     } catch (patchError) {
-      setError(patchError instanceof Error ? patchError.message : "Progress could not be updated.");
+      setError(userSafeErrorMessage(patchError, "Progress could not be updated. Please retry."));
     } finally {
       setSaving(false);
     }
@@ -58,7 +64,7 @@ export default function CandidateDetailClient({ id }: { id: string }) {
       setNoteBody("");
       setSuccess("Note was added.");
     } catch (noteError) {
-      setError(noteError instanceof Error ? noteError.message : "Note could not be added.");
+      setError(userSafeErrorMessage(noteError, "Note could not be added. Please retry."));
     } finally {
       setSaving(false);
     }
@@ -74,7 +80,7 @@ export default function CandidateDetailClient({ id }: { id: string }) {
       setCandidate(updated);
       setSuccess("Note was deleted.");
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Note could not be deleted.");
+      setError(userSafeErrorMessage(deleteError, "Note could not be deleted. Please retry."));
     } finally {
       setSaving(false);
     }
@@ -85,7 +91,12 @@ export default function CandidateDetailClient({ id }: { id: string }) {
   }
 
   if (error && !candidate) {
-    return <p className="message error" role="alert">{error}</p>;
+    return (
+      <div className="message error" role="alert">
+        <p>{error}</p>
+        <button className="secondary" type="button" onClick={() => setRetryVersion((version) => version + 1)}>Retry</button>
+      </div>
+    );
   }
 
   if (!candidate) {
@@ -120,13 +131,13 @@ export default function CandidateDetailClient({ id }: { id: string }) {
           <h2>Pipeline progress</h2>
           <label className="field">
             <span>Status</span>
-            <select value={candidate.status} onChange={(event) => handleProgressChange(event.target.value as Candidate["status"], candidate.stage)}>
+            <select disabled={saving} value={candidate.status} onChange={(event) => handleProgressChange(event.target.value as Candidate["status"], candidate.stage)}>
               {CANDIDATE_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
             </select>
           </label>
           <label className="field" style={{ marginTop: "1rem" }}>
             <span>Stage</span>
-            <select value={candidate.stage} onChange={(event) => handleProgressChange(candidate.status, event.target.value as Candidate["stage"])}>
+            <select disabled={saving} value={candidate.stage} onChange={(event) => handleProgressChange(candidate.status, event.target.value as Candidate["stage"])}>
               {CANDIDATE_STAGES.map((stage) => <option key={stage} value={stage}>{stage}</option>)}
             </select>
           </label>

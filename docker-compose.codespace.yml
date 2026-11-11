@@ -1,0 +1,36 @@
+services:
+  api:
+    network_mode: host
+    networks: !reset []
+    ports: !reset []
+    environment:
+      REDIS_URL: redis://127.0.0.1:6379/0
+
+  redis:
+    network_mode: host
+    networks: !reset []
+    ports: !reset []
+    command: ["redis-server", "--bind", "127.0.0.1", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+
+  worker:
+    network_mode: host
+    networks: !reset []
+    environment:
+      REDIS_URL: redis://127.0.0.1:6379/0
+
+  flower:
+    network_mode: host
+    networks: !reset []
+    ports: !reset []
+    command: ["celery", "-A", "services.celery_app:app", "flower", "--address=127.0.0.1", "--port=5555"]
+    environment:
+      REDIS_URL: redis://127.0.0.1:6379/0
+      FLOWER_UNAUTHENTICATED_API: "true"
+
+  ui:
+    network_mode: host
+    networks: !reset []
+    ports: !reset []
+    environment:
+      API_INTERNAL_URL: http://localhost:8000
+      BACKOFFICE_INTERNAL_URL: http://localhost:3001

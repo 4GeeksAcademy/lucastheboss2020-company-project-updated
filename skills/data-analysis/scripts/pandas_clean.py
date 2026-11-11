@@ -2,10 +2,36 @@
 Safe snippet for basic pandas cleaning. Copy and adapt for your dataset.
 Run: python pandas_clean.py  (ensure pandas is installed)
 """
-import pandas as pd
+import sys
+
+try:
+	import pandas as pd
+except ImportError:
+	print("pandas is required to clean this dataset. Install pandas and retry.", file=sys.stderr)
+	raise SystemExit(1)
 
 # Load (adjust path and kwargs as needed)
-df = pd.read_csv("data.csv")  # or read_json, read_excel
+try:
+	df = pd.read_csv("data.csv")  # or read_json, read_excel
+except FileNotFoundError:
+	print("Input file data.csv was not found.", file=sys.stderr)
+	raise SystemExit(1)
+except PermissionError:
+	print("Input file data.csv cannot be read due to file permissions.", file=sys.stderr)
+	raise SystemExit(1)
+except pd.errors.EmptyDataError:
+	print("Input file data.csv is empty.", file=sys.stderr)
+	raise SystemExit(1)
+except pd.errors.ParserError:
+	print("Input file data.csv could not be parsed as a table.", file=sys.stderr)
+	raise SystemExit(1)
+except UnicodeDecodeError:
+	print("Input file data.csv must use a supported text encoding.", file=sys.stderr)
+	raise SystemExit(1)
+except OSError:
+	print("Input file data.csv could not be read.", file=sys.stderr)
+	raise SystemExit(1)
+
 print("df_shape", df.shape)
 print("df_dtypes", df.dtypes)
 

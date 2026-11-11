@@ -1,0 +1,1 @@
+export { GET, PATCH, PUT } from "../../../../../../app/api/candidates/[id]/route";

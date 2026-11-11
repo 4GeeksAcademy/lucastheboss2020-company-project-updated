@@ -33,11 +33,11 @@ def create(data: dict) -> dict:
     return get_one(data["id"])
 
 
-def update_rate(supplier_id: int, rate: float) -> dict | None:
+def update_rate(supplier_id: int, rate_per_shipment: float) -> dict | None:
     record = get_one(supplier_id)
     if not record:
         return None
-    table.update({"rate": rate, "updated_at": _now()}, query.id == supplier_id)
+    table.update({"rate_per_shipment": rate_per_shipment, "updated_at": _now()}, query.id == supplier_id)
     return get_one(supplier_id)
 
 

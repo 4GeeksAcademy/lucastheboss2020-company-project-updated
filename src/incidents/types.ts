@@ -1,30 +1,49 @@
 /**
- * Incident Analysis Domain Types
- * 
- * Defines incident records for customer support data analysis:
- * complaints, requests, and operational failures.
+ * Incident Analysis Domain Types — TrackFlow Logistics Format
+ *
+ * Defines incident records per CONTEXT-trackflow spec:
+ * incident_id (TRF-XXXXXX), date (YYYY-MM-DD), country (US/ES),
+ * customer_type (B2B/B2C), tracking_number (>=8 chars),
+ * carrier (per country), category (LOST_PARCEL/DELAYED_DELIVERY/etc.),
+ * status (OPEN/CLOSED/DISCARDED), customer_email (SENSITIVE),
+ * satisfaction_score (1-5, required if CLOSED).
  */
 
-// Incident categories from the support department system
-export type IncidentCategory = 'complaints' | 'requests' | 'operational_failures';
+// Valid countries
+export type TrackFlowCountry = 'US' | 'ES';
 
-// Incident status lifecycle
-export type IncidentStatus = 'open' | 'closed' | 'discarded';
+// Valid carriers per country
+export type TrackFlowCarrier = 'UPS' | 'FEDEX' | 'DHL_US' | 'MRW' | 'SEUR' | 'DHL_ES' | 'LOCAL_ES';
+
+// Valid incident categories (TrackFlow logistics)
+export type TrackFlowCategory =
+  | 'LOST_PARCEL'
+  | 'DELAYED_DELIVERY'
+  | 'WRONG_ADDRESS'
+  | 'RETURN_REQUEST'
+  | 'DAMAGE';
+
+// Valid incident statuses
+export type TrackFlowStatus = 'OPEN' | 'CLOSED' | 'DISCARDED';
+
+// Valid customer types
+export type CustomerType = 'B2B' | 'B2C';
 
 /**
- * A single incident record from the CSV file
+ * A single incident record from the CSV file (TrackFlow Format)
  */
-export interface IncidentRecord {
+export interface TrackFlowRecord {
   incident_id: string;
-  category: IncidentCategory;
-  status: IncidentStatus;
-  description: string;
-  customer_name: string;
-  email: string;
-  phone?: string;
   date: string;
-  satisfaction_score?: number; // Only for closed incidents
-  notes?: string;
+  country: TrackFlowCountry;
+  customer_type: CustomerType;
+  tracking_number: string;
+  carrier: TrackFlowCarrier;
+  category: TrackFlowCategory;
+  description: string;
+  status: TrackFlowStatus;
+  customer_email: string;
+  satisfaction_score?: number;
 }
 
 /**
@@ -33,7 +52,7 @@ export interface IncidentRecord {
 export interface RecordValidationError {
   row_number: number;
   incident_id?: string;
-  errors: string[]; // Array of specific field validation errors
+  errors: string[];
 }
 
 /**
@@ -43,18 +62,12 @@ export interface AnalysisMetrics {
   total_processed: number;
   valid_records: number;
   invalid_records: number;
-  category_breakdown: {
-    complaints: number;
-    requests: number;
-    operational_failures: number;
-  };
-  status_breakdown: {
-    open: number;
-    closed: number;
-    discarded: number;
-  };
-  average_satisfaction_index?: number; // Average of satisfaction scores for closed incidents
-  satisfaction_score_count?: number; // Count of closed incidents with satisfaction scores
+  carrier_breakdown: Record<string, number>;
+  category_breakdown: Record<string, number>;
+  status_breakdown: Record<string, number>;
+  country_breakdown: Record<string, number>;
+  average_satisfaction_index?: number;
+  invalid_breakdown: Record<string, number>;
 }
 
 /**
@@ -62,10 +75,11 @@ export interface AnalysisMetrics {
  */
 export interface AnalysisResult {
   id: string;
-  timestamp: number; // Unix milliseconds
+  timestamp: number;
   filename: string;
+  format?: string;
   metrics: AnalysisMetrics;
-  invalid_records: RecordValidationError[]; // Details on each invalid record
+  invalid_records: RecordValidationError[];
   valid_record_count: number;
 }
 
