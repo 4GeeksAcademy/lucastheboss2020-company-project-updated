@@ -70,6 +70,7 @@ export default function BackofficeHome() {
           <Link className="button secondary" href="/uis/backoffice/incidents/manager">Incident Manager</Link>
           <Link className="button secondary" href="/uis/backoffice/suppliers">Supplier Directory</Link>
           <Link className="button secondary" href="/uis/backoffice/reporting">Weekly Reporting</Link>
+          <Link className="button secondary" href="/uis/backoffice/knowledge">Knowledge Assistant</Link>
         </div>
       </header>
 

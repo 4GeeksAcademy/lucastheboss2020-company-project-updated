@@ -5,6 +5,7 @@ services:
     ports: !reset []
     environment:
       REDIS_URL: redis://127.0.0.1:6379/0
+      QDRANT_URL: http://127.0.0.1:6333
 
   redis:
     network_mode: host

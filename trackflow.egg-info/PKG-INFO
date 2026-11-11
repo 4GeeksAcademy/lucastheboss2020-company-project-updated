@@ -19,3 +19,6 @@ Requires-Dist: prefect>=3
 Requires-Dist: celery[redis]<6,>=5.5
 Requires-Dist: redis<8,>=5
 Requires-Dist: flower<3,>=2
+Requires-Dist: qdrant-client>=1.20.0
+Requires-Dist: fastembed>=0.9.1
+Requires-Dist: openai>=3.49.0
