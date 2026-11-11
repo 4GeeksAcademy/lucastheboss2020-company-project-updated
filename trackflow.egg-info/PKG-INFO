@@ -14,3 +14,8 @@ Requires-Dist: python-jose>=3.3
 Requires-Dist: passlib[bcrypt]>=1.7
 Requires-Dist: bcrypt<4.1
 Requires-Dist: email-validator>=2.0
+Requires-Dist: pandas>=2.0
+Requires-Dist: prefect>=3
+Requires-Dist: celery[redis]<6,>=5.5
+Requires-Dist: redis<8,>=5
+Requires-Dist: flower<3,>=2
