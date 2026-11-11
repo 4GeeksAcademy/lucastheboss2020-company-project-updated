@@ -18,6 +18,11 @@ from scripts.train_sales_forecast import (
     split_sales_data,
     validate_sales_data,
 )
+from scripts.evaluate_sales_forecast import (
+    chronological_folds,
+    evaluate_temporal_cv,
+    run_evaluation,
+)
 
 
 def make_sales_data() -> pd.DataFrame:
@@ -180,3 +185,75 @@ def test_training_run_writes_model_metrics_predictions_and_plot(tmp_path: Path) 
     assert (output_dir / "sales_forecast_model.joblib").is_file()
     assert (output_dir / "sales_forecast_metrics.json").is_file()
     assert (output_dir / "sales_forecast.png").stat().st_size > 0
+
+
+def test_temporal_folds_are_ordered_non_overlapping_and_five_fold() -> None:
+    data = validate_sales_data(make_sales_data())
+    training, final_test = split_sales_data(data)
+
+    folds = chronological_folds(training)
+
+    assert len(folds) == 5
+    assert final_test["month"].min() == pd.Timestamp("2024-01-01")
+    for fold_number, (fold_train, fold_validation) in enumerate(folds):
+        assert fold_train["month"].max() < fold_validation["month"].min()
+        assert len(fold_validation) == 8
+        assert fold_train["month"].is_monotonic_increasing
+        assert fold_validation["month"].is_monotonic_increasing
+        if fold_number:
+            assert folds[fold_number - 1][1]["month"].max() < fold_validation["month"].min()
+
+
+def test_temporal_cv_reports_fold_mean_and_standard_deviation() -> None:
+    data = validate_sales_data(make_sales_data())
+    training, _ = split_sales_data(data)
+
+    folds, summary = evaluate_temporal_cv(training, n_estimators=8)
+
+    assert len(folds) == 5
+    for metric in ("training_mae_eur", "training_rmse_eur", "validation_mae_eur", "validation_rmse_eur"):
+        assert summary[metric]["mean"] >= 0.0
+        assert summary[metric]["std"] >= 0.0
+    assert all(fold["training_end"] < fold["validation_start"] for fold in folds)
+
+
+def test_cv_first_fold_training_metrics_ignore_validation_actuals() -> None:
+    data = validate_sales_data(make_sales_data())
+    training, _ = split_sales_data(data)
+    first_fold_train, first_fold_validation = chronological_folds(training)[0]
+    changed = training.copy()
+    validation_months = set(first_fold_validation["month"])
+    mask = changed["month"].isin(validation_months)
+    changed.loc[mask, "revenue_eur"] *= 3
+
+    original_folds, _ = evaluate_temporal_cv(training, n_estimators=8)
+    changed_folds, _ = evaluate_temporal_cv(changed, n_estimators=8)
+
+    assert first_fold_train["month"].max() < first_fold_validation["month"].min()
+    assert original_folds[0]["training_mae_eur"] == pytest.approx(
+        changed_folds[0]["training_mae_eur"]
+    )
+    assert original_folds[0]["training_rmse_eur"] == pytest.approx(
+        changed_folds[0]["training_rmse_eur"]
+    )
+    assert original_folds[0]["validation_mae_eur"] != pytest.approx(
+        changed_folds[0]["validation_mae_eur"]
+    )
+
+
+def test_evaluation_writes_fixed_origin_curve_and_report(tmp_path: Path) -> None:
+    input_path = tmp_path / "synthetic_sales.csv"
+    output_dir = tmp_path / "evaluation"
+    make_sales_data().to_csv(input_path, index=False)
+
+    folds, summary, curve = run_evaluation(input_path, output_dir, n_estimators=8)
+
+    report = (output_dir / "evaluation_report.md").read_text()
+    assert len(folds) == 5
+    assert summary["validation_rmse_eur"]["mean"] >= 0.0
+    assert [point["training_months"] for point in curve] == [36, 48, 60, 72, 84]
+    assert "fixed-origin" in report.lower()
+    assert "underfitting" in report.lower()
+    assert "overfitting" in report.lower()
+    assert (output_dir / "learning_curve.png").stat().st_size > 0
+    assert len(pd.read_csv(output_dir / "temporal_cv_folds.csv")) == 5
