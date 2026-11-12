@@ -33,17 +33,20 @@ packages/shared/__init__.py
 packages/shared/incident_validation.py
 scripts/__init__.py
 scripts/analyze_incidents.py
+scripts/evaluate_rag.py
 scripts/evaluate_sales_forecast.py
 scripts/generate_fixture.py
 scripts/nightly_export.py
 scripts/seed_incidents.py
 scripts/seed_telemetry_proof.py
+scripts/setup_knowledge_base.py
 scripts/train_sales_forecast.py
 services/__init__.py
 services/celery_app.py
 services/database.py
 services/db_connect.py
 services/job_runner.py
+services/knowledge_query.py
 services/main.py
 services/models.py
 services/schemas.py
@@ -68,6 +71,7 @@ services/reporting/models.py
 services/reporting/router.py
 services/routers/__init__.py
 services/routers/inventory.py
+services/routers/knowledge.py
 services/routers/telemetry.py
 services/suppliers/__init__.py
 services/suppliers/api.py
@@ -79,6 +83,7 @@ services/telemetry/analysis.py
 services/tests/__init__.py
 services/tests/conftest.py
 services/tests/test_inventory_api.py
+services/tests/test_knowledge_api.py
 services/tests/test_reporting_api.py
 services/tests/test_seed_inventory.py
 services/tests/test_serialization_responses.py
