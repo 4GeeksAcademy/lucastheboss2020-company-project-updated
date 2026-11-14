@@ -26,7 +26,7 @@ All config is read from `backend/.env` by the capture script and FastAPI entry p
 | Key | Required | Purpose |
 |-----|----------|---------|
 | `QD_HOST` | ✅ | Qdrant host (default `localhost` in code) |
-| `QD_PORT` | ✅ | Qdrant gRPC port (default `6333` in code) |
+| `QD_PORT` | ✅ | Qdrant HTTP port (default `6333` in code) |
 | `RAG_API_BASE_URL` | ✅ | LLM API base (e.g. `https://api.openai.com/v1`) |
 | `RAG_API_KEY` | ✅ | LLM API key |
 | `RAG_GENERATION_MODEL` | ✅ | LLM model name (e.g. `gpt-4o-mini`) |
@@ -77,13 +77,13 @@ Output includes node execution order from the SQLite trace store.
 108 tests — compiles graph, tests node isolation, classification, routing,
 bounded tools, trace integration.
 
-### 5. Offline evaluation script
+### 5. Runtime smoke evaluation script
 
 ```bash
 uv run --env-file backend/.env .venv/bin/python scripts/evaluate_agent_graph.py
 ```
 
-Score report (11/11 by design).
+This smoke scorecard executes the graph. Use the saved-trace replay command above for evaluations without live services.
 
 ---
 
@@ -105,7 +105,7 @@ for run in list_runs(limit=20):
     print(run["run_id"], run["classification"], run["outcome"])
 
 # Inspect a specific run
-run = get_run("live-capture-both")
+run = get_run(list_runs(limit=1)[0]["run_id"])
 print(run["nodes"])  # ordered node execution
 ```
 
@@ -124,35 +124,34 @@ for r in runs:
 
 ## Checkpoint Inspect / Pause / Resume
 
-LangGraph's `InMemorySaver` is the default checkpointer. To pause and resume:
+The default `InMemorySaver` stores checkpoints for the life of the Python process. This example pauses before generation, inspects the pending node, then resumes the same run. Run it with the existing backend configuration loaded.
 
 ```python
+from uuid import uuid4
 from langgraph.checkpoint.memory import InMemorySaver
 from services.agent.graph import build_agent
 
-sg = build_agent()
-graph = sg.compile(checkpointer=InMemorySaver())
-
-# First invocation — starts fresh
-result1 = graph.invoke(
-    {"question": "What is the return window?"},
-    config={"configurable": {"thread_id": "session-1"}},
+graph = build_agent().compile(
+    checkpointer=InMemorySaver(),
+    interrupt_before=["generate_answer"],
 )
-
-# Inspect intermediate state
-print(result1.get("retrieved_chunks"))
-
-# Resume — continues with same thread_id
-result2 = graph.invoke(
-    {"question": "Show incident TRF-123"},
-    config={"configurable": {"thread_id": "session-1"}},
+config = {"configurable": {"thread_id": str(uuid4())}}
+graph.invoke(
+    {"question": "What is the return window for a damaged item?"},
+    config=config,
 )
+checkpoint = graph.get_state(config)
+assert checkpoint.next == ("generate_answer",)
+print(checkpoint.next, len(checkpoint.values["retrieved_chunks"]))
+
+# None resumes the pending work; passing a new question starts a new invocation.
+result = graph.invoke(None, config=config)
+assert not graph.get_state(config).next
+print(result["answer"])
+print("Saved checkpoints:", len(list(graph.get_state_history(config))))
 ```
 
-> **Note:** `InMemorySaver` state is lost on process restart. For persistent
-> checkpointing, use `SqliteSaver` or `PostgresSaver` from LangGraph.
-
----
+Verified in the Codespace: the run paused at `generate_answer`, resumed successfully, produced an answer, and retained seven checkpoints. In-memory checkpoints do not survive a process restart; durable semantic traces are stored separately in SQLite.
 
 ## Architecture
 

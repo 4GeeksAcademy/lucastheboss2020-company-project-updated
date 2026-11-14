@@ -25,3 +25,5 @@ Command: npm run typecheck
 
 
 Full-repository pytest collection remains limited by the existing sales-forecast dependency on joblib. The complete relevant RAG, agent, trace replay and MCP suites above pass.
+
+Additional live checkpoint verification: paused before generate_answer, inspected pending state, resumed with invoke(None, config), completed with an answer; seven checkpoints retained.
