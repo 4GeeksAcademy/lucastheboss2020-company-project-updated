@@ -127,7 +127,6 @@ export default function InventoryOrderForm({ mode }: InventoryOrderFormProps) {
 
     setSubmitting(true);
     try {
-      let orderId: number | null = null;
       if (mode === "inbound") {
         const order = await createInboundOrder({
           sku_id: selectedProduct.id,
@@ -135,7 +134,6 @@ export default function InventoryOrderForm({ mode }: InventoryOrderFormProps) {
           reference: reference.trim(),
           warehouse: selectedProduct.warehouse,
         });
-        orderId = order.id;
         setSuccess("Receipt recorded. Inventory has been updated.");
         track("inbound_order_created", {
           warehouse: telemetryWarehouse(selectedProduct.warehouse),
@@ -154,7 +152,6 @@ export default function InventoryOrderForm({ mode }: InventoryOrderFormProps) {
           tracking_number: exitType === "dispatch" ? trackingNumber.trim() : null,
           warehouse: selectedProduct.warehouse,
         });
-        orderId = order.id;
         setSuccess("Stock exit recorded.");
         track("outbound_order_created", {
           warehouse: telemetryWarehouse(selectedProduct.warehouse),

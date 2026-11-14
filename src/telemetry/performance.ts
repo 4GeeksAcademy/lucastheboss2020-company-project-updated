@@ -44,7 +44,8 @@ function registerPerformanceObserver(route: string): void {
     // We only need one shot — read LCP and CLS once they're available.
     const observer = new PerformanceObserver((list) => {
       const entries = list.getEntries();
-      for (const entry of entries) {
+      for (const rawEntry of entries) {
+        const entry = rawEntry as unknown as Record<string, unknown>;
         if (entry.type === "largest-contentful-paint" && "latency" in entry) {
           track("frontend_page_load", {
             route,
@@ -103,11 +104,8 @@ export function capturePageVitals(route: string): void {
   } catch { /* FID not available — skip */ }
 
   // Device type detection
-  let device = "desktop";
   try {
-    const width = window.innerWidth;
-    if (width < 768) device = "mobile";
-    else if (width < 1024) device = "tablet";
+    window.innerWidth;
   } catch { /* ignore */ }
 }
 
@@ -143,7 +141,7 @@ export function installGlobalErrorHandlers(): void {
     });
   });
 
-  window.addEventListener("uncaughtRejectedPromise", (event: PromiseRejectEvent) => {
+  window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
     const route = window.location.pathname;
     const message = event.reason?.message ?? "unhandled_promise_rejection";
     track("frontend_error_uncaught", {

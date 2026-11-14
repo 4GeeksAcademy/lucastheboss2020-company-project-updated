@@ -66,7 +66,7 @@ function resolveEndpoint(): string | null {
   // Next.js inlines process.env.NEXT_PUBLIC_* at build time into string literals.
   // We reference it via a helper so it's accessible as a string at runtime.
   try {
-    // @ts-expect-error — process.env may not exist in all runtimes; we catch gracefully
+    // process.env may not exist in all runtimes; we catch gracefully
     const envEndpoint = typeof process !== "undefined" && process.env && process.env.NEXT_PUBLIC_TELEMETRY_ENDPOINT;
     if (envEndpoint && typeof envEndpoint === "string" && envEndpoint.trim() !== "") {
       return envEndpoint.trim();
@@ -204,7 +204,7 @@ class TelemetryServiceImpl {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ events: batch }),
         // Keepalive helps the sendBeacon-like behaviour
-        keepalive: 30_000,
+        keepalive: true,
       });
 
       if (!response.ok) {

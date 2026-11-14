@@ -1,0 +1,98 @@
+{
+  "question": "What is the return policy for incident 95b5f484-b729-4e40-a149-c023386db302?",
+  "classification": "both",
+  "error": null,
+  "retrieved_chunks": [
+    {
+      "score": 0.68507844,
+      "payload": {
+        "company": "trackflow",
+        "source_document": "returns-policy",
+        "section": "Returns Policy",
+        "language": "en",
+        "chunk_index": 1,
+        "text": "Standard return window: 30 days from delivery, unless the client brand has configured a different window in their contract.\n\nReturn costs: the return shipping cost is covered by the client brand, unless the reason is a TrackFlow error (product damaged in transit or wrong delivery), in which case TrackFlow covers it."
+      }
+    },
+    {
+      "score": 0.6413885,
+      "payload": {
+        "company": "trackflow",
+        "source_document": "returns-policy",
+        "section": "Returns Policy",
+        "language": "en",
+        "chunk_index": 2,
+        "text": "International returns (purchased in one country, returned in another) are not covered by the standard automated process and require manual handling by Sof\u00eda Ramos's team (Returns Manager).\n\nTrackFlow does not recondition or resell product on its own account; it only executes logistics according to the rules each client brand defines."
+      }
+    },
+    {
+      "score": 0.5789014,
+      "payload": {
+        "company": "trackflow",
+        "source_document": "returns-policy",
+        "section": "Returns Policy",
+        "language": "en",
+        "chunk_index": 0,
+        "text": "TrackFlow's standard reverse logistics process works as follows:\n\n1. The end customer requests a return through the brand's portal. 2. TrackFlow automatically generates the return label if the reason falls within the rules configured by the client (e.g. wrong size, defective product). 3. The product arrives at the warehouse and an operative inspects and classifies it as: fit for resale, fit for reconditioning, or not fit (disposal)."
+      }
+    },
+    {
+      "score": 0.5719602,
+      "payload": {
+        "company": "trackflow",
+        "source_document": "carrier-coverage",
+        "section": "Carrier Coverage",
+        "language": "en",
+        "chunk_index": 0,
+        "text": "TrackFlow works with different carriers depending on the country:\n\nUnited States (Los Angeles): UPS, FedEx, and DHL. - UPS: full national coverage, best rate for heavy packages (over 5 kg). - FedEx: best delivery time for express shipments within California. - DHL: the only reliable-coverage option for international shipments from Los Angeles."
+      }
+    },
+    {
+      "score": 0.56955296,
+      "payload": {
+        "company": "trackflow",
+        "source_document": "sla-delivery",
+        "section": "Delivery SLA",
+        "language": "en",
+        "chunk_index": 3,
+        "text": "TrackFlow does not guarantee delivery SLA during declared high-demand dates (Black Friday, Christmas, January Sales in Spain) \u2014 during those dates, delivery times may extend by up to an additional 40%, and this must be communicated proactively to clients in advance."
+      }
+    }
+  ],
+  "generated_answer": "I don\u2019t have incident-specific details for **95b5f484-b729-4e40-a149-c023386db302**. The standard policy is a 30-day return window from delivery, unless the client\u2019s contract sets a different window. The client brand covers return shipping, except when the return is due to a TrackFlow error, such as transit damage or a wrong delivery; then TrackFlow covers it. [returns-policy | Returns Policy]\n\nReturns are requested through the brand\u2019s portal. A return label is generated automatically when the reason meets the client\u2019s configured rules. International returns require manual handling by Sof\u00eda Ramos\u2019s team. [returns-policy | Returns Policy]",
+  "incident_result": {
+    "id": "95b5f484-b729-4e40-a149-c023386db302",
+    "title": "Incident regarding lost parcel",
+    "description": "Incident regarding lost parcel",
+    "category": "lost_parcel",
+    "status": "open",
+    "origin": "customer",
+    "branch": "la_office",
+    "created_at": "2026-09-15T00:00:00Z",
+    "updated_at": "2026-09-15T00:00:00Z"
+  },
+  "answer": "I don\u2019t have incident-specific details for **95b5f484-b729-4e40-a149-c023386db302**. The standard policy is a 30-day return window from delivery, unless the client\u2019s contract sets a different window. The client brand covers return shipping, except when the return is due to a TrackFlow error, such as transit damage or a wrong delivery; then TrackFlow covers it. [returns-policy | Returns Policy]\n\nReturns are requested through the brand\u2019s portal. A return label is generated automatically when the reason meets the client\u2019s configured rules. International returns require manual handling by Sof\u00eda Ramos\u2019s team. [returns-policy | Returns Policy]\n\n**Incident details**\n- **ID:** 95b5f484-b729-4e40-a149-c023386db302\n- **Title:** Incident regarding lost parcel\n- **Status:** open\n- **Category:** lost_parcel\n- **Branch:** la_office\n- **Description:** Incident regarding lost parcel",
+  "run_id": "001b51a6-6085-4c33-990a-cc3401258cad",
+  "_node_order": [
+    {
+      "node_name": "receive_validate",
+      "status": "completed"
+    },
+    {
+      "node_name": "route_classify",
+      "status": "completed"
+    },
+    {
+      "node_name": "lookup_incident",
+      "status": "completed"
+    },
+    {
+      "node_name": "retrieve_context",
+      "status": "completed"
+    },
+    {
+      "node_name": "generate_answer",
+      "status": "completed"
+    }
+  ]
+}
