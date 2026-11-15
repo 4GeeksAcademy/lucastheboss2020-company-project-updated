@@ -1,0 +1,42 @@
+Milestone 8 Part 1 validation — 2026-11-15
+Combined memory + prior regression tests:
+........................................................................ [ 26%]
+........................................................................ [ 52%]
+........................................................................ [ 78%]
+............................................................             [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /workspaces/lucastheboss2020-company-project-updated/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/mcps/test_local_integration.py:269
+  /workspaces/lucastheboss2020-company-project-updated/tests/mcps/test_local_integration.py:269: PytestUnknownMarkWarning: Unknown pytest.mark.integration - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.integration
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+276 passed, 2 warnings in 10.03s
+TEST_EXIT_CODE 0
+
+npm run typecheck (confirmed exit code 0):
+
+> trackflow-company-project@1.0.0 typecheck
+> tsc --noEmit
+
+
+Actual configured-model cycles:
+Completed evidence turn 1 facts 0
+Completed evidence turn 2 facts 1
+Completed evidence turn 3 facts 1
+Completed evidence turn 4 facts 1
+Completed evidence turn 5 facts 1
+VERIFIED approved future-session reuse and rejected unchanged memory: data/eval/agent-memory-cycles.json
+Actual configured-model decision probes:
+Probe 1 passed rejected
+Probe 2 passed uncertain
+Probe 3 passed uncertain
+Probe 4 passed unrelated
+Probe 5 passed approved
+Probe 6 passed rejected
+Probe 7 passed proposed
+VERIFIED all seven live adversarial decision probes
+git diff --check: passed. No App Router changes; build not required.

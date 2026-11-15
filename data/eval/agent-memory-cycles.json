@@ -1,0 +1,285 @@
+{
+  "captured_at": "2026-11-15T06:37:05.379888+00:00",
+  "mode": "Actual configured model and existing MCP LangGraph; actual RAG knowledge path. These report-preference turns do not invoke MCP operational tools.",
+  "synthetic_data": true,
+  "cycles_verified": true,
+  "turns": [
+    {
+      "conversation": "approved-cycle",
+      "question": "The cosmetics client in Spain always wants the monthly report with returns breakdown first, before shipment volume.",
+      "answer": "Thanks for clarifying. I’ll treat this as a stated preference for the Spain cosmetics client, not as a verified company-wide policy.\n\nProposed memory (not saved): For the monthly report, the client wants the returns breakdown before shipment volume.\nWhy: This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\nMay I remember this for future conversations?",
+      "recalled": [],
+      "facts_after": [],
+      "audit_after": [
+        {
+          "seq": 1,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "proposed",
+          "source_ref": "2344c225770b04ca00ebc2d3707eb75d1dc54c2f26827cef4ee9aa3e5a24f53e",
+          "timestamp": 1794724602.2412803,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        }
+      ]
+    },
+    {
+      "conversation": "approved-cycle",
+      "question": "Yes, remember that monthly report preference for future conversations.",
+      "answer": "Saved the approved operational memory.",
+      "recalled": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "facts_after": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "audit_after": [
+        {
+          "seq": 1,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "proposed",
+          "source_ref": "2344c225770b04ca00ebc2d3707eb75d1dc54c2f26827cef4ee9aa3e5a24f53e",
+          "timestamp": 1794724602.2412803,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        },
+        {
+          "seq": 2,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "approved",
+          "source_ref": "cdd8749091a012639f269f36b4b07f809a63a56be20b2cc131d8d7acd3536540",
+          "timestamp": 1794724604.3556774,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        }
+      ]
+    },
+    {
+      "conversation": "new-future-session",
+      "question": "How should I order the cosmetics client monthly report in Spain?",
+      "answer": "For the monthly report, the recorded preference is to put the returns breakdown before shipment volume. If you mean the inventory aging report, request it through your account manager; it can be requested at any time, but it is generated internally rather than automated for the end client. The available information doesn’t specify a cosmetics-specific monthly ordering or delivery process.",
+      "recalled": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "facts_after": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "audit_after": [
+        {
+          "seq": 1,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "proposed",
+          "source_ref": "2344c225770b04ca00ebc2d3707eb75d1dc54c2f26827cef4ee9aa3e5a24f53e",
+          "timestamp": 1794724602.2412803,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        },
+        {
+          "seq": 2,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "approved",
+          "source_ref": "cdd8749091a012639f269f36b4b07f809a63a56be20b2cc131d8d7acd3536540",
+          "timestamp": 1794724604.3556774,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        }
+      ]
+    },
+    {
+      "conversation": "rejected-cycle",
+      "question": "The electronics client in Spain always wants the monthly report with shipment volume first, before returns breakdown.",
+      "answer": "Understood: you’re saying the electronics client in Spain prefers shipment volume before the returns breakdown in monthly reports. I’ll propose this as a reusable report preference; it isn’t independently verified.\n\nProposed memory (not saved): The user reports that for monthly reports, the client wants shipment volume before the returns breakdown.\nWhy: This is an explicitly stated recurring monthly report ordering preference that may be reused for future reports; it is retained as user-reported, not verified company policy.\nMay I remember this for future conversations?",
+      "recalled": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "facts_after": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "audit_after": [
+        {
+          "seq": 1,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "proposed",
+          "source_ref": "2344c225770b04ca00ebc2d3707eb75d1dc54c2f26827cef4ee9aa3e5a24f53e",
+          "timestamp": 1794724602.2412803,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        },
+        {
+          "seq": 2,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "approved",
+          "source_ref": "cdd8749091a012639f269f36b4b07f809a63a56be20b2cc131d8d7acd3536540",
+          "timestamp": 1794724604.3556774,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        },
+        {
+          "seq": 3,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "rejected-cycle",
+          "proposal_id": "13703367-b74c-4d99-986a-fd16fbeaee1f",
+          "version": 1,
+          "event": "proposed",
+          "source_ref": "1d144166fcef933fd980417ef4d6ab7309e2dd5e899a4d238c1ed5c70a76a1ff",
+          "timestamp": 1794724621.462555,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Electronics client in Spain\",\"country\":\"ES\",\"fact\":\"The user reports that for monthly reports, the client wants shipment volume before the returns breakdown.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that may be reused for future reports; it is retained as user-reported, not verified company policy.\"}"
+        }
+      ]
+    },
+    {
+      "conversation": "rejected-cycle",
+      "question": "No, do not remember that preference.",
+      "answer": "The memory proposal was discarded; nothing was saved.",
+      "recalled": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "facts_after": [
+        {
+          "kind": "report_preference",
+          "entity": "Cosmetics client in Spain",
+          "country": "ES",
+          "fact": "For the monthly report, the client wants the returns breakdown before shipment volume.",
+          "reason": "This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "authorized_by": "milestone8-evaluator",
+          "expires": 1802500604.3558247
+        }
+      ],
+      "audit_after": [
+        {
+          "seq": 1,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "proposed",
+          "source_ref": "2344c225770b04ca00ebc2d3707eb75d1dc54c2f26827cef4ee9aa3e5a24f53e",
+          "timestamp": 1794724602.2412803,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        },
+        {
+          "seq": 2,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "approved-cycle",
+          "proposal_id": "7fa1810d-7462-436e-a584-5c04dcc515f5",
+          "version": 1,
+          "event": "approved",
+          "source_ref": "cdd8749091a012639f269f36b4b07f809a63a56be20b2cc131d8d7acd3536540",
+          "timestamp": 1794724604.3556774,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Cosmetics client in Spain\",\"country\":\"ES\",\"fact\":\"For the monthly report, the client wants the returns breakdown before shipment volume.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that can be reused for future reports.\"}"
+        },
+        {
+          "seq": 3,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "rejected-cycle",
+          "proposal_id": "13703367-b74c-4d99-986a-fd16fbeaee1f",
+          "version": 1,
+          "event": "proposed",
+          "source_ref": "1d144166fcef933fd980417ef4d6ab7309e2dd5e899a4d238c1ed5c70a76a1ff",
+          "timestamp": 1794724621.462555,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Electronics client in Spain\",\"country\":\"ES\",\"fact\":\"The user reports that for monthly reports, the client wants shipment volume before the returns breakdown.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that may be reused for future reports; it is retained as user-reported, not verified company policy.\"}"
+        },
+        {
+          "seq": 4,
+          "company": "trackflow",
+          "actor": "milestone8-evaluator",
+          "conversation": "rejected-cycle",
+          "proposal_id": "13703367-b74c-4d99-986a-fd16fbeaee1f",
+          "version": 1,
+          "event": "rejected",
+          "source_ref": "b661fb7826e5e8f8f69857aa8ebb463bd4640f881aba0b7c487d4a8ccd211db8",
+          "timestamp": 1794724625.3714588,
+          "candidate": "{\"kind\":\"report_preference\",\"entity\":\"Electronics client in Spain\",\"country\":\"ES\",\"fact\":\"The user reports that for monthly reports, the client wants shipment volume before the returns breakdown.\",\"reason\":\"This is an explicitly stated recurring monthly report ordering preference that may be reused for future reports; it is retained as user-reported, not verified company policy.\"}"
+        }
+      ]
+    }
+  ]
+}

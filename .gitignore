@@ -37,3 +37,6 @@ services/agent/traces/*.bak
 
 # Generated build info
 next-env.d.ts
+
+# Milestone 8 dedicated memory runtime
+services/agent_memory/runtime/
