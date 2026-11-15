@@ -1,0 +1,29 @@
+Independent final review — 2026-11-14
+Branch created before code edits: feature/langgraph-agent-base-and-tools
+
+Command: REDIS_URL=redis://127.0.0.1:6379/15 uv run --no-sync python -m pytest tests/pipelines/test_rag.py tests/pipelines/test_pipeline.py tests/pipelines/test_agent_graph.py tests/pipelines/test_offline_replay.py tests/mcps -q --tb=short
+........................................................................ [ 32%]
+........................................................................ [ 64%]
+........................................................................ [ 97%]
+......                                                                   [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /workspaces/lucastheboss2020-company-project-updated/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/mcps/test_local_integration.py:269
+  /workspaces/lucastheboss2020-company-project-updated/tests/mcps/test_local_integration.py:269: PytestUnknownMarkWarning: Unknown pytest.mark.integration - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.integration
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+222 passed, 2 warnings in 23.90s
+
+Command: npm run typecheck
+
+> trackflow-company-project@1.0.0 typecheck
+> tsc --noEmit
+
+
+Full-repository pytest collection remains limited by the existing sales-forecast dependency on joblib. The complete relevant RAG, agent, trace replay and MCP suites above pass.
+
+Additional live checkpoint verification: paused before generate_answer, inspected pending state, resumed with invoke(None, config), completed with an answer; seven checkpoints retained.

@@ -28,3 +28,12 @@ reports/sales-forecasting/
 
 # Generated exports (nightly_export.py)
 data/raw/telemetry_*.csv
+
+# Runtime SQLite trace store (including WAL, SHM, backups)
+services/agent/traces/agent_traces.sqlite
+services/agent/traces/agent_traces.sqlite-wal
+services/agent/traces/agent_traces.sqlite-shm
+services/agent/traces/*.bak
+
+# Generated build info
+next-env.d.ts

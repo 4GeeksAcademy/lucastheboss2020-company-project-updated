@@ -1,0 +1,523 @@
+{
+  "evaluation_type": "agent_graph_offline_trace_validation",
+  "generation_model_evaluated": true,
+  "metric": "trace_integrity_and_classification_accuracy",
+  "total_questions": 11,
+  "passed": 11,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "total_elapsed_s": 16.322,
+  "limitation": "This evaluation invokes the real compiled LangGraph agent graph against grounded company policy questions and validates SQLite trace persistence and classification accuracy. The generation answer is not fact-checked against the knowledge base; only trace existence, classification match, and evidence substring presence are verified.",
+  "results": [
+    {
+      "id": "returns-policy",
+      "question": "What is the return window for a product?",
+      "classification": {
+        "expected": "rag",
+        "actual": "rag"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "The standard return window is **30 days from delivery**, unless the client brand has configured a different window in it\u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "2d4ad3c9-82a9-404c-8a9b-f0eab437fc6f",
+        "question": "What is the return window for a product?",
+        "classification": "rag",
+        "outcome": "answered",
+        "node_count": 4,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "retrieve_context",
+            "status": "completed"
+          },
+          {
+            "name": "generate_answer",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "30 days",
+          "delivery"
+        ],
+        "matched": [
+          "30 days",
+          "delivery"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 3.448,
+      "passed": true
+    },
+    {
+      "id": "sla-standard",
+      "question": "What is the standard delivery SLA for TrackFlow?",
+      "classification": {
+        "expected": "rag",
+        "actual": "rag"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "The standard contract commits to 90% on-time deliveries per month, measured by country; delivery commitments can vary by\u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "0b7b52b5-5090-4ec1-af8b-790569950f6b",
+        "question": "What is the standard delivery SLA for TrackFlow?",
+        "classification": "rag",
+        "outcome": "answered",
+        "node_count": 4,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "retrieve_context",
+            "status": "completed"
+          },
+          {
+            "name": "generate_answer",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "90%",
+          "on-time",
+          "SLA"
+        ],
+        "matched": [
+          "90%",
+          "on-time",
+          "SLA"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 5.033,
+      "passed": true
+    },
+    {
+      "id": "storage-pricing",
+      "question": "How much does TrackFlow charge for storage per cubic meter in Los Angeles?",
+      "classification": {
+        "expected": "rag",
+        "actual": "rag"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "TrackFlow\u2019s standard storage rate in Los Angeles is **18 USD per cubic meter per month**. [storage-pricing | Storage Pri\u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "5f671cda-4d71-478a-8e87-2f8f68aa2d94",
+        "question": "How much does TrackFlow charge for storage per cubic meter in Los Angeles?",
+        "classification": "rag",
+        "outcome": "answered",
+        "node_count": 4,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "retrieve_context",
+            "status": "completed"
+          },
+          {
+            "name": "generate_answer",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "18 USD",
+          "cubic meter",
+          "Los Angeles"
+        ],
+        "matched": [
+          "18 USD",
+          "cubic meter",
+          "Los Angeles"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 1.721,
+      "passed": true
+    },
+    {
+      "id": "carrier-coverage",
+      "question": "Which carriers does TrackFlow use in Spain?",
+      "classification": {
+        "expected": "rag",
+        "actual": "rag"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "In Spain (Zaragoza), TrackFlow uses MRW, SEUR, DHL, and two local last-mile carriers. The local carriers serve only the \u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "d3140a51-cecb-44d9-8100-e62f51548e8b",
+        "question": "Which carriers does TrackFlow use in Spain?",
+        "classification": "rag",
+        "outcome": "answered",
+        "node_count": 4,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "retrieve_context",
+            "status": "completed"
+          },
+          {
+            "name": "generate_answer",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "MRW",
+          "SEUR",
+          "Zaragoza"
+        ],
+        "matched": [
+          "MRW",
+          "SEUR",
+          "Zaragoza"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 5.29,
+      "passed": true
+    },
+    {
+      "id": "incident-lookup",
+      "question": "Check incident TRF-abc12345",
+      "classification": {
+        "expected": "ticket",
+        "actual": "ticket"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "No incident found with that ID.",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "70b2aee2-28d8-441d-8f88-8b8edf62b881",
+        "question": "Check incident TRF-abc12345",
+        "classification": "ticket",
+        "outcome": "error:INCIDENT_NOT_FOUND",
+        "node_count": 3,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "lookup_incident",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [],
+        "matched": []
+      },
+      "evidence_ok": true,
+      "elapsed_s": 0.026,
+      "passed": true
+    },
+    {
+      "id": "inventory-stock",
+      "question": "Show me current stock levels for all products",
+      "classification": {
+        "expected": "inventory",
+        "actual": "inventory"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "**Current inventory**\n- **Classic White Sneaker - Size 42** (CLT-SNK-W-42, LA): 44 units\n- **Classic White Sneaker - Siz\u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "850bdd95-2caf-4cac-9795-27f2af975d82",
+        "question": "Show me current stock levels for all products",
+        "classification": "inventory",
+        "outcome": "answered",
+        "node_count": 3,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "lookup_inventory",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [],
+        "matched": []
+      },
+      "evidence_ok": true,
+      "elapsed_s": 0.763,
+      "passed": true
+    },
+    {
+      "id": "both-sla-incident",
+      "question": "What is the SLA for incident TRF-abc12345?",
+      "classification": {
+        "expected": "both",
+        "actual": "both"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "No incident found with that ID.",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "fa089d1a-4ce6-46b8-b17d-0c16fb676c97",
+        "question": "What is the SLA for incident TRF-abc12345?",
+        "classification": "both",
+        "outcome": "error:INCIDENT_NOT_FOUND",
+        "node_count": 5,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "lookup_incident",
+            "status": "completed"
+          },
+          {
+            "name": "retrieve_context",
+            "status": "skipped"
+          },
+          {
+            "name": "fallback",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [],
+        "matched": []
+      },
+      "evidence_ok": true,
+      "elapsed_s": 0.011,
+      "passed": true
+    },
+    {
+      "id": "write-intent-create",
+      "question": "Create a new incident for a lost package",
+      "classification": {
+        "expected": "write_intent",
+        "actual": "write_intent"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "I can only answer read-only questions about TrackFlow policies, incidents/tickets, and inventory. I cannot create, updat\u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "bdc84c16-19e5-4ecf-a8a9-f5d67fb09a73",
+        "question": "Create a new incident for a lost package",
+        "classification": "write_intent",
+        "outcome": "answered",
+        "node_count": 3,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "reject_write_intent",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "read-only"
+        ],
+        "matched": [
+          "read-only"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 0.006,
+      "passed": true
+    },
+    {
+      "id": "write-intent-delete",
+      "question": "Delete ticket TRF-abc123",
+      "classification": {
+        "expected": "write_intent",
+        "actual": "write_intent"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "I can only answer read-only questions about TrackFlow policies, incidents/tickets, and inventory. I cannot create, updat\u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "832135ba-49aa-4414-8c56-f3673290885d",
+        "question": "Delete ticket TRF-abc123",
+        "classification": "write_intent",
+        "outcome": "answered",
+        "node_count": 3,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "reject_write_intent",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "read-only"
+        ],
+        "matched": [
+          "read-only"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 0.006,
+      "passed": true
+    },
+    {
+      "id": "unknown-greeting",
+      "question": "Hello world",
+      "classification": {
+        "expected": "unknown",
+        "actual": "unknown"
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "I'm not sure how to help with that. Please ask about TrackFlow policies (returns, storage, SLA), incidents/tickets, or i\u2026",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "d295a29e-4b05-4c5f-a66c-9495b71a0bf8",
+        "question": "Hello world",
+        "classification": "unknown",
+        "outcome": "answered",
+        "node_count": 3,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "completed"
+          },
+          {
+            "name": "fallback",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "not sure how to help"
+        ],
+        "matched": [
+          "not sure how to help"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 0.007,
+      "passed": true
+    },
+    {
+      "id": "blank-question",
+      "question": "",
+      "classification": {
+        "expected": null,
+        "actual": null
+      },
+      "classification_ok": true,
+      "has_answer": true,
+      "answer_preview": "I need a question to work with. Please provide details.",
+      "trace_exists": true,
+      "trace": {
+        "run_id": "aa92184c-799c-490b-8ca8-e8ea7c4c4e3f",
+        "question": "",
+        "classification": null,
+        "outcome": "error:BLANK_QUESTION",
+        "node_count": 3,
+        "nodes": [
+          {
+            "name": "receive_validate",
+            "status": "completed"
+          },
+          {
+            "name": "route_classify",
+            "status": "skipped"
+          },
+          {
+            "name": "fallback",
+            "status": "completed"
+          }
+        ]
+      },
+      "evidence": {
+        "expected": [
+          "I need a question"
+        ],
+        "matched": [
+          "I need a question"
+        ]
+      },
+      "evidence_ok": true,
+      "elapsed_s": 0.006,
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "question": "Show me incident 95b5f484-b729-4e40-a149-c023386db302",
+  "classification": "ticket",
+  "error": null,
+  "incident_result": {
+    "id": "95b5f484-b729-4e40-a149-c023386db302",
+    "title": "Incident regarding lost parcel",
+    "description": "Incident regarding lost parcel",
+    "category": "lost_parcel",
+    "status": "open",
+    "origin": "customer",
+    "branch": "la_office",
+    "created_at": "2026-09-15T00:00:00Z",
+    "updated_at": "2026-09-15T00:00:00Z"
+  },
+  "answer": "**Incident details**\n- **ID:** 95b5f484-b729-4e40-a149-c023386db302\n- **Title:** Incident regarding lost parcel\n- **Status:** open\n- **Category:** lost_parcel\n- **Branch:** la_office\n- **Description:** Incident regarding lost parcel",
+  "run_id": "75577d14-71ce-4f0d-b842-06494452d5f1",
+  "_node_order": [
+    {
+      "node_name": "receive_validate",
+      "status": "completed"
+    },
+    {
+      "node_name": "route_classify",
+      "status": "completed"
+    },
+    {
+      "node_name": "lookup_incident",
+      "status": "completed"
+    }
+  ]
+}

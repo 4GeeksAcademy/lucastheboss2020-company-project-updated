@@ -1,0 +1,60 @@
+# Test & Validation Output
+> Generated 2026-11-14
+
+## TypeScript Type Check
+```
+
+> trackflow-company-project@1.0.0 typecheck
+> tsc --noEmit
+
+```
+
+## Agent Graph Tests (108 passed)
+```
+........................................................................ [ 66%]
+....................................                                     [100%]
+108 passed in 3.91s
+```
+
+## Offline Replay Tests (33 passed)
+```
+.................................                                        [100%]
+33 passed in 0.05s
+```
+
+## Eval Scorecard (11/11)
+```
+  [carrier-coverage] 'Which carriers does TrackFlow use in Spain?'… PASS (5.29s)
+  [incident-lookup] 'Check incident TRF-abc12345'… PASS (0.03s)
+  [inventory-stock] 'Show me current stock levels for all products'… PASS (0.76s)
+  [both-sla-incident] 'What is the SLA for incident TRF-abc12345?'… PASS (0.01s)
+  [write-intent-create] 'Create a new incident for a lost package'… PASS (0.01s)
+  [write-intent-delete] 'Delete ticket TRF-abc123'… PASS (0.01s)
+  [unknown-greeting] 'Hello world'… PASS (0.01s)
+  [blank-question] ''… PASS (0.01s)
+
+============================================================
+Agent graph offline eval: 11/11 passed
+Details: /workspaces/lucastheboss2020-company-project-updated/data/eval/agent_graph_eval.json
+============================================================
+
+✅ All evaluations passed.
+```
+
+## Git Status
+```
+ M .gitignore
+ M services/main.py
+ M src/telemetry/TelemetryService.ts
+ M src/telemetry/performance.ts
+ M uis/backoffice/inventory/InventoryOrderForm.tsx
+?? data/eval/agent_graph_eval.json
+?? data/eval/live-traces/
+?? docs/agent/
+?? scripts/capture_live_agent_traces.py
+?? scripts/evaluate_agent_graph.py
+?? services/agent/
+?? services/routers/agent.py
+?? tests/pipelines/test_agent_graph.py
+?? tests/pipelines/test_offline_replay.py
+```
