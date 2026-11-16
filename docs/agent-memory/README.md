@@ -2,13 +2,13 @@
 
 The existing MCP-connected LangGraph assistant now remembers approved operational corrections and recurring B2B reporting preferences across restarts and conversations. A proposal is never an approved fact: explicit approval of the pending version and its audit entry must commit together before the fact becomes retrievable.
 
-The user-created branch is **Milestone-8**, serving the role called feature/agent-memory in the assignment. Part 2's harness is outside this change. The full copied assignment, TrackFlow briefing and approved design choices are in [CONTEXT_MILESTONE_8.md](../../Contexts/CONTEXT_MILESTONE_8.md).
+The user-created branch is **Milestone-8**, serving the role called feature/agent-memory in the assignment. Part 2 now adds the [protection harness](../agent-harness/README.md) to this same graph; this document describes the retained Part 1 memory design. The full copied assignment, TrackFlow briefing and approved design choices are in [CONTEXT_MILESTONE_8.md](../../Contexts/CONTEXT_MILESTONE_8.md).
 
 ## Architecture
 
 This extends **the same graph in mcps/agent.py**, not another agent. Operational requests still discover and invoke tools through MultiServerMCPClient; inventory stays read-only. Existing grounded RAG remains a read-only knowledge path. Neither company Qdrant collections nor the separate earlier services/agent checkpoint/trace implementation are memory storage.
 
-Memory-enabled path: memory_prepare → route → knowledge/tools → memory_evaluate → END. Confirmation-only messages finish after memory_prepare. A decision plus a question resolves the proposal then continues normally. The classifier's continuation must be a verbatim substring of the actual user message; it cannot invent a new request. A question containing a question mark is preserved even if the classifier omits it.
+Current memory-enabled path: input_guard → memory_prepare → route → knowledge/tools → memory_evaluate → output_guard → END. Confirmation-only messages skip RAG/tools after memory_prepare and still pass through output_guard. A decision plus a question resolves the proposal then continues normally. The classifier's continuation must be a verbatim substring of the actual user message; it cannot invent a new request. A question containing a question mark is preserved even if the classifier omits it.
 
 The existing grounded/tool answer is retained as a draft. One additional structured final-response call returns Evaluation(answer, memory_proposal) together. A structured Decision call runs only when a proposal is pending. This preserves existing RAG/MCP behavior without another graph, another agent, or a self-editing system prompt. Optional evaluation failure preserves the grounded draft. A memory backend failure does not prevent the existing operations path from responding.
 
@@ -30,7 +30,7 @@ Read the proposal, then run the same command with the same three identifiers and
 
 All three scope flags are required together. **They are trusted local CLI/operator inputs, not authentication.** An integrating application must derive company/actor from its authenticated server-side identity, never chat text. There is no shared default memory user. Actors and companies are isolated; this version does not share preferences across staff. A new conversation discards the principal's unresolved old proposal by default.
 
-Calling ask(question), or omitting all scope flags, retains original memory-disabled behavior. The existing /agent/query web endpoint and its authentication/response contract are unchanged and do not enable this memory flow. No public endpoint, credential, or permission is added.
+Calling ask(question), or omitting all scope flags, is memory-disabled but now protected by the Part 2 harness. The /agent/query endpoint now invokes the same secured MCP graph while retaining its authentication and response fields; it remains memory-disabled and does not accept client ownership grants. No public endpoint, credential, or permission is added.
 
 ## Self-evaluation and restrictions
 
@@ -83,3 +83,5 @@ An edit is validated, logged, versioned and displayed for a fresh approval. Old-
 The script uses the actual configured provider, existing graph and real RAG knowledge path with synthetic facts. It reopens SQLite and creates a fresh graph every turn. The approved cycle checks a future session's recall and answer ordering. The rejected cycle checks identical facts before/after and logged rejection. These report-preference turns do not invoke incident/inventory tools; existing MCP tests plus a new memory-enabled discovery test cover that boundary. Deterministic unit tests use explicit fake model/tool boundaries and are not presented as live evidence.
 
 Additional live classifier evidence: [agent-memory-decision-probes.json](../../data/eval/agent-memory-decision-probes.json), reproducible using scripts/evaluate_memory_decisions.py. Seven actual-model probes cover quoted yes with rejection, uncertainty, conditional consent, topic change, approval plus a question, classifier prompt injection, and an edit without approval. All passed. Model-reported confidence is a decision gate, not a calibrated probability of truth.
+
+Current combined validation and guardrails are documented in ../agent-harness/README.md and ../agent-harness/validation.txt. The original Part 1 validation is retained as historical evidence.
