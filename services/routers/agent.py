@@ -1,105 +1,49 @@
-"""FastAPI endpoint for the TrackFlow LangGraph agent.
-
-Synchronous POST endpoint at ``/agent/query`` that invokes the compiled
-LangGraph agent with read-only tool routing (RAG, incident lookup,
-inventory lookup) and returns a structured answer.
+"""Authenticated FastAPI adapter for the same secured TrackFlow MCP agent.
+The response shape is unchanged. Customer resource grants are deliberately absent
+until a trusted customer/order ownership source is integrated; requests fail closed.
 """
-
 from __future__ import annotations
-
 import logging
 import time
-import uuid
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, StringConstraints
 from typing import Annotated
-
+from fastapi import APIRouter,Depends,HTTPException,status
+from pydantic import BaseModel,StringConstraints
 from backend.auth import get_current_user
-from langgraph.checkpoint.memory import InMemorySaver
+from mcps.agent import create_agent_graph
 
-from services.agent.graph import build_agent
-
-logger = logging.getLogger(__name__)
-
-router = APIRouter(tags=["agent"])
-
-# ── Compiled agent (lazy singleton) ──────────────────────────────────────
-_compiled_agent = None
-
+logger=logging.getLogger(__name__)
+router=APIRouter(tags=['agent'])
+_compiled_agent=None
 
 def _get_agent():
-    """Return the compiled agent singleton.
-
-    Compilation failures (e.g. invalid graph structure) are surfaced here
-    as ``RuntimeError`` so the endpoint can return a sanitised 500 instead
-    of crashing the uvicorn worker.
-    """
     global _compiled_agent
     if _compiled_agent is None:
         try:
-            graph = build_agent()
-            _compiled_agent = graph.compile(checkpointer=InMemorySaver())
+            # No raw-message checkpoint, client-provided grants or shared memory scope.
+            _compiled_agent=create_agent_graph()
         except Exception as exc:
-            logger.exception("Agent compilation failed")
-            raise RuntimeError("Agent initialisation failed.") from exc
+            logger.error('Secured agent initialisation failed')
+            raise RuntimeError('Agent initialisation failed.') from exc
     return _compiled_agent
 
-
-# ── Request / response models ────────────────────────────────────────────
-
-
 class AgentQueryRequest(BaseModel):
-    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
-
-
+    question: Annotated[str,StringConstraints(strip_whitespace=True,min_length=1,max_length=2000)]
 class AgentQueryResponse(BaseModel):
     answer: str
-    classification: str | None = None
-    run_id: str | None = None
-    elapsed_ms: int | None = None
+    classification: str | None=None
+    run_id: str | None=None
+    elapsed_ms: int | None=None
 
-
-@router.post(
-    "/agent/query",
-    response_model=AgentQueryResponse,
-    summary="Route a question through the TrackFlow agent (RAG / incident / inventory)",
-)
-def query_agent(
-    body: AgentQueryRequest,
-    _user: dict = Depends(get_current_user),
-) -> AgentQueryResponse:
-    """Classify the question, execute the appropriate tool branch, and return an answer."""
-    t0 = time.perf_counter()
-
+@router.post('/agent/query',response_model=AgentQueryResponse,summary='Query the secured TrackFlow CX agent')
+async def query_agent(body:AgentQueryRequest,_user:dict=Depends(get_current_user))->AgentQueryResponse:
+    start=time.perf_counter()
     try:
-        agent = _get_agent()
-    except RuntimeError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="The agent encountered an internal error.",
-        ) from exc
-
-    try:
-        # Use uuid4 thread_id; omit checkpoint_ns and checkpoint_id for
-        # root graph so get_state_history works without a subgraph key.
-        thread_id = str(uuid.uuid4())
-        result = agent.invoke(
-            {"question": body.question},
-            config={"configurable": {"thread_id": thread_id}},
-        )
+        result=await _get_agent().ainvoke({'question':body.question})
     except Exception as exc:
-        logger.exception("Agent invocation failed")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="The agent encountered an internal error.",
-        ) from exc
-
-    elapsed_ms = int((time.perf_counter() - t0) * 1000)
-
-    return AgentQueryResponse(
-        answer=result.get("answer", ""),
-        classification=result.get("classification"),
-        run_id=result.get("run_id"),
-        elapsed_ms=elapsed_ms,
-    )
+        # Never include raw question, tool data or provider exception details in logs.
+        logger.error('Secured agent invocation failed')
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail='The agent encountered an internal error.') from exc
+    ctx=result.get('harness_context')
+    route=result.get('route')
+    classification='rag' if route=='knowledge' else 'inventory' if route=='tools' and any(word in body.question.casefold() for word in ['inventory','stock','sku']) else 'ticket' if route=='tools' else 'unknown'
+    return AgentQueryResponse(answer=result.get('answer',''),classification=classification,run_id=ctx.request_id if ctx else None,elapsed_ms=int((time.perf_counter()-start)*1000))

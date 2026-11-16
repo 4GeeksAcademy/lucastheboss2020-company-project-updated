@@ -24,4 +24,4 @@
 - [x] TypeScript check passes (validation.txt).
 - [ ] User review before assignment submission or merge.
 
-Use the trusted scoped MCP CLI described in README; the existing web API remains memory-disabled. Part 2 is not included. The branch name follows the user's explicit choice instead of the assignment's example name.
+Use the trusted scoped MCP CLI described in README; the existing web API remains memory-disabled. Part 2 now extends the same graph; see ../agent-harness/EVALUATION_CHECKLIST.md. The branch name follows the user's explicit choice instead of the assignment's example name.

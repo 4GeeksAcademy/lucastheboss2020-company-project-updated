@@ -1,0 +1,45 @@
+name: TrackFlow agent harness
+'on':
+  pull_request:
+    branches: [main]
+  push:
+    branches: [Milestone-8]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deterministic-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: --health-cmd 'redis-cli ping' --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      REDIS_URL: redis://localhost:6379/15
+      RAG_API_KEY: ''
+      RAG_API_BASE_URL: ''
+      RAG_GENERATION_MODEL: ''
+      MCP_ACCESS_TOKEN: ''
+      HF_HUB_OFFLINE: '1'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7, official tag verified
+        with:
+          persist-credentials: false
+      - name: Install uv and matching Python
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.12.17'
+          python-version: '3.14'
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --locked --group dev
+      - name: Deterministic harness, memory and prior agent regressions
+        run: >-
+          uv run --no-sync python -m pytest
+          tests/agent_harness tests/agent_memory tests/mcps
+          tests/pipelines/test_rag.py tests/pipelines/test_pipeline.py
+          tests/pipelines/test_agent_graph.py tests/pipelines/test_offline_replay.py
+          -q --tb=short
