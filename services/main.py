@@ -19,3 +19,10 @@ app.include_router(telemetry_router)
 app.include_router(reporting_router)
 app.include_router(task_api_router)
 app.router.on_startup.append(create_db_and_tables)
+
+# Milestone 9: additive RFP routes and tables; existing contracts unchanged.
+from services.rfp_intake.router import router as rfp_router
+from services.rfp_intake.models import create_tables as create_rfp_tables
+from services.database import engine as rfp_engine
+app.include_router(rfp_router)
+app.router.on_startup.append(lambda: create_rfp_tables(rfp_engine))

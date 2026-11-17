@@ -1,0 +1,8 @@
+Milestone 9 Part 1 validation, 2026-11-17 UTC
+RFP unit/API/PostgreSQL: 31 passed.
+TypeScript: npm run typecheck exited 0.
+Production build: npm run build exited 0; RFP page 4.23 kB.
+Formatting: uvx ruff format and existing prettier commands passed.
+Live configured-provider graph: all 3 official PDFs passed; see live-graph.json.
+Authenticated UI/Celery test: pending fresh user login.
+Existing baseline regression comparison: 416 passed with committed agent route in an isolated process. Normal working tree has 4 pre-existing failures from an unrelated user edit; that file is excluded from this commit.

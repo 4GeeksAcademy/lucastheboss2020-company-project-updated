@@ -32,6 +32,10 @@ dependencies = [
     "langchain-mcp-adapters==0.3.2",
     "langgraph>=1.2.20",
     "langchain-openai>=1.7.4",
+    "markitdown[pdf]>=0.1.9",
+    "py-readability-metrics>=1.4.5",
+    "pypdf>=7.1.0",
+    "python-multipart>=0.0.32",
 ]
 scripts = { seed = "services.suppliers.seed:main", seed-incidents = "scripts.seed_incidents:main", seed-inventory = "services.seed_inventory:main" }
 
