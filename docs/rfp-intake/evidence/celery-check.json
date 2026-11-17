@@ -1,0 +1,7 @@
+{
+  "kind": "isolated PostgreSQL + Redis + real Celery worker + configured model, public supplier-pitch sample; not UI evidence",
+  "passed": true,
+  "status": "discarded",
+  "markdown_created": true,
+  "attempts": 1
+}

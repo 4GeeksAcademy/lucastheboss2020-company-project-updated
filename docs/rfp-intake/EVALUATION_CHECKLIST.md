@@ -21,12 +21,14 @@ Branch: `Milestone-9`. No pull request is opened automatically. Parts 2 and 3 re
 - [x] ModaViva's 15,000 SKUs were not invented as monthly order volume.
 - [x] Final production build passed (29 static pages, including the RFP route).
 - [ ] All three PDFs uploaded and completed through the authenticated UI and Celery worker.
-- [ ] Branch-only GitHub Actions checks passed after push.
+- [x] Branch-only GitHub Actions checks passed after push: 31 intake tests, 416 existing regressions, type check and production build.
 
 ## Evidence and limits
 
 The live graph report is in evidence/live-graph.json. It uses the public curriculum samples and real configured model access; it is not an upload/UI test. Raw uploads and development logs are intentionally ignored.
 
 The working tree contained an unrelated edit to services/routers/agent.py before this task. Four existing harness API tests fail against that edit; the committed baseline route passed all 416 targeted prior tests in an isolated in-memory comparison. That user edit is preserved and excluded from this milestone commit. Branch CI verifies the committed tree without an overlay.
+
+Real background integration also passed against an isolated PostgreSQL database, Redis broker, Celery worker and configured model (see evidence/celery-check.json).
 
 Text PDFs are supported. Encrypted, corrupt, oversized, overlong and scanned-only documents fail clearly; OCR is not implemented. Model/provider failures remain visible and retryable rather than producing fabricated results. No new authentication bypass or credential storage is introduced.
