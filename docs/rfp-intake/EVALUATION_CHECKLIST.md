@@ -15,12 +15,13 @@ Branch: `Milestone-9`. No pull request is opened automatically. Parts 2 and 3 re
 - [x] Pollable analyzing → intake_complete/discarded lifecycle. Failed/stalled jobs have bounded retries; lease claims prevent duplicate concurrent processing.
 - [x] Readability metrics and approximate token counts are recorded, with language/availability limitations disclosed.
 - [x] Sales summary, department contacts, questions, source evidence and stable ticket_id handoff are shown in the UI.
-- [x] Owner isolation, invalid PDFs, classifier/worker output, retries, persistence, and PostgreSQL concurrency are covered by 31 passing tests.
+- [x] Owner isolation, invalid PDFs, classifier/worker output, retries, persistence, and PostgreSQL concurrency are covered by 32 passing tests.
 - [x] TypeScript type check passed.
 - [x] All three official PDFs passed a live configured-provider graph run: ModaViva → warehouse + reverse/EUR; LunaCosmetics → warehouse + lastmile/USD; supplier pitch → discarded.
 - [x] ModaViva's 15,000 SKUs were not invented as monthly order volume.
 - [x] Final production build passed (29 static pages, including the RFP route).
-- [ ] All three PDFs uploaded and completed through the authenticated UI and Celery worker.
+- [x] Luna Cosmetics completed through the authenticated UI, real Celery worker and configured PostgreSQL database (see evidence/ui-check.json).
+- [ ] Official sample 1 and 3 uploads through the authenticated UI remain unverified: browser file selection was unreliable and the session expired. Their live graph results passed.
 - [x] Branch-only GitHub Actions checks passed after push: 31 intake tests, 416 existing regressions, type check and production build.
 
 ## Evidence and limits

@@ -1,10 +1,10 @@
 Milestone 9 Part 1 validation, 2026-11-17 UTC
-RFP unit/API/PostgreSQL: 31 passed.
+RFP unit/API/PostgreSQL/console-entry-point regression: 32 passed.
 TypeScript: npm run typecheck exited 0.
 Production build: npm run build exited 0; RFP page 4.23 kB.
 Formatting: uvx ruff format and existing prettier commands passed.
 Live configured-provider graph: all 3 official PDFs passed; see live-graph.json.
-Authenticated UI/Celery test: pending native file selection; fresh user login completed.
+Authenticated UI/Celery: Luna Cosmetics completed with USD, 5,000 orders/month, warehouse + lastmile owners, source evidence and Sales summary. Sample 1/3 UI uploads remain unverified; browser file selection unreliable and session expired.
 Existing baseline regression comparison: 416 passed with committed agent route in an isolated process. Normal working tree has 4 pre-existing failures from an unrelated user edit; that file is excluded from this commit.
 
 GitHub Actions success: https://github.com/4GeeksAcademy/lucastheboss2020-company-project-updated/actions/runs/44201497915

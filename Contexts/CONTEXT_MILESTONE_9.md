@@ -97,3 +97,6 @@ returns-sla-breach	reverse (or any section) promises returns turnaround under 48
 currency-mismatch	Two active sections quote different currencies, or currency ≠ client_country mapping (US→USD, Spain→EUR)	Miguel Torres	Rewrite offending sections to the country currency; reject if unresolved after iteration limit
 
 Wire these trigger ids into your arbitration node. Agents may surface a conflict; they must not resolve it by free-form consensus.
+
+## Implementation checkpoint (2026-11-17)
+Part 1 is implemented on Milestone-9. No PR is authorized. See docs/rfp-intake/EVALUATION_CHECKLIST.md and evidence for precise verification. The Celery console entry-point import was fixed and covered by an isolated-process regression. Luna Cosmetics completed in the authenticated UI using the real worker and configured PostgreSQL database. Official samples 1/3 passed live graph checks but their UI uploads remain unverified because file selection was unreliable and the session expired. User is away: do not ask questions until they return. Preserve pre-existing services/routers/agent.py and .gitignore changes and services/agent_harness/runtime/.

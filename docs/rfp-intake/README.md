@@ -67,7 +67,7 @@ Offline agents are explicitly injected fixtures in tests only:
 
     DATABASE_URL=sqlite:// REDIS_URL=redis://127.0.0.1:6379/15 uv run --no-sync python -m pytest tests/pipelines/test_rfp_intake.py tests/pipelines/test_rfp_api.py -q
 
-For PostgreSQL roundtrip and concurrent-claim tests, explicitly set TEST_RFP_DATABASE_URL to a disposable PostgreSQL test database and include tests/pipelines/test_rfp_postgres.py. These tests never fall back to SQLite. The branch workflow provides isolated PostgreSQL and Redis and needs no model secrets. Optional real-model graph smoke:
+For PostgreSQL roundtrip and concurrent-claim tests, explicitly set TEST_RFP_DATABASE_URL to a disposable PostgreSQL test database and include tests/pipelines/test_rfp_postgres.py tests/pipelines/test_rfp_task_entrypoint.py. These tests never fall back to SQLite. The branch workflow provides isolated PostgreSQL and Redis and needs no model secrets. Optional real-model graph smoke:
 
     uv run --no-sync --env-file backend/.env python scripts/smoke_rfp_intake.py
 

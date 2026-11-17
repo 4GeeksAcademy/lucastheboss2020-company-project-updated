@@ -1,5 +1,7 @@
 """RFP tasks use the existing Celery app and reporting queue; no new API process."""
 
+from pathlib import Path
+import sys
 from services.celery_app import app
 
 TASK_NAME = "run_rfp_intake"
@@ -9,6 +11,11 @@ TASK_NAME = "run_rfp_intake"
 def run_rfp_intake(self, ticket_id):
     from services.database import engine
     from services.rfp_intake.store import Store
+
+    # Match the reporting task: console entry points omit the repository root.
+    project_root = str(Path(__file__).resolve().parents[2])
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
     from data.pipelines.rfp_intake.runner import process_ticket
 
     store = Store(engine)
