@@ -22,7 +22,7 @@ app = Celery(
     "trackflow",
     broker=redis_url,
     backend=redis_url,
-    include=["services.tasks"],
+    include=["services.tasks", "services.rfp_intake.tasks"],
 )
 app.conf.update(
     accept_content=["json"],

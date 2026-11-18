@@ -42,3 +42,6 @@ next-env.d.ts
 services/agent_memory/runtime/
 
 services/agent_harness/runtime/
+
+# Milestone 9 customer uploads and conversion artifacts
+data/raw/rfp/

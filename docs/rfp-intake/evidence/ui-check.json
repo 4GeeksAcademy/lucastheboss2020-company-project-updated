@@ -1,0 +1,21 @@
+{
+  "kind": "Authenticated backoffice and existing production-configured database; real configured model and Celery worker",
+  "sample": "trackflow-request-2.pdf",
+  "uploaded_by": "user through the PDF file picker",
+  "result": "intake_complete",
+  "client": "Luna Cosmetics",
+  "country": "US",
+  "currency": "USD",
+  "monthly_volume": "5,000 orders a month",
+  "departments": [
+    "warehouse",
+    "lastmile"
+  ],
+  "owners": [
+    "Ana Whitfield",
+    "Carlos Vega"
+  ],
+  "sales_summary_visible": true,
+  "source_evidence_visible": true,
+  "notes": "The first worker invocation failed before claiming the ticket because the console entry point omitted the checkout from sys.path. The import was fixed and the existing unclaimed upload requeued. Official samples 1 and 3 passed graph checks; their authenticated UI uploads remain unverified."
+}
