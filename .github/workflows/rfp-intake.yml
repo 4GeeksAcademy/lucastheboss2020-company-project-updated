@@ -45,6 +45,11 @@ jobs:
           uv run --no-sync python -m pytest
           tests/pipelines/test_rfp_intake.py tests/pipelines/test_rfp_api.py
           tests/pipelines/test_rfp_postgres.py tests/pipelines/test_rfp_task_entrypoint.py -q --tb=short
+      - name: Proposal generation, bounded revisions, API and PostgreSQL
+        run: >-
+          uv run --no-sync python -m pytest
+          tests/pipelines/test_rfp_proposal.py tests/pipelines/test_rfp_proposal_api.py
+          tests/pipelines/test_rfp_proposal_postgres.py -q --tb=short
       - name: Existing agent, memory and MCP regressions
         run: >-
           uv run --no-sync python -m pytest

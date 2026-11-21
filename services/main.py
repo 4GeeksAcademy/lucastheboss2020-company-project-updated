@@ -26,3 +26,6 @@ from services.rfp_intake.models import create_tables as create_rfp_tables
 from services.database import engine as rfp_engine
 app.include_router(rfp_router)
 app.router.on_startup.append(lambda: create_rfp_tables(rfp_engine))
+
+from services.rfp_generation.router import router as proposal_router
+app.include_router(proposal_router)

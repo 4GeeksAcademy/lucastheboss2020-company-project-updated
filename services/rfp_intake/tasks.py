@@ -39,3 +39,14 @@ def run_rfp_intake(self, ticket_id):
                 exc=RuntimeError("RFP analysis temporarily unavailable"), countdown=10 * (2**self.request.retries)
             )
         raise
+
+
+@app.task(name="run_rfp_proposal", acks_late=True, soft_time_limit=540, time_limit=600)
+def run_rfp_proposal(ticket_id):
+    from services.database import engine
+    from services.rfp_generation.store import ProposalStore
+    project_root = str(Path(__file__).resolve().parents[2])
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    from data.pipelines.rfp_intake.proposal_graph import process_proposal
+    return process_proposal(ProposalStore(engine), ticket_id)

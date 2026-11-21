@@ -17,6 +17,7 @@ export interface RfpSection {
   open_questions: string[];
 }
 export interface RfpTicket {
+  proposal?: ProposalRun | null;
   ticket_id: string;
   rfp_id: string;
   original_filename: string;
@@ -40,4 +41,46 @@ export interface RfpTicket {
     conflicts: string[];
     ready_for_part2: boolean;
   } | null;
+}
+
+export interface ProposalEvaluation {
+  department_id: string;
+  draft_version: number;
+  overall_pass: boolean;
+  feedback_for_generator: string;
+  readability: {
+    pass: boolean;
+    score: number | null;
+    details: string;
+    method: string;
+  };
+  relevance: {
+    pass: boolean;
+    missing_aspects: string[];
+    unsupported_claims: string[];
+  };
+  compliance: {
+    pass: boolean;
+    rule_ids: string[];
+    violations: { rule_id: string; violation: string }[];
+  };
+}
+export interface ProposalAttempt {
+  department_id: string;
+  version: number;
+  draft: { content: string; open_questions: string[]; currency: string | null };
+  evaluation: ProposalEvaluation | null;
+}
+export interface ProposalRun {
+  state: string;
+  runs: number;
+  progress: Record<
+    string,
+    { phase: string; attempt: number; max_attempts: number }
+  >;
+  attempts: ProposalAttempt[];
+  can_retry: boolean;
+  stalled: boolean;
+  error_message: string | null;
+  handoff: { ready_for_part3: boolean } | null;
 }

@@ -75,4 +75,6 @@ class DepartmentSection(SQLModel, table=True):
 
 
 def create_tables(engine):
-    SQLModel.metadata.create_all(engine, tables=[Ticket.__table__, RFPMetadata.__table__, DepartmentSection.__table__])
+    from services.rfp_generation.models import ProposalRun, ProposalAttempt
+    SQLModel.metadata.create_all(engine, tables=[Ticket.__table__, RFPMetadata.__table__, DepartmentSection.__table__,
+        ProposalRun.__table__, ProposalAttempt.__table__])
