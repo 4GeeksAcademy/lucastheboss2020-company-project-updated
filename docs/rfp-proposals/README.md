@@ -53,6 +53,8 @@ Open the existing backoffice RFP screen, select an accepted intake ticket and ch
 
 ## Verification and outstanding live check
 
+[Committed-branch GitHub validation passed](https://github.com/4GeeksAcademy/lucastheboss2020-company-project-updated/actions/runs/44876503515): 32 intake tests, 29 proposal tests (including the two new PostgreSQL cases), and 416 existing regressions, plus typecheck and production build. See validation.json for the evidence scope and remaining live check.
+
 Tests cover generators, parallel evaluator overlap, success, missing-aspect feedback, company-rule failures (including 24-hour returns), revision success, iteration exhaustion, retained drafts, provider interruption/resume, ownership, queue failure, duplicate commands, stale-token fencing and retry budgets. PostgreSQL-only integration tests verify fresh-session JSON/history persistence and concurrent start/claim uniqueness. They skip explicitly without a disposable `TEST_RFP_DATABASE_URL`; they do not silently substitute SQLite.
 
 ```sh

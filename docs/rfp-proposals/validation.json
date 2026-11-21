@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-21",
+  "branch": "Milestone-9",
+  "code_commit": "0495c1945bb9f761d9d3ec4c6706f5da517ffe78",
+  "github_run": "https://github.com/4GeeksAcademy/lucastheboss2020-company-project-updated/actions/runs/44876503515",
+  "ci_conclusion": "success",
+  "ci_test_groups": {
+    "intake_including_postgres": 32,
+    "proposal_including_postgres": 29,
+    "existing_regressions": 416,
+    "total": 477
+  },
+  "typecheck": "passed locally and in GitHub",
+  "production_build": "passed locally and in GitHub",
+  "postgres": "Disposable PostgreSQL 17 in branch CI; proposal history and concurrent start/claim tests passed",
+  "local_browser": {
+    "authentication": "Normal login to an isolated test account",
+    "database": "SQLite; not Supabase",
+    "model": "Explicit deterministic test fixture injection; not a live provider",
+    "revision_then_pass": "Both selected departments passed on attempt 2 with prior failed evaluations retained",
+    "iteration_exhaustion": "Reverse section retained at attempt 3 as needs_human_review; warehouse passed at attempt 1",
+    "feedback_and_history": "Visible and expandable",
+    "reload": "Both tickets and their saved final statuses remained visible",
+    "console_limit": "Browser extensions injected body attributes and raised extension errors; no feature-code exception was observed"
+  },
+  "live_provider_codespace_supabase": "Not run for Part 2: GitHub reported an organization Codespaces billing/budget issue. Configured credentials remain in the inaccessible Codespace and were not copied or displayed.",
+  "pull_request_opened": false
+}
