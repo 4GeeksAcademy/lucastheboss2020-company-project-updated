@@ -15,6 +15,71 @@ from tests.pipelines.test_rfp_intake import store as store, ticket
 from tests.pipelines.test_rfp_proposal import draft
 
 
+def test_pdf_upload_through_all_three_parts_and_authenticated_final_download(store, tmp_path, monkeypatch):
+    """Actual local PDF conversion and HTTP contracts; only models/queue are fixtures."""
+    from io import BytesIO
+    from pypdf import PdfWriter
+    from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
+    from services.rfp_intake import router as intake
+    from services.rfp_generation import router as proposal
+    from services.rfp_generation.store import ProposalStore
+    from data.pipelines.rfp_intake.runner import process_ticket
+    from data.pipelines.rfp_intake.proposal_graph import process_proposal
+    from data.pipelines.rfp_intake.approval_graph import process_approval
+    from tests.pipelines.test_rfp_intake import ModelFixture, FORMAL
+    from tests.pipelines.test_rfp_proposal import ProposalFixture
+
+    pdf = PdfWriter()
+    page = pdf.add_blank_page(width=612, height=792)
+    font = DictionaryObject({NameObject("/Type"): NameObject("/Font"), NameObject("/Subtype"): NameObject("/Type1"), NameObject("/BaseFont"): NameObject("/Helvetica")})
+    page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): DictionaryObject({NameObject("/F1"): pdf._add_object(font)})})
+    content = DecodedStreamObject()
+    content.set_data(f"BT /F1 9 Tf 20 740 Td ({FORMAL}) Tj ET".encode("ascii"))
+    page[NameObject("/Contents")] = pdf._add_object(content)
+    binary = BytesIO()
+    pdf.write(binary)
+
+    app = FastAPI()
+    for router in [intake.router, proposal.router, api.router]:
+        app.include_router(router)
+    approvals = ApprovalStore(store.engine)
+    app.dependency_overrides[intake.get_store] = lambda: store
+    app.dependency_overrides[proposal.get_store] = lambda: ProposalStore(store.engine)
+    app.dependency_overrides[api.get_store] = lambda: approvals
+    monkeypatch.setattr(intake, "RAW_ROOT", tmp_path / "actual-pdf-uploads")
+    monkeypatch.setattr(intake, "dispatch", lambda identifier: None)
+    monkeypatch.setattr(proposal, "dispatch", lambda identifier: None)
+    monkeypatch.setattr(api, "dispatch", lambda st, identifier: None)
+    monkeypatch.setattr(api, "get_user_by_id", lambda identifier: {"id": identifier, "is_active": True})
+    login(app, "alice")
+    with TestClient(app) as client:
+        uploaded = client.post("/rfp/tickets", files={"file": ("modaviva.pdf", binary.getvalue(), "application/pdf")})
+        assert uploaded.status_code == 202 and uploaded.json()["status"] == "analyzing"
+        identifier = uploaded.json()["ticket_id"]
+        path = f"/rfp/tickets/{identifier}"
+        process_ticket(store, identifier, ModelFixture())  # Real MarkItDown/PDF conversion.
+        assert client.get(path).json()["status"] == "intake_complete"
+        assert client.post(path + "/proposal").status_code == 202
+        process_proposal(ProposalStore(store.engine), identifier, ProposalFixture())
+        assert client.get(path).json()["status"] == "under_evaluation"
+        for department, user in [("warehouse", "ana"), ("reverse", "sofia")]:
+            assert client.post(path + "/approvals/reviewers", json={"department_id": department, "user_id": user}).status_code == 200
+        assert client.post(path + "/approvals").status_code == 202
+        for department in ["warehouse", "reverse"]:
+            process_approval(approvals, identifier, department)
+        login(app, "sofia")
+        assert client.post(path + "/approvals/reverse/resume", json={"decision": "approve", "version": 1}).status_code == 202
+        process_approval(approvals, identifier, "reverse")
+        assert client.get(path + "/approvals").json()["status"] == "waiting_for_approval"
+        assert client.get(path + "/approvals/document").status_code == 409
+        login(app, "ana")
+        assert client.post(path + "/approvals/warehouse/resume", json={"decision": "approve", "version": 1}).status_code == 202
+        process_approval(approvals, identifier, "warehouse")
+        assert client.get(path + "/approvals").json()["status"] == "done"
+        final = client.get(path + "/approvals/document")
+        assert final.status_code == 200 and "ModaViva" in final.text and "EUR" in final.text
+
+
 @pytest.fixture
 def setup(store, tmp_path, monkeypatch):
     """Seed the documented Part 2 handoff; graph behavior is tested separately."""

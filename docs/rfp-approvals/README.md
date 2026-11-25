@@ -60,6 +60,8 @@ uv run python -m pytest tests/pipelines/test_rfp_approval.py tests/pipelines/tes
 
 `test_parallel_interrupt_resume_full_flow` reproducibly drives Parts 1→2→3 with the ModaViva fixture, pauses both departments, approves reverse while warehouse remains interrupted, then approves warehouse and verifies the final EUR document. Other tests cover file-backed restart, rejection, three revision rounds, provider interruption, owner isolation, version conflicts, all three arbitration triggers and API recovery. These simulated decisions demonstrate the software; they are not real employee approvals.
 
+`test_pdf_upload_through_all_three_parts_and_authenticated_final_download` goes further: it creates a valid text PDF, uploads it through the actual HTTP intake endpoint, runs the real MarkItDown PDF converter, triggers proposal/approval endpoints and independent simulated owner resumes, then downloads the final EUR document. Only model responses, authentication actors and background dispatch are explicit test fixtures; the same persisted ticket passes through all three parts.
+
 To exercise actual PostgreSQL checkpoints and concurrent decisions, set `TEST_RFP_DATABASE_URL` to an explicitly disposable PostgreSQL test database and run:
 
 ```sh
