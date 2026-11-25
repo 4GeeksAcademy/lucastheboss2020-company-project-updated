@@ -3,6 +3,7 @@ import asyncio
 from contextlib import contextmanager
 from pathlib import Path
 import tempfile
+import time
 from typing import TypedDict
 from weakref import WeakKeyDictionary
 from langgraph.graph import StateGraph, START, END
@@ -25,7 +26,15 @@ def checkpoint_saver(engine):
         with PostgresSaver.from_conn_string(url) as saver:
             # Multiple department workers may start together on a fresh database.
             # Serialize only schema setup, never a human's pending approval.
-            saver.conn.execute("SELECT pg_advisory_lock(904003)")
+            # A blocking SELECT pg_advisory_lock holds a query snapshot while
+            # waiting. CREATE INDEX CONCURRENTLY inside setup waits for that
+            # snapshot, causing a startup deadlock. Try-lock queries finish
+            # immediately and release their snapshots between attempts.
+            started = time.monotonic()
+            while not saver.conn.execute("SELECT pg_try_advisory_lock(904003) AS acquired").fetchone()["acquired"]:
+                if time.monotonic() - started > 45:
+                    raise RuntimeError("Checkpoint schema setup is busy; retry saved processing.")
+                time.sleep(0.05)
             try:
                 saver.setup()
             finally:
