@@ -23,5 +23,3 @@ TrackFlow will review the requested logistics services with your commercial team
 | Standard volume | Standard rate |
 | Higher volume | Subject to approval |
 Quotation currency: EUR.
-
-
