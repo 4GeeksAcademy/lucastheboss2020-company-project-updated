@@ -50,3 +50,14 @@ def run_rfp_proposal(ticket_id):
         sys.path.insert(0, project_root)
     from data.pipelines.rfp_intake.proposal_graph import process_proposal
     return process_proposal(ProposalStore(engine), ticket_id)
+
+
+@app.task(name="run_rfp_approval", acks_late=True, soft_time_limit=540, time_limit=600)
+def run_rfp_approval(ticket_id, department):
+    project_root = str(Path(__file__).resolve().parents[2])
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    from services.database import engine
+    from services.rfp_approval.store import ApprovalStore
+    from data.pipelines.rfp_intake.approval_graph import process_approval
+    return process_approval(ApprovalStore(engine), ticket_id, department)

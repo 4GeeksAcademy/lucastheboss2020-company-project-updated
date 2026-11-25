@@ -29,3 +29,6 @@ app.router.on_startup.append(lambda: create_rfp_tables(rfp_engine))
 
 from services.rfp_generation.router import router as proposal_router
 app.include_router(proposal_router)
+
+from services.rfp_approval.router import router as approval_router
+app.include_router(approval_router)

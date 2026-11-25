@@ -3,6 +3,7 @@
 from typing import Literal
 from pydantic import Field
 from .schemas import Strict, Department
+from .approval_rules import Commitments
 
 MAX_ATTEMPTS = 3
 
@@ -22,6 +23,7 @@ class ProposalDraft(Strict):
     volume_discount_tiers: list[DiscountTier] = Field(max_length=8)
     source_ids: list[str] = Field(min_length=1, max_length=12)
     open_questions: list[str] = Field(default_factory=list, max_length=15)
+    commitments: Commitments | None = None
 
 
 class RelevanceResult(Strict):

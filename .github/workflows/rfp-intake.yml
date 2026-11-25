@@ -57,6 +57,12 @@ jobs:
           tests/pipelines/test_rag.py tests/pipelines/test_pipeline.py
           tests/pipelines/test_agent_graph.py tests/pipelines/test_offline_replay.py
           -q --tb=short
+      - name: Independent human approvals, durable resumes and completion
+        run: >-
+          uv run --no-sync python -m pytest
+          tests/pipelines/test_rfp_approval.py tests/pipelines/test_rfp_approval_api.py
+          tests/pipelines/test_rfp_approval_recovery.py
+          tests/pipelines/test_rfp_approval_postgres.py -q --tb=short
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build

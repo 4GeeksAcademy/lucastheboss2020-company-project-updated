@@ -36,6 +36,8 @@ dependencies = [
     "py-readability-metrics>=1.4.5",
     "pypdf>=7.1.0",
     "python-multipart>=0.0.32",
+    "langgraph-checkpoint-postgres>=3.2.1",
+    "langgraph-checkpoint-sqlite>=3.1.3",
 ]
 scripts = { seed = "services.suppliers.seed:main", seed-incidents = "scripts.seed_incidents:main", seed-inventory = "services.seed_inventory:main" }
 

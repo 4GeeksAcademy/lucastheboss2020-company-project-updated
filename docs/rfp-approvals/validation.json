@@ -1,0 +1,32 @@
+{
+  "validated_at": "2026-11-25",
+  "branch": "Milestone-9",
+  "checked_code_commit": "e6fcc95007f64e560e57d9bfa0da9e007b3c1e38",
+  "workflow_url": "https://github.com/4GeeksAcademy/lucastheboss2020-company-project-updated/actions/runs/45553737288",
+  "workflow_conclusion": "success",
+  "tests": {
+    "intake_api_postgresql_and_worker_entrypoint": 32,
+    "proposal_generation_api_and_postgresql": 29,
+    "prior_agent_memory_mcp_and_pipeline_regressions": 416,
+    "approval_api_recovery_and_postgresql": 30,
+    "total_passed": 507
+  },
+  "typecheck": "passed",
+  "production_build": "passed",
+  "local_browser": {
+    "mode": "isolated normal-login test accounts; SQLite; explicit fixture model injection; no customer credentials",
+    "separate_accounts": ["sales@example.com", "ana@example.com", "sofia@example.com"],
+    "checks": [
+      "Sofia approves reverse while Ana warehouse remains pending",
+      "Final document remains unavailable until Ana approves",
+      "Last current-version approval automatically creates the final EUR document",
+      "Authenticated Markdown download works",
+      "Reload preserves completed state"
+    ],
+    "screenshots": ["parallel-pending.png", "final-document.png"]
+  },
+  "reproducible_pdf_e2e": "test_pdf_upload_through_all_three_parts_and_authenticated_final_download: actual HTTP upload, real local PDF conversion, simulated model/actors/queue, same ticket across Parts 1-3, authenticated final download",
+  "live_codespace_model_supabase_celery_verified": false,
+  "live_verification_note": "Last observed Codespaces access was blocked by the organization billing/budget notice. Local/CI fixtures do not prove live configured-provider integration.",
+  "pull_request_opened": false
+}

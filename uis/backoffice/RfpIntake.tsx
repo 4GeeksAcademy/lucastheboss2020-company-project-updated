@@ -6,6 +6,7 @@ import { trackFlowAuthHeaders } from "../../src/utils/auth-headers";
 import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 import type { RfpTicket } from "../../src/types/rfp-intake";
 import ProposalReview from "./ProposalReview";
+import ApprovalReview, { ApprovalInbox } from "./ApprovalReview";
 const API = "/api/backend/rfp/tickets";
 const field = (value: string | null | undefined) =>
   value || "Not stated — needs clarification";
@@ -15,6 +16,7 @@ export default function RfpIntake() {
   const [selectedId, setSelectedId] = useState(""),
     [offset, setOffset] = useState(0),
     [file, setFile] = useState<File | null>(null);
+  const [approvalTicketId, setApprovalTicketId] = useState("");
   const [loading, setLoading] = useState(true),
     [uploading, setUploading] = useState(false),
     [retrying, setRetrying] = useState(false),
@@ -84,6 +86,7 @@ export default function RfpIntake() {
         body,
       });
       setSelectedId(result.ticket_id);
+      setApprovalTicketId("");
       setSelected(result);
       setOffset(0);
       setFile(null);
@@ -167,6 +170,7 @@ export default function RfpIntake() {
           </button>
         </div>
       )}
+      <ApprovalInbox onSelect={setApprovalTicketId} />
       <section className="panel" aria-label="RFP ticket list">
         <h2>Your requests</h2>
         {loading && <p role="status">Loading requests…</p>}
@@ -199,6 +203,7 @@ export default function RfpIntake() {
                       aria-pressed={selectedId === t.ticket_id}
                       onClick={() => {
                         setSelectedId(t.ticket_id);
+                        setApprovalTicketId("");
                         setSelected(t);
                       }}
                     >
@@ -347,8 +352,7 @@ export default function RfpIntake() {
               )}
               <p className="message">
                 Intake is complete. Proposal drafts can be prepared below.
-                Department approval and the final proposal follow in Part 3;
-                no pricing or capacity has been committed.
+                Review the proposal drafts, then continue to department approvals.
               </p>
             </>
           )}
@@ -389,6 +393,12 @@ export default function RfpIntake() {
             </article>
           ))}
         </section>
+      )}
+      {(approvalTicketId || selected?.proposal?.handoff?.ready_for_part3) && (
+        <ApprovalReview
+          key={approvalTicketId || selected?.ticket_id}
+          ticketId={approvalTicketId || selected!.ticket_id}
+        />
       )}
     </section>
   );

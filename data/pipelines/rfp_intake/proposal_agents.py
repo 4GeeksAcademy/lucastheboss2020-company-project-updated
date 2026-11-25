@@ -8,6 +8,7 @@ from .schemas import LABELS
 from .graph import numbers
 from .ingestion import readability
 from .proposal_schemas import ProposalDraft, RelevanceResult, ComplianceReview, EvaluationResult
+from .approval_rules import quantity_grounded
 
 POLICY_ROOT = Path(__file__).resolve().parents[3] / "docs" / "company-knowledge-base"
 RULES = {
@@ -83,6 +84,18 @@ class DepartmentGenerator:
             raise ValueError("Generator returned the wrong department")
         if not set(result.source_ids).issubset(context["policy_sources"]):
             raise ValueError("Generator cited an unknown policy source")
+        if result.commitments:
+            sources = json.dumps({k: context.get(k) for k in ("metadata", "key_aspects", "policy_sources")}, ensure_ascii=False)
+            for quantity in (result.commitments.capacity, result.commitments.volume):
+                if quantity and not quantity_grounded(quantity, sources):
+                    raise ValueError("Capacity or volume is not grounded in the quoted quantity, unit and time basis")
+            cost = result.commitments.customer_total_cost
+            if cost:
+                from decimal import Decimal
+                quote_values = {Decimal(n) for n in numbers(cost.evidence)}
+                period = {"month": r"monthly|months?", "day": r"daily|days?", "total": r"total|overall"}[cost.period]
+                if cost.evidence not in sources or Decimal(str(cost.amount)) not in quote_values or cost.currency not in cost.evidence or not re.search(period, cost.evidence, re.I):
+                    raise ValueError("Customer total cost is not grounded in the supplied quotation")
         return result.model_dump()
 
 
