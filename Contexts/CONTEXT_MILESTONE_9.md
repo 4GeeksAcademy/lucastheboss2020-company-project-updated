@@ -1,6 +1,14 @@
 # Milestone 9 — TrackFlow agentic RFP workflow
 
-User instructions: use the existing Milestone-9 branch for all three parts. Do not create another branch. Do not open a pull request; the user will do that. The user approved the Part 2 plan and requested implementation on 2026-11-21. Part 3 remains future scope.
+User instructions: use the existing Milestone-9 branch for all three parts. Do not create another branch. Do not open a pull request; the user will do that. The user approved Part 3 implementation on 2026-11-25.
+
+## Part 3 implementation checkpoint — 2026-11-25
+
+Added services/rfp_approval and a dedicated per-department approval LangGraph under data/pipelines/rfp_intake/. Every active department has a real interrupt and durable official PostgreSQL checkpointer, using rfp-{ticket_id}:{department} thread identity. Local file-backed SQLite checkpointers support deterministic restart tests. Existing Celery tasks run until paused and explicit authenticated decisions resume the saved graph. Separate branches prove reverse can approve while warehouse remains interrupted.
+
+Explicit creator-controlled per-ticket assignment maps existing active account IDs to Ana/Carlos/Sofía/Miguel, with no login/auth-provider change or self-declared roles in resume payloads. Original intake creator-only ACL remains intact; an approval inbox provides assigned-user access. Three additional human revision rounds use the existing generators/evaluators, retain feedback and all prior versions in trace, invalidate changed approvals and preserve capped Part 2 failures. Reject blocks completion. Fixed arbitration node uses currency, returns SLA and unit-compatible sourced capacity/volume contradictions; named human arbiter directs affected revisions. Every node records input/output/timestamp. All current active versions must be approved and no conflict remain before an immutable Markdown FinalDocument and done status are stored atomically. Normal authenticated download; no email/publish step.
+
+Backoffice now includes reviewer assignment/inbox, independent version-specific approve/reject/request_changes, evaluation feedback, named arbitration, retry of saved processing, trace, final preview/download. No PR opened. See docs/rfp-approvals/README.md for API, design, fixture path and live-environment limitations. Local browser fixture used three isolated normal-login accounts, confirmed independent approvals and downloaded the final document; it did not use customer credentials or a live LLM. Codespaces/Supabase/configured-provider verification remains separate from deterministic local and CI checks. Preserve original Codespace uncommitted .gitignore, services/routers/agent.py and services/agent_harness/runtime/ changes when synchronizing.
 
 ## Part 2 implementation checkpoint — 2026-11-21
 

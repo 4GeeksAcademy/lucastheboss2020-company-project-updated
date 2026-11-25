@@ -84,3 +84,38 @@ export interface ProposalRun {
   error_message: string | null;
   handoff: { ready_for_part3: boolean } | null;
 }
+
+export interface ApprovalSection {
+  department_id: string;
+  owner: string;
+  version: number;
+  approval_status: string;
+  draft: { content: string; open_questions?: string[] };
+  evaluation: Record<string, unknown> | null;
+  can_decide: boolean;
+  can_approve: boolean;
+  feedback?: string | null;
+  error?: string | null;
+}
+
+export interface RfpApprovalReview {
+  ticket_id: string;
+  status: string;
+  can_start: boolean;
+  can_assign: boolean;
+  sections: ApprovalSection[];
+  reviewers: { department_id: string; user_id: string }[];
+  conflicts: {
+    trigger_id: string;
+    department_ids: string[];
+    status: string;
+    arbiter: string;
+    arbiter_name?: string;
+    resolution: string;
+    can_resolve: boolean;
+  }[];
+  trace: Record<string, unknown>[];
+  document: { content: string; currency: string; generated_at: string } | null;
+  error?: string | null;
+  blocked?: boolean;
+}
