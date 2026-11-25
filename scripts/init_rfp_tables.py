@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sqlalchemy.schema import CreateTable, CreateIndex
 from sqlalchemy.dialects import postgresql
 from services.rfp_intake.models import Ticket, RFPMetadata, DepartmentSection, create_tables
+from services.rfp_generation.models import ProposalRun, ProposalAttempt
 
 
 def main():
@@ -19,7 +20,7 @@ def main():
         create_tables(engine)
         print("Initialized missing RFP tables using the existing database engine.")
     else:
-        for model in [Ticket, RFPMetadata, DepartmentSection]:
+        for model in [Ticket, RFPMetadata, DepartmentSection, ProposalRun, ProposalAttempt]:
             print(str(CreateTable(model.__table__).compile(dialect=postgresql.dialect())) + ";")
             for index in model.__table__.indexes:
                 print(str(CreateIndex(index).compile(dialect=postgresql.dialect())) + ";")

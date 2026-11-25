@@ -1,0 +1,138 @@
+{
+  "kind": "Deterministic injected test-model examples, not live provider output",
+  "passing": {
+    "draft": {
+      "department_id": "warehouse",
+      "content": "TrackFlow will review the requested logistics services with your commercial team. We will agree the scope before starting work. Your existing requirements remain part of this draft. We will confirm storage needs and the launch date with you. No capacity has been reserved. The monthly on-time delivery SLA is 90% where TrackFlow delivery is contracted. Declared peak dates are excluded under the standard policy. We will explain any service limits before you sign. Returns processing will take at least 48 hours, subject to confirmation. Any preferential discount requires approval from Miguel Torres. This draft does not approve a discount. All prices and service terms need human approval before a final proposal is sent.\n| Volume basis | Discount |\n|---|---|\n| Standard volume | Standard rate |\n| Higher volume | Subject to approval |\nQuotation currency: EUR.",
+      "currency": "EUR",
+      "on_time_sla_percent": 90,
+      "returns_turnaround_hours": null,
+      "volume_discount_tiers": [
+        {
+          "volume_basis": "Higher volume",
+          "discount_percent": null,
+          "approval_required": true
+        }
+      ],
+      "source_ids": [
+        "sla-delivery",
+        "storage-pricing"
+      ],
+      "open_questions": [
+        "Confirm scope before committing capacity."
+      ]
+    },
+    "evaluation": {
+      "section_id": "section",
+      "department_id": "warehouse",
+      "draft_version": 1,
+      "readability": {
+        "pass": true,
+        "score": 9.85,
+        "details": "Transparent fallback: at least 40 words, average sentence ≤22 words and maximum ≤40; no formula score is claimed.",
+        "method": "sentence_length_fallback",
+        "metrics": {
+          "word_count": 128,
+          "character_count": 862,
+          "estimated_tokens": 216,
+          "token_estimate_method": "characters / 4; approximate, not billing",
+          "flesch_kincaid": null,
+          "gunning_fog": null,
+          "availability": "unavailable_tokenizer_or_text",
+          "language_note": "English formula estimates; country does not determine document language."
+        }
+      },
+      "relevance": {
+        "pass": true,
+        "missing_aspects": [],
+        "unsupported_claims": []
+      },
+      "compliance": {
+        "pass": true,
+        "rule_ids": [
+          "currency",
+          "delivery_sla",
+          "returns_minimum",
+          "discount_table",
+          "carrier_confidentiality",
+          "source_grounding"
+        ],
+        "violations": []
+      },
+      "overall_pass": true,
+      "feedback_for_generator": "All automated checks passed; human approval remains Part 3."
+    }
+  },
+  "failing": {
+    "draft": {
+      "department_id": "reverse",
+      "content": "TrackFlow will review the requested logistics services with your commercial team. We will agree the scope before starting work. Your existing requirements remain part of this draft. We will confirm storage needs and the launch date with you. No capacity has been reserved. The monthly on-time delivery SLA is 90% where TrackFlow delivery is contracted. Declared peak dates are excluded under the standard policy. We will explain any service limits before you sign. Returns processing will take within 24 hours, subject to confirmation. Any preferential discount requires approval from Miguel Torres. This draft does not approve a discount. All prices and service terms need human approval before a final proposal is sent.\n| Volume basis | Discount |\n|---|---|\n| Standard volume | Standard rate |\n| Higher volume | Subject to approval |\nQuotation currency: EUR.",
+      "currency": "EUR",
+      "on_time_sla_percent": 90,
+      "returns_turnaround_hours": 24,
+      "volume_discount_tiers": [
+        {
+          "volume_basis": "Higher volume",
+          "discount_percent": null,
+          "approval_required": true
+        }
+      ],
+      "source_ids": [
+        "sla-delivery",
+        "storage-pricing"
+      ],
+      "open_questions": [
+        "Confirm scope before committing capacity."
+      ]
+    },
+    "evaluation": {
+      "section_id": "section",
+      "department_id": "reverse",
+      "draft_version": 1,
+      "readability": {
+        "pass": true,
+        "score": 9.77,
+        "details": "Transparent fallback: at least 40 words, average sentence ≤22 words and maximum ≤40; no formula score is claimed.",
+        "method": "sentence_length_fallback",
+        "metrics": {
+          "word_count": 127,
+          "character_count": 860,
+          "estimated_tokens": 215,
+          "token_estimate_method": "characters / 4; approximate, not billing",
+          "flesch_kincaid": null,
+          "gunning_fog": null,
+          "availability": "unavailable_tokenizer_or_text",
+          "language_note": "English formula estimates; country does not determine document language."
+        }
+      },
+      "relevance": {
+        "pass": true,
+        "missing_aspects": [],
+        "unsupported_claims": []
+      },
+      "compliance": {
+        "pass": false,
+        "rule_ids": [
+          "currency",
+          "delivery_sla",
+          "returns_minimum",
+          "discount_table",
+          "carrier_confidentiality",
+          "source_grounding"
+        ],
+        "violations": [
+          {
+            "rule_id": "returns_minimum",
+            "violation": "Returns processing cannot be promised in under 48 hours."
+          },
+          {
+            "rule_id": "returns_minimum",
+            "violation": "Remove the under-48-hour returns promise from the prose."
+          }
+        ]
+      },
+      "overall_pass": false,
+      "feedback_for_generator": "Returns processing cannot be promised in under 48 hours.\nRemove the under-48-hour returns promise from the prose."
+    }
+  }
+}

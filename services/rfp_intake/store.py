@@ -39,7 +39,9 @@ class Store:
             return self.serialize(db, t) if t else None
 
     def serialize(self, db, t):
+        from services.rfp_generation.store import ProposalStore
         data = t.model_dump(exclude={"owner_id", "raw_pdf_path", "run_token", "lease_until", "sha256"})
+        data["proposal"] = ProposalStore.serialize(db, t.ticket_id)
         metadata = db.get(RFPMetadata, t.ticket_id)
         data["metadata"] = metadata.model_dump(exclude={"ticket_id"}) if metadata else None
         data["sections"] = [

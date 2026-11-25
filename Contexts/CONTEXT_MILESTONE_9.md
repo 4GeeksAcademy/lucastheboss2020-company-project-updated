@@ -1,6 +1,16 @@
 # Milestone 9 — TrackFlow agentic RFP workflow
 
-User instructions: use the existing Milestone-9 branch for all three parts. Do not create another branch. Do not open a pull request; the user will do that. Implement Part 1 now; Parts 2 and 3 remain future scope.
+User instructions: use the existing Milestone-9 branch for all three parts. Do not create another branch. Do not open a pull request; the user will do that. The user approved the Part 2 plan and requested implementation on 2026-11-21. Part 3 remains future scope.
+
+## Part 2 implementation checkpoint — 2026-11-21
+
+Part 2 consumes Ticket.handoff from accepted intake, with no PDF re-ingestion. Separate warehouse/lastmile/reverse generators and concurrent readability/relevance/compliance evaluators run in dedicated proposal subgraphs under data/pipelines/rfp_intake/. Up to three saved drafts per department; exhausted sections retain their content and EvaluationResult and hand off to Part 3 as needs_human_review. Passing sections stop revising independently. No approval decision, waiting_for_approval or done status is set in Part 2.
+
+Existing services/ API gains authenticated owned-ticket POST proposal and proposal/retry commands. PostgreSQL gains additive rfp_proposal_run/rfp_proposal_attempt tables; the latest draft/evaluation also updates existing DepartmentSection fields. Run-token fencing, consistent lock order, atomic claims, history checkpoints and six-claim retry budget protect recovery. Ticket.handoff remains the original Part 1 contract; the separate ProposalRun.handoff includes every department for Part 3. Existing backoffice RFP screen now shows generation controls, progress, drafts, all evaluator results, concrete feedback, previous versions and human-review notices.
+
+The four pinned company knowledge documents supply the real storage, delivery, carrier and returns context. Compliance uses the TrackFlow briefing rules; no invented discount/rate/capacity commitments. Details, setup, evaluation checklist and clearly labelled passing/failing fixture examples are in docs/rfp-proposals/.
+
+GitHub blocked Codespace startup with an organization billing/budget notice on 2026-11-21. Work continued in a separate local checkout of the SAME Milestone-9 branch. Do not overwrite the original Codespace's uncommitted .gitignore, services/routers/agent.py or services/agent_harness/runtime/ changes. After Codespaces access returns, review and fast-forward to the pushed branch without discarding those files. Part 2 live configured-provider/Supabase/Celery verification remains pending there; local browser verification used normal login, an isolated test account, explicit test-model injection and SQLite. There is no production fake fallback and no authentication/environment/billing/deployment change.
 
 Part 1 assignment: https://learn.4geeks.com/main-cohort/miami-ai-engineering-2/syllabus/agentic-workflows-miami/project/ai-eng-milestone-agentic-workflows-orchestrate?moduleId=1
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { trackFlowAuthHeaders } from "../../src/utils/auth-headers";
 import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 import type { RfpTicket } from "../../src/types/rfp-intake";
+import ProposalReview from "./ProposalReview";
 const API = "/api/backend/rfp/tickets";
 const field = (value: string | null | undefined) =>
   value || "Not stated — needs clarification";
@@ -345,12 +346,13 @@ export default function RfpIntake() {
                 </>
               )}
               <p className="message">
-                Intake is complete. Proposal writing and department approvals
-                follow in the next parts; no pricing or capacity has been
-                committed.
+                Intake is complete. Proposal drafts can be prepared below.
+                Department approval and the final proposal follow in Part 3;
+                no pricing or capacity has been committed.
               </p>
             </>
           )}
+          <ProposalReview key={selected.ticket_id} ticket={selected} onChange={setSelected} />
           {selected.sections.map((s) => (
             <article className="panel" key={s.department_id}>
               <h3>
