@@ -185,3 +185,15 @@ def test_structured_quantities_require_actual_numeric_unit_period_evidence():
     assert not quantity_grounded(quantity.model_copy(update={"period": "day"}), quote)
     with pytest.raises(ValidationError):
         Quantity(value=float("inf"), unit="orders", period="month", evidence=quote)
+
+
+def test_capacity_correction_cannot_hide_volume_or_preserve_higher_quoted_total():
+    from data.pipelines.rfp_intake.approval_rules import capacity_revision_valid
+    cap = {"value": 100, "unit": "orders", "period": "month", "evidence": "100 orders monthly"}
+    cost = {"amount": 200, "currency": "EUR", "period": "month", "evidence": "200 EUR monthly"}
+    previous = {"commitments": {"volume": dict(cap, value=200), "customer_total_cost": cost}}
+    corrected = {"commitments": {"volume": cap, "customer_total_cost": dict(cost, amount=100)}}
+    assert capacity_revision_valid(previous, corrected, cap)
+    assert not capacity_revision_valid(previous, {"commitments": {"volume": cap}}, cap)
+    assert not capacity_revision_valid(previous, {"commitments": {"volume": cap, "customer_total_cost": cost}}, cap)
+    assert not capacity_revision_valid(previous, {"commitments": {}}, cap)

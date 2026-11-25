@@ -23,7 +23,7 @@ The dedicated `arbitration` node detects structured contradictions; language mod
 | `returns-sla-breach` | Sofía for a reverse-only breach; Miguel when another department embeds it | Request changes on every offending section; no sub-48-hour returns commitment. |
 | `currency-mismatch` | Miguel Torres | Rewrite offending sections to USD for US or EUR for Spain. |
 
-The fixed arbiter's authenticated decision is recorded, then affected branches revise and re-evaluate. Marking arbitration `request_changes` does not waive compliance. Unresolved contradictions keep the final gate closed. Capacity comparison requires matching units and periods, with quoted source evidence. No SKU-to-order or pallet-to-order conversion is invented. Missing capacity remains an open commercial question; the system does not claim that an unprovided capacity has been verified. Older drafts without the optional structured commitments remain readable.
+The fixed arbiter's authenticated decision is recorded, then affected branches revise and re-evaluate. Marking arbitration `request_changes` does not waive compliance. Unresolved contradictions keep the final gate closed. Capacity comparison requires matching units and periods, with quoted source evidence. A correction cannot hide its volume or remove an existing quoted customer total: that total must decrease in the same currency/billing period. Explicit commercial facts in authenticated human feedback are retained as source data for revisions; they cannot override business constraints. No SKU-to-order or pallet-to-order conversion, exchange rate or price is invented. Missing capacity remains an open commercial question; the system does not claim that an unprovided capacity has been verified. Older drafts without the optional structured commitments remain readable.
 
 ## Persistence and recovery
 
@@ -55,7 +55,7 @@ Unauthenticated requests return 401; unrelated tickets 404; wrong decision owner
 Install locked dependencies with `uv sync --locked --group dev`. No model credentials are needed for these tests: fixtures are explicitly injected only in tests; production has no fake fallback.
 
 ```sh
-uv run python -m pytest tests/pipelines/test_rfp_approval.py tests/pipelines/test_rfp_approval_api.py -q
+uv run python -m pytest tests/pipelines/test_rfp_approval.py tests/pipelines/test_rfp_approval_api.py tests/pipelines/test_rfp_approval_recovery.py -q
 ```
 
 `test_parallel_interrupt_resume_full_flow` reproducibly drives Parts 1→2→3 with the ModaViva fixture, pauses both departments, approves reverse while warehouse remains interrupted, then approves warehouse and verifies the final EUR document. Other tests cover file-backed restart, rejection, three revision rounds, provider interruption, owner isolation, version conflicts, all three arbitration triggers and API recovery. These simulated decisions demonstrate the software; they are not real employee approvals.

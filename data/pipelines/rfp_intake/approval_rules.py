@@ -19,6 +19,36 @@ class Commitments(BaseModel):
     model_config = ConfigDict(extra="forbid")
     capacity: Quantity | None = None
     volume: Quantity | None = None
+    customer_total_cost: "CustomerCost | None" = None
+
+
+class CustomerCost(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    amount: float = Field(ge=0)
+    currency: str = Field(pattern=r"^(USD|EUR)$")
+    period: str = Field(pattern=r"^(month|day|total)$")
+    evidence: str = Field(min_length=8, max_length=2000)
+
+
+Commitments.model_rebuild()
+
+
+def capacity_revision_valid(previous, revised, capacity):
+    old = (previous.get("commitments") or {})
+    new = (revised.get("commitments") or {})
+    volume = new.get("volume")
+    if not old.get("volume") or not volume or not capacity or (volume["unit"], volume["period"]) != (capacity["unit"], capacity["period"]) or volume["value"] > capacity["value"]:
+        return False
+    # Only compare supported totals for the same billing period. Never invent
+    # a rate, conversion or fixed/variable cost split when no total was quoted.
+    quoted = old.get("customer_total_cost")
+    if quoted is not None:
+        corrected = new.get("customer_total_cost")
+        if not corrected or (quoted["currency"], quoted["period"]) != (corrected["currency"], corrected["period"]):
+            return False
+        if corrected["amount"] > quoted["amount"] or (quoted["amount"] > 0 and corrected["amount"] == quoted["amount"]):
+            return False
+    return True
 
 
 def quantity_grounded(quantity, source):

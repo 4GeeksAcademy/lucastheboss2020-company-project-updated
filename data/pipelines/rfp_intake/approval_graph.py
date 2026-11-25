@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from services.rfp_intake.models import Ticket, DepartmentSection
 from services.rfp_approval.models import ApprovalTrace
 from .proposal_agents import GENERATORS, ProposalModel, evaluate, policies
-from .approval_rules import MAX_REVISIONS
+from .approval_rules import MAX_REVISIONS, capacity_revision_valid
 
 _local_checkpoint_paths = WeakKeyDictionary()
 
@@ -105,6 +105,14 @@ def department_approval_graph(store, ticket_id, department, token, saver, model=
                               DepartmentSection.department_id == department)).one()
             context = {"section_id": section.section_id, "department_id": department, "metadata": t.handoff["metadata"],
                        "key_aspects": section.key_aspects, "open_questions": section.open_questions, "policy_sources": policies()}
+        # Preserve signed human commercial facts as source DATA. They never
+        # override currency, capacity, confidentiality or other policy checks.
+        context["metadata"] = dict(context["metadata"], human_review_feedback={
+            "actor": state["response"]["actor"], "feedback": state["response"]["feedback"]})
+        if department == "lastmile":
+            warehouse = store.branch(ticket_id, "warehouse")
+            if warehouse:
+                context["metadata"]["confirmed_warehouse_commitments"] = warehouse.draft.get("commitments")
         async def generate_and_check():
             provider = model or ProposalModel()
             feedback = state["response"]["feedback"] + "\n" + b.evaluation.get("feedback_for_generator", "")
@@ -118,11 +126,9 @@ def department_approval_graph(store, ticket_id, department, token, saver, model=
         with Session(store.engine) as db:
             conflict = db.get(ApprovalConflict, (ticket_id, "volume-vs-capacity"))
             if conflict and department in conflict.department_ids and conflict.status == "request_changes":
-                old_volume = (b.draft.get("commitments") or {}).get("volume")
-                new_volume = (draft.get("commitments") or {}).get("volume")
                 warehouse = store.branch(ticket_id, "warehouse")
                 capacity = (warehouse.draft.get("commitments") or {}).get("capacity")
-                if not old_volume or not new_volume or not capacity or (new_volume["unit"], new_volume["period"]) != (capacity["unit"], capacity["period"]) or new_volume["value"] > capacity["value"]:
+                if not capacity_revision_valid(b.draft, draft, capacity):
                     result["overall_pass"] = False
                     result["feedback_for_generator"] += "\nSupply supported revised volume within the confirmed warehouse capacity and revise the customer cost downward."
                     result["compliance"]["pass"] = False
