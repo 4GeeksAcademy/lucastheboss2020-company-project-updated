@@ -1,5 +1,34 @@
 # TrackFlow Progress
 
+## Website redesign — Part 3 ready for review (2026-11-25)
+
+- User authorized Part 3 after reviewing Part 2. Stop now for review; do not redesign dashboard/business-page content (Part 4) until instructed.
+- Replaced the crowded backoffice header with reusable `BackofficeNavigation`: fixed grouped sidebar, sticky top bar, breadcrumb/page title, contextual Add lead action, profile/password/sign-out menu, current-page indicators, expandable Inventory and Incidents groups, public website link, mobile drawer, Escape/focus restoration, focus containment and inert/background-scroll handling.
+- `app/Navigation.tsx` remains an adapter using the existing auth context and route. Authentication/provider/API logic is unchanged. Actual pages use the new chrome; page workflows and content remain intact for subsequent stages.
+- Added missing thin combined-app reporting/telemetry page importers and standalone-backoffice knowledge page importer so sidebar destinations resolve in both app surfaces. Existing page components and backend contracts reused.
+- Public visual preview at `http://127.0.0.1:3000/uis/website?preview=backoffice-navigation` reuses the real navigation component with explicit sample account/content and local selection callbacks. It does not fetch protected records, modify a real session, or bypass authentication. Actual backoffice remains protected.
+- Typecheck and production build pass. Browser checks pass for grouped destinations/current-state markers, submenu expansion, account/Escape behavior, six widths (1440,1024,900,768,390,320 across desktop/mobile checks), mobile focus containment/inert restoration/reduced motion, normal isolated local test login, sticky real top bar, RFP/reporting/telemetry/knowledge/inbound destinations, normal sign-out/token removal, and public-site isolation. Existing public smooth-scrolling regression also passes; no browser runtime errors.
+- Local review server intentionally remains on port 3000. Backend fixture used only for tests; no customer credentials or live business updates. Source remains local/uncommitted, no PR opened. Keep build-generated `.next/` changes out of commits and do not restore them while the preview is running.
+
+## Website redesign — Part 2 ready for review (2026-11-25)
+
+- Review adjustment: header and other in-page links now use native smooth scrolling, scoped to the public website. Reduced-motion preference uses instant scrolling. Desktop/mobile browser checks verify animated intermediate positions, correct sticky-header offsets, mobile menu closing, and unchanged scrolling on other screens; production build passes.
+
+- User approved the Part 1 navy/teal palette and explicitly authorized Part 2. Work paused at the user's request and resumed on "continue". Stop now for Part 2 review; do not start Part 3/backoffice navigation until instructed.
+- Public website redesigned at both `/` and `/uis/website`: one sticky header, accessible mobile menu, split hero with original operations illustration, three service cards, coverage/location panels, company facts, grouped enquiry form, contact details and footer. Public root metadata corrected; duplicate backoffice header hidden only on public website paths. Backoffice layout and login/authentication logic are unchanged.
+- Approved palette, required landing-section order, business information, form fields, exact validation messages, lead payload and Organization structured data retained. Staff links respect existing NEXT_PUBLIC_BACKOFFICE_URL, with relative combined-app fallback; no environment/configuration changes.
+- Contact form adds associated inline errors, linked/focused error summary, disabled inputs during submission, and success-panel focus/retained `contact-form` anchor. Simulated browser submission preserves new/intake/Commercial Desk defaults; no real enquiry was sent during checks.
+- Typecheck and production build pass. Browser checks pass for both public routes and 1440/1024/768/390/320px widths, no horizontal overflow, section anchors, mobile menu/Escape/focus, inline validation, low-volume warning, 500-character comment limit, successful intercepted submission and Part 1 preview. No browser runtime errors.
+- Review URL: `http://127.0.0.1:3000/uis/website?review=part-2`. Next production preview intentionally left running on port 3000 for user review. UI source remains local/uncommitted; no PR opened. Generated `.next/` changes must not be committed or restored while preview is being used.
+
+## Website redesign — Part 1 ready for review (2026-11-25)
+
+- User requires one part at a time; stop after each part for review. Do not begin Part 2 until instructed.
+- Shared visual foundations implemented: navy/teal palette, typography, spacing, panels, buttons, fields, focus states and semantic feedback colors. Existing application layouts and business workflows remain in their current structure.
+- Interactive review surface: `/uis/website?preview=foundations`. The sample form never sends or saves data. Source remains local pending user review; no PR opened.
+- Typecheck and production build pass. Browser checks pass at desktop/tablet/mobile widths, with keyboard focus, reduced-motion behavior, sample validation and existing lead-form validation/low-volume warning/submission using an intercepted test response.
+- A local Next.js preview is intentionally left running on port 3000 for user review. Build-generated `.next/` changes are not source changes and must not be committed. Do not restore generated files while the preview is being used.
+
 ## Completed
 
 - TrackFlow business context and lead domain model established.

@@ -1,0 +1,85 @@
+/* Shared visual foundations. Layout redesigns are separate review stages. */
+:root {
+  color-scheme: light;
+  --track-blue: #163c52;
+  --track-blue-hover: #0e2b3d;
+  --track-ink: #1b303e;
+  --track-muted: #526574;
+  --track-mint: #087f74;
+  --track-accent: #087f74;
+  --track-accent-hover: #06685f;
+  --track-canvas: #f5f7f9;
+  --track-surface: #ffffff;
+  --track-surface-muted: #edf2f5;
+  --track-sand: #f3f0e8;
+  --track-border: #dce4e9;
+  --track-control-border: #7b8f9d;
+  --track-info: #225479;
+  --track-info-bg: #e9f2fa;
+  --track-success: #176348;
+  --track-success-bg: #e6f4ec;
+  --track-warning: #82520a;
+  --track-warning-bg: #fff3d8;
+  --track-error: #aa2838;
+  --track-error-bg: #fcecef;
+  --track-radius-sm: 8px;
+  --track-radius-lg: 14px;
+  --track-space-1: 0.25rem;
+  --track-space-2: 0.5rem;
+  --track-space-3: 0.75rem;
+  --track-space-4: 1rem;
+  --track-space-5: 1.5rem;
+  --track-space-6: 2rem;
+  --track-space-7: 3rem;
+  --track-shadow-sm: 0 2px 5px rgb(22 60 82 / 3%);
+}
+
+/* Review surface: examples use the same shared classes as the application. */
+.foundation-review { max-width: 1080px; margin: 0 auto; }
+.foundation-review__brand { display: flex; align-items: center; gap: 0.7rem; font-weight: 800; font-size: 1.25rem; letter-spacing: -0.04em; }
+.foundation-review__mark { display: flex; align-items: center; gap: 3px; width: 29px; height: 30px; }
+.foundation-review__mark i { display: block; width: 7px; height: 20px; border-radius: 2px; background: var(--track-accent); transform: skewY(-25deg); }
+.foundation-review__mark i:nth-child(2) { height: 28px; background: var(--track-blue); }
+.foundation-review__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--track-border); padding-bottom: 1.5rem; }
+.foundation-review__edition { color: var(--track-muted); font-size: 0.8rem; }
+.foundation-review__hero { padding: clamp(2rem, 6vw, 4rem) 0 2.5rem; max-width: 760px; }
+.foundation-review__eyebrow { color: var(--track-accent); font-size: 0.75rem; font-weight: 750; letter-spacing: 0.13em; text-transform: uppercase; }
+.foundation-review__hero h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); letter-spacing: -0.055em; margin: 0.75rem 0 1rem; line-height: 1.08; }
+.foundation-review__hero p { color: var(--track-muted); font-size: 1.1rem; max-width: 620px; }
+.foundation-review__links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
+.foundation-review__links a { font-size: 0.88rem; font-weight: 650; text-underline-offset: 4px; }
+.foundation-review__section { margin: 1.5rem 0 2rem; scroll-margin-top: 1.5rem; }
+.foundation-review__section-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1rem; }
+.foundation-review__section-header > span { font-size: 0.72rem; color: var(--track-accent); font-weight: 750; }
+.foundation-review__section-header h2 { font-size: 1.3rem; margin: 0; }
+.foundation-review__swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.foundation-review__swatch { overflow: hidden; border: 1px solid var(--track-border); border-radius: var(--track-radius-lg); background: white; }
+.foundation-review__swatch-color { height: 82px; }
+.foundation-review__swatch-label { padding: 0.8rem 1rem; display: grid; gap: 0.2rem; }
+.foundation-review__swatch-label strong { font-size: 0.9rem; }
+.foundation-review small { color: var(--track-muted); font-size: 0.8rem; }
+.foundation-review__two { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.foundation-review__type h3 { font-size: 2.15rem; margin: 0 0 0.7rem; }
+.foundation-review__type p { margin: 0 0 1rem; color: var(--track-muted); }
+.foundation-review__overline { display: block; margin-bottom: 1rem; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--track-muted); font-weight: 700; }
+.foundation-review__buttons { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+.foundation-review__sample h3 { margin: 0 0 0.45rem; font-size: 1.15rem; }
+.foundation-review__sample > p { color: var(--track-muted); margin: 0 0 1.5rem; }
+.foundation-review__sample .field { margin-bottom: 1rem; }
+.foundation-review__sample .field > span { font-weight: 650; font-size: 0.9rem; }
+.foundation-review__check { display: flex; align-items: center; gap: 0.6rem; margin: 0.9rem 0 1.4rem; }
+.foundation-review__field-error { color: var(--track-error) !important; }
+.foundation-review__statuses { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-bottom: 1rem; }
+.foundation-review__feedback .message { margin: 0.7rem 0; }
+.foundation-review__feedback .message strong { display: block; margin-bottom: 0.15rem; }
+.foundation-review__spacer { margin-top: 1.8rem; }
+.foundation-review__footer { margin-top: 2.5rem; padding: 1.5rem 0 0.5rem; border-top: 1px solid var(--track-border); color: var(--track-muted); font-size: 0.85rem; }
+@media (max-width: 650px) {
+  .foundation-review__swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .foundation-review__two { grid-template-columns: 1fr; }
+  .foundation-review__top { align-items: flex-start; }
+  .foundation-review__edition { max-width: 120px; text-align: right; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root button, :root .button, :root input, :root select, :root textarea { transition: none; }
+}

@@ -1,5 +1,1 @@
-import WebsiteHome from "../../../WebsiteHome";
-
-export default function WebsiteRoute() {
-  return <WebsiteHome />;
-}
+export { default, metadata } from "../../../../../app/uis/website/page";
