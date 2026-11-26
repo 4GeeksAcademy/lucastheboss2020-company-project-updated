@@ -1,5 +1,12 @@
 # TrackFlow Progress
 
+## Codespaces transfer checkpoint — 2026-11-25
+
+- User explicitly requested that all UI work be implemented in Codespaces and continued there, using Chrome. Parts 1–3 actual UI source is now committed and pushed to `Milestone-9`, code commit `9ae8149411e6a270f49ea244ac54342edf95bfed`; remote branch hash was verified after push. No PR opened. Earlier local/uncommitted notes below are historical.
+- The running Codespace has NOT been verified or synchronized. Do not claim the remote workspace is updated just because GitHub is pushed. Browser-control runtime fails before reading Chrome tabs with `failed to write kernel assets: The system cannot find the path specified. (os error 3)`, including after reset/retry. GitHub Codespaces API access with existing credentials also lacks access. Continue through Chrome when its connection works, respecting the user's explicit preference.
+- Before pulling, inspect the remote branch/worktree and preserve existing Codespace changes (previously `.gitignore`, `services/routers/agent.py`, `services/agent_harness/runtime/`). Do not reset or discard user changes. Sync the existing `Milestone-9` branch, restart its actual UI if needed, then verify the real sections with its configured backend. No fake auth, credential copying, or production/environment changes were made for this transfer.
+- Do not advance the next redesign part merely because transfer was requested; preserve one-part-at-a-time review checkpoints.
+
 ## Website redesign — Part 3 ready for review (2026-11-25)
 
 - User authorized Part 3 after reviewing Part 2. Stop now for review; do not redesign dashboard/business-page content (Part 4) until instructed.
