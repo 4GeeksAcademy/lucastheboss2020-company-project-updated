@@ -1,0 +1,4 @@
+.rate { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; }
+.edit { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; min-height: 28px; padding: 5px; border: 0; border-radius: 5px; background: transparent; color: var(--track-accent); vertical-align: middle; }
+.edit:hover:not(:disabled) { background: var(--track-surface-muted); color: var(--track-accent-hover); }
+.edit svg { width: 14px; height: 14px; flex-shrink: 0; }

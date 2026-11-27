@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from "../../src/utils/auth-headers";
+import rateStyles from "./SupplierRate.module.css";
 
 export interface Supplier {
   id: number;
@@ -568,7 +569,7 @@ export default function SupplierDirectory() {
                       </button>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1">
+                    <span className={rateStyles.rate}>
                       {s.rate_per_shipment.toFixed(2)}
                       <button
                         onClick={() => {
@@ -576,10 +577,12 @@ export default function SupplierDirectory() {
                           setEditRateValue(s.rate_per_shipment.toString());
                           setRateUpdateError(null);
                         }}
-                        className="text-xs text-blue-600 hover:text-blue-800 ml-1"
+                        className={rateStyles.edit}
+                        type="button"
+                        aria-label={`Edit rate for ${s.name}`}
                         title="Edit rate"
                       >
-                        ✏️
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15Z" /></svg>
                       </button>
                     </span>
                   )}
