@@ -1,5 +1,13 @@
 # TrackFlow Progress
 
+## Backoffice redesign — Part 4 ready for review (2026-11-27)
+
+- The user authorized the next redesign part after the live navigation review. Implemented the actual BackofficeHome overview, committed as `af1718d` on `Milestone-9`, pushed and fast-forwarded in the running Codespace. Stop for user review before starting the next part. No PR.
+- Added live full-pipeline totals (all, new, qualified, proposal stage), compact linked lead rows, existing URL-based search/status/stage/pagination, refresh, grouped operation shortcuts and reporting panel. Totals come from existing authenticated candidate API responses, independent of lead-list filters. Demo reports remain available in a collapsed, explicitly labeled examples section and load on demand.
+- Fixed the overview public enquiry link to use the configured website origin or same-origin fallback rather than hardcoded localhost. No API/auth/environment contracts changed for this redesign.
+- Local and Codespace typechecks pass. Real signed-in Chrome checks confirmed totals 6/1/2/2, page 2, qualified status, proposal stage, zero-match search and reset. Desktop, 390px and 320px layouts inspected; no horizontal overflow at 320px. Temporary viewport override reset. Actual Codespace overview left open at the top for review.
+- Prior fixes `7a3e846` are running: weekly reporting attaches the existing login token; TinyDB shared-handle operations are synchronized to prevent concurrent JSON read errors. 53 auth/storage tests passed in Codespaces, reporting loaded saved pipeline status, incident manager loaded all 97 records after a fresh page load. Existing unrelated Codespace edits remain preserved.
+
 ## Codespaces transfer checkpoint — 2026-11-25
 
 - User explicitly requested that all UI work be implemented in Codespaces and continued there, using Chrome. Parts 1–3 actual UI source is now committed and pushed to `Milestone-9`, code commit `9ae8149411e6a270f49ea244ac54342edf95bfed`; remote branch hash was verified after push. No PR opened. Earlier local/uncommitted notes below are historical.
