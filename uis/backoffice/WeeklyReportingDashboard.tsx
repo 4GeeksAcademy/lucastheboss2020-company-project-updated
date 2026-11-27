@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
+import { trackFlowAuthHeaders } from "../../src/utils/auth-headers";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -133,8 +134,8 @@ export default function WeeklyReportingDashboard() {
     try {
       const params = week ? `?week_start=${week}` : "";
       const [perfRes, wmRes] = await Promise.all([
-        fetchJson<PerformanceResponse>(`/api/reporting/weekly-warehouse-client-performance${params}`),
-        fetchJson<WatermarkResponse>("/api/reporting/pipeline-runs/latest"),
+        fetchJson<PerformanceResponse>(`/api/reporting/weekly-warehouse-client-performance${params}`, { headers: trackFlowAuthHeaders() }),
+        fetchJson<WatermarkResponse>("/api/reporting/pipeline-runs/latest", { headers: trackFlowAuthHeaders() }),
       ]);
       setData(perfRes);
       setWatermark(wmRes);
@@ -156,7 +157,7 @@ export default function WeeklyReportingDashboard() {
       const body = weekStart ? { week_start: weekStart } : {};
       const accepted = await fetchJson<TriggerResponse>("/api/reporting/pipeline-runs", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...trackFlowAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       setTriggerResult({ ...accepted });
@@ -166,7 +167,7 @@ export default function WeeklyReportingDashboard() {
           await new Promise((resolve) => setTimeout(resolve, TASK_POLL_INTERVAL_MS));
         }
 
-        const task = await fetchJson<TaskStatusResponse>(`/api/tasks/${accepted.task_id}`);
+        const task = await fetchJson<TaskStatusResponse>(`/api/tasks/${accepted.task_id}`, { headers: trackFlowAuthHeaders() });
         const week = task.week_start ?? accepted.week_start;
 
         setTriggerResult({
