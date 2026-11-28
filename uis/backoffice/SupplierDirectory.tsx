@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, fetchJson, userSafeErrorMessage } from "../../src/utils/api-errors";
 import { TRACKFLOW_TOKEN_KEY, trackFlowAuthHeaders } from "../../src/utils/auth-headers";
 import rateStyles from "./SupplierRate.module.css";
+import styles from "./SupplierDirectory.module.css";
 
 export interface Supplier {
   id: number;
@@ -45,7 +46,7 @@ const VALID_CATEGORIES = [
 
 function formatCategory(cat: string): string {
   return cat
-    .replace(/_/g, " ")
+    .replace(/[_-]/g, " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
@@ -238,48 +239,44 @@ export default function SupplierDirectory() {
   }
 
   // ---- Loading / error states ----
-  if (loading && suppliers.length === 0)
-    return <p className="text-gray-500">Loading suppliers…</p>;
-  if (error && suppliers.length === 0)
-    return (
-      <div className="message error" role="alert">
-        <p>{error}</p>
-        <button className="secondary" type="button" onClick={fetchSuppliers}>Retry</button>
-      </div>
-    );
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Supplier Directory</h2>
+    <section className={styles.directory}>
+      <header className={styles.heading}>
+        <div><span className={styles.eyebrow}>TRACKFLOW PARTNER NETWORK</span><h1>Supplier directory</h1><p>Manage the partners supporting your operations in the United States and Spain.</p></div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className={showForm ? "secondary" : "accent"}
+          aria-expanded={showForm}
+          aria-controls="supplier-registration"
         >
           {showForm ? "Cancel" : "Register Supplier"}
         </button>
-      </div>
+      </header>
 
       {/* ---- Registration Form ---- */}
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4"
+          className={styles.form}
+          id="supplier-registration"
+          aria-label="Register a supplier"
         >
+          <h2>New supplier</h2><p className={styles.formIntro}>Add a partner to your directory. Fields marked * are required.</p>
           {formApiError && (
-            <div className="rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-              API Error: {formApiError}
+            <div className={styles.error} role="alert">
+              {formApiError}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={styles.formGrid}>
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="supplier-name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name *
               </label>
               <input
                 type="text"
+                id="supplier-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 className={`w-full rounded border px-3 py-2 text-sm ${
@@ -293,10 +290,11 @@ export default function SupplierDirectory() {
 
             {/* Country */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="supplier-country" className="block text-sm font-medium text-gray-700 mb-1">
                 Country *
               </label>
               <select
+                id="supplier-country"
                 value={formCountry}
                 onChange={(e) => setFormCountry(e.target.value)}
                 className={`w-full rounded border px-3 py-2 text-sm ${
@@ -317,13 +315,14 @@ export default function SupplierDirectory() {
 
             {/* Rate per Shipment */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="supplier-rate" className="block text-sm font-medium text-gray-700 mb-1">
                 Rate per Shipment *
               </label>
               <input
                 type="number"
                 step="0.01"
                 min="0.01"
+                id="supplier-rate"
                 value={formRatePerShipment}
                 onChange={(e) => setFormRatePerShipment(e.target.value)}
                 className={`w-full rounded border px-3 py-2 text-sm ${
@@ -337,10 +336,11 @@ export default function SupplierDirectory() {
 
             {/* Currency — auto-set from country, but editable */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="supplier-currency" className="block text-sm font-medium text-gray-700 mb-1">
                 Currency *
               </label>
               <select
+                id="supplier-currency"
                 value={formCurrency}
                 onChange={(e) => setFormCurrency(e.target.value)}
                 className={`w-full rounded border px-3 py-2 text-sm ${
@@ -358,10 +358,11 @@ export default function SupplierDirectory() {
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="supplier-status" className="block text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
               <select
+                id="supplier-status"
                 value={formStatus}
                 onChange={(e) =>
                   setFormStatus(e.target.value as "active" | "suspended")
@@ -375,11 +376,12 @@ export default function SupplierDirectory() {
 
             {/* Service Zone (optional) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="supplier-zone" className="block text-sm font-medium text-gray-700 mb-1">
                 Service Zone
               </label>
               <input
                 type="text"
+                id="supplier-zone"
                 value={formServiceZone}
                 onChange={(e) => setFormServiceZone(e.target.value)}
                 placeholder="e.g. West Coast, Aragón"
@@ -389,11 +391,12 @@ export default function SupplierDirectory() {
 
             {/* Contact Email (optional) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="supplier-email" className="block text-sm font-medium text-gray-700 mb-1">
                 Contact Email
               </label>
               <input
                 type="email"
+                id="supplier-email"
                 value={formContactEmail}
                 onChange={(e) => setFormContactEmail(e.target.value)}
                 placeholder="supplier@example.com"
@@ -413,11 +416,8 @@ export default function SupplierDirectory() {
                   key={cat}
                   type="button"
                   onClick={() => toggleCategory(cat)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold border ${
-                    formCategories.includes(cat)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                  }`}
+                  className={`${styles.categoryChoice} ${formCategories.includes(cat) ? styles.selectedChoice : ""}`}
+                  aria-pressed={formCategories.includes(cat)}
                 >
                   {formatCategory(cat)}
                 </button>
@@ -432,11 +432,12 @@ export default function SupplierDirectory() {
 
           {/* Notes (optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="supplier-notes" className="block text-sm font-medium text-gray-700 mb-1">
               Notes
             </label>
             <textarea
-              value={formNotes}
+              id="supplier-notes"
+                value={formNotes}
               onChange={(e) => setFormNotes(e.target.value)}
               placeholder="Operations team notes..."
               rows={2}
@@ -447,7 +448,7 @@ export default function SupplierDirectory() {
           <button
             type="submit"
             disabled={formSubmitting}
-            className="rounded bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            className="accent"
           >
             {formSubmitting ? "Creating…" : "Create Supplier"}
           </button>
@@ -455,10 +456,13 @@ export default function SupplierDirectory() {
       )}
 
       {/* ---- Filters ---- */}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Country:</label>
+      <section className={styles.panel} aria-labelledby="supplier-results-title">
+      <div className={styles.panelHeader}><div><h2 id="supplier-results-title">Your suppliers</h2><p role="status">{loading ? "Loading suppliers…" : error ? "The supplier list could not be refreshed." : `${suppliers.length} ${suppliers.length === 1 ? "supplier" : "suppliers"} shown`}</p></div><button className="secondary" type="button" onClick={fetchSuppliers} disabled={loading}>Refresh list</button></div>
+      <div className={styles.filters} role="search" aria-label="Filter suppliers">
+        <div>
+          <label htmlFor="supplier-country-filter">Country</label>
           <select
+            id="supplier-country-filter"
             value={countryFilter}
             onChange={(e) => setCountryFilter(e.target.value)}
             className="rounded border border-gray-300 px-3 py-1.5 text-sm"
@@ -471,9 +475,10 @@ export default function SupplierDirectory() {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Category:</label>
+        <div>
+          <label htmlFor="supplier-category-filter">Category</label>
           <select
+            id="supplier-category-filter"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="rounded border border-gray-300 px-3 py-1.5 text-sm"
@@ -492,7 +497,7 @@ export default function SupplierDirectory() {
               setCountryFilter("");
               setCategoryFilter("");
             }}
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
+            className={`secondary ${styles.clearFilters}`}
           >
             Clear filters
           </button>
@@ -501,25 +506,26 @@ export default function SupplierDirectory() {
 
       {/* ---- Error banner ---- */}
       {error && (
-        <div className="rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <div className={styles.error} role="alert">
           {error}
           <button className="secondary compact-button" type="button" onClick={fetchSuppliers} style={{ marginLeft: "0.75rem" }}>Retry list load</button>
         </div>
       )}
       {rateUpdateError && (
-        <div className="rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <div className={styles.error} role="alert">
           {rateUpdateError}
         </div>
       )}
       {statusUpdateError && (
-        <div className="rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700" role="alert">
+        <div className={styles.error} role="alert">
           {statusUpdateError}
         </div>
       )}
 
       {/* ---- Supplier Table ---- */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
+      <div className={styles.tableRegion} role="region" aria-label="Supplier rates and availability" tabIndex={0} aria-busy={loading}>
+        <table className={styles.table}>
+          <caption className={styles.srOnly}>Supplier directory with shipment rates, currencies, status, and management actions.</caption>
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
@@ -534,19 +540,20 @@ export default function SupplierDirectory() {
           <tbody className="divide-y divide-gray-100">
             {suppliers.map((s) => (
               <tr key={s.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{s.name}</td>
-                <td className="px-4 py-3 text-gray-700">{s.country}</td>
-                <td className="px-4 py-3 text-gray-700">
-                  {s.categories.map(formatCategory).join(", ")}
+                <td data-label="Supplier" className={styles.supplierName}>{s.name}</td>
+                <td data-label="Country">{s.country === "USA" ? "United States" : s.country}</td>
+                <td data-label="Categories" className={styles.categories}>
+                  <div>{s.categories.map((category) => <span key={category}>{formatCategory(category)}</span>)}</div>
                 </td>
-                <td className="px-4 py-3 text-right text-gray-900">
+                <td data-label="Rate / shipment" className={styles.rateCell}>
                   {editingRate === s.id ? (
-                    <span className="inline-flex items-center gap-1">
+                    <span className={styles.rateEditor}>
                       <input
                         type="number"
                         step="0.01"
                         min="0.01"
                         value={editRateValue}
+                        aria-label={`Rate per shipment for ${s.name}`}
                         onChange={(e) => setEditRateValue(e.target.value)}
                         className="w-20 rounded border border-gray-300 px-2 py-1 text-xs text-right"
                         autoFocus
@@ -554,7 +561,8 @@ export default function SupplierDirectory() {
                       <button
                         onClick={() => handleRateUpdate(s.id)}
                         disabled={updatingRateId === s.id}
-                        className="text-xs text-green-600 hover:text-green-800 font-semibold"
+                        className={styles.saveRate}
+                        type="button"
                       >
                         {updatingRateId === s.id ? "Saving…" : "Save"}
                       </button>
@@ -563,7 +571,8 @@ export default function SupplierDirectory() {
                           setEditingRate(null);
                           setRateUpdateError(null);
                         }}
-                        className="text-xs text-gray-500 hover:text-gray-700"
+                        className={styles.cancelRate}
+                        type="button"
                       >
                         Cancel
                       </button>
@@ -587,27 +596,21 @@ export default function SupplierDirectory() {
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-center font-mono text-gray-900">{s.currency}</td>
-                <td className="px-4 py-3 text-center">
+                <td data-label="Currency" className={styles.currency}>{s.currency}</td>
+                <td data-label="Status">
                   <span
-                    className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                      s.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
+                    className={`${styles.status} ${s.status === "active" ? styles.active : styles.suspended}`}
                   >
                     {s.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-center">
+                <td data-label="Action" className={styles.actionCell}>
                   <button
                     onClick={() => handleToggleStatus(s)}
                         disabled={updatingStatusId === s.id}
-                    className={`rounded px-3 py-1 text-xs font-semibold border ${
-                      s.status === "active"
-                        ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                        : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                    }`}
+                    className={`${styles.statusAction} ${s.status === "active" ? styles.suspendAction : styles.activateAction}`}
+                    type="button"
+                    aria-label={`${s.status === "active" ? "Suspend" : "Activate"} ${s.name}`}
                   >
                     {updatingStatusId === s.id ? "Updating…" : s.status === "active" ? "Suspend" : "Activate"}
                   </button>
@@ -618,11 +621,12 @@ export default function SupplierDirectory() {
         </table>
       </div>
 
-      {suppliers.length === 0 && !loading && (
-        <p className="text-gray-400 text-center py-8">
-          No suppliers registered yet.
+      {suppliers.length === 0 && !loading && !error && (
+        <p className={styles.empty}>
+          {countryFilter || categoryFilter ? "No suppliers match these filters. Try another country or category." : "No suppliers registered yet. Register a supplier to get started."}
         </p>
       )}
-    </div>
+      </section>
+    </section>
   );
 }
