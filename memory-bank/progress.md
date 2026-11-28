@@ -138,3 +138,12 @@ Milestone 4 evaluation readiness: confirm documentation structure, public lead c
 - ✅ **Resubmit: allowlist trimming before insert** — `trim_properties_to_allowlist` in storage drops out-of-plan `properties` keys (per `get_properties_allowlist`) before writing `tags` JSONB; endpoint contract unchanged
 - ✅ `scripts/seed_telemetry_proof.py` + `docs/telemetry-phase3-proof.md` — seed+verify+trimming-evidence tooling for the Supabase screenshot proof
 - ✅ Verification: 179/179 tests pass (49 telemetry incl. 16 telemetry-events tests, 5 new trimming tests); ruff clean on changed files
+
+
+## Supplier directory redesign review checkpoint (2026-11-27)
+- Implemented on `Milestone-9`; no pull request. Stop here for the user's review before another redesign part.
+- Added scoped supplier-page styles: aligned country/category filters, clear table spacing, category chips, status badges, compact Activate/Suspend actions, and responsive supplier cards below 700px.
+- Preserved the 28px pencil controls and existing supplier API contracts. Registration uses a two-column desktop form and single-column phone form, with associated field labels. Loading/error messages keep the page shell visible; filtered empty results have specific guidance.
+- Verification: `npm run typecheck` passed locally and in Codespaces. The real forwarded port-3000 page loaded all 15 suppliers; Spain returned 7; Spain + Warehouse Supplies showed the filtered empty state; Clear filters restored 15. Rate edit opened and Cancel closed without writing data. Registration opened/closed on desktop and at 320px. Chrome screenshots verified desktop and 390px supplier cards; 390px and 320px had no document horizontal overflow. Temporary viewport overrides were cleared.
+- The console's remaining React warning references extension-injected body attributes (`__processed_*`, `bis_register`). No supplier request failure was observed. Do not suppress application errors or weaken authentication to hide this extension warning.
+- Source change: `a6274d0`, pushed and pulled into the actual Codespace. Existing unrelated Codespace edits and generated `.next` output were preserved.
